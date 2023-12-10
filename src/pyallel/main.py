@@ -217,6 +217,6 @@ def run() -> None:
         print(f"{GREEN_BOLD}Success!{NC}")
 
     elapsed_time = time.perf_counter() - start_time
-    if args.verbose:
+    if args.debug:
         print(f"\nTime taken : {format_time_taken(elapsed_time)}")
     sys.exit(exit_code)
