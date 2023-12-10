@@ -1,6 +1,7 @@
 import argparse
 import logging
 import time
+from datetime import timedelta
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 import subprocess
@@ -92,6 +93,8 @@ def run() -> None:
 
     logger.debug(f"CLI arguments : {args}")
 
+    start_time = time.perf_counter()
+
     futures = run_commands(args.commands)
 
     icons: list[str] = ["/", "-", "\\", "|"]
@@ -120,3 +123,6 @@ def run() -> None:
 
         if len(completed_futures) == len(futures):
             break
+
+    elapsed_time = time.perf_counter() - start_time
+    print(f"Time taken : {timedelta(seconds=elapsed_time)}")
