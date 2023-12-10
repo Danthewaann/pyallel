@@ -42,5 +42,5 @@ pyallel "black --color --check --diff ." "mypy ." "ruff check --no-fix ."
 - [ ] Maybe allow command dependencies to be defined in a python file where commands are
       decorated with info that details it's dependencies?
 - [x] Add test suite
-- [ ] Improve error handling when parsing provided commands (check they are valid executables)
+- [x] Improve error handling when parsing provided commands (check they are valid executables)
 - [ ] Add visual examples of `pyallel` in action
