@@ -32,7 +32,7 @@ def test_run_multiple_commands(capsys: CaptureFixture[str]) -> None:
 
 
 def test_run_fail_fast(capsys: CaptureFixture[str]) -> None:
-    assert main.run("sleep 1", 'sh -c \"exit 1\"', "-f") == 1
+    assert main.run("sleep 1", 'sh -c "exit 1"', "-f") == 1
     captured = capsys.readouterr()
     out = captured.out.splitlines(keepends=True)
     assert out == [
@@ -42,6 +42,7 @@ def test_run_fail_fast(capsys: CaptureFixture[str]) -> None:
         "\n",
         "A command failed!\n",
     ]
+
 
 def test_run_verbose_mode(capsys: CaptureFixture[str]) -> None:
     assert main.run("sleep 0.1", "-V") == 0
@@ -76,4 +77,22 @@ def test_run_debug_mode(capsys: CaptureFixture[str]) -> None:
         "Success!\n",
         "\n",
         "Time taken : 0s\n",
+    ]
+
+
+def test_handles_invalid_executable(capsys: CaptureFixture[str]) -> None:
+    assert main.run("invalid_exe") == 1
+    captured = capsys.readouterr()
+    out = captured.out.splitlines(keepends=True)
+    assert out == [
+        "Error: executables [invalid_exe] were not found\n",
+    ]
+
+
+def test_handles_many_invalid_executables(capsys: CaptureFixture[str]) -> None:
+    assert main.run("invalid_exe", "other_invalid_exe") == 1
+    captured = capsys.readouterr()
+    out = captured.out.splitlines(keepends=True)
+    assert out == [
+        "Error: executables [invalid_exe, other_invalid_exe] were not found\n",
     ]

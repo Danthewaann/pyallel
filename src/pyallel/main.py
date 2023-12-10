@@ -3,11 +3,13 @@ from __future__ import annotations
 import os
 import sys
 import time
+import shutil
 from dataclasses import dataclass
 import shlex
 import importlib.metadata
 import subprocess
 
+from pyallel.errors import InvalidExecutableErrors, InvalidExecutableError
 from pyallel.parser import Arguments, create_parser
 
 IN_TTY = sys.__stdin__.isatty()
@@ -48,6 +50,8 @@ class Process:
 
 def run_command(command: str) -> Process:
     executable, *args = command.split(maxsplit=1)
+    if not shutil.which(executable):
+        raise InvalidExecutableError(executable)
     args = shlex.split(" ".join(args))
     env = os.environ.copy()
     # TODO: need to provide a way to supply environment variables
@@ -64,7 +68,19 @@ def run_command(command: str) -> Process:
 
 
 def run_commands(commands: list[str]) -> list[Process]:
-    return [run_command(command) for command in commands]
+    processes: list[Process] = []
+    errors: list[InvalidExecutableError] = []
+
+    for command in commands:
+        try:
+            processes.append(run_command(command))
+        except InvalidExecutableError as e:
+            errors.append(e)
+
+    if errors:
+        raise InvalidExecutableErrors(*errors)
+
+    return processes
 
 
 def indent(output: str) -> str:
@@ -190,14 +206,23 @@ def run(*args: str) -> int:
     start = time.perf_counter()
 
     exit_code = 0
-    status = main_loop(
-        parsed_args.commands,
-        parsed_args.fail_fast,
-        parsed_args.interactive,
-        parsed_args.debug,
-    )
+    message = None
+    try:
+        status = main_loop(
+            parsed_args.commands,
+            parsed_args.fail_fast,
+            parsed_args.interactive,
+            parsed_args.debug,
+        )
+    except Exception as e:
+        status = False
+        message = str(e)
+
     if not status:
-        print(f"{RED_BOLD}A command failed!{NC}")
+        if not message:
+            print(f"{RED_BOLD}A command failed!{NC}")
+        else:
+            print(f"{RED_BOLD}Error: {message}{NC}")
         exit_code = 1
     else:
         print(f"{GREEN_BOLD}Success!{NC}")
