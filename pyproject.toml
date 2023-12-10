@@ -21,6 +21,10 @@ pyallel = "pyallel.main:entry_point"
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+mypy = "^1.7.0"
+
 [tool.mypy]
 strict = true
 show_error_codes = true
