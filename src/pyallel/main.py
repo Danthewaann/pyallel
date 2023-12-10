@@ -2,7 +2,6 @@ import argparse
 import logging
 import time
 from datetime import timedelta
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 import subprocess
 
@@ -32,23 +31,14 @@ class Arguments:
 @dataclass
 class Command:
     name: str
-    exit_code: int
-    output: bytes
-    time_taken: float
+    process: subprocess.Popen[bytes]
 
 
 def run_command(command: str) -> Command:
-    start = time.perf_counter()
-    process = subprocess.run(
+    process = subprocess.Popen(
         command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
-    end = time.perf_counter()
-    return Command(
-        name=command.split()[0],
-        exit_code=process.returncode,
-        output=process.stdout,
-        time_taken=end - start,
-    )
+    return Command(name=command.split()[0], process=process)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -72,12 +62,11 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run_commands(commands: list[str]) -> dict[Future[Command], str]:
-    futures: dict[Future[Command], str] = {}
+def run_commands(commands: list[str]) -> dict[str, Command]:
+    futures: dict[str, Command] = {}
 
-    with ThreadPoolExecutor() as executor:
-        for command in commands:
-            futures[executor.submit(run_command, command)] = command
+    for command in commands:
+        futures[command] = run_command(command)
 
     return futures
 
@@ -88,7 +77,7 @@ def indent(output: str) -> str:
 
 def main_loop(commands: list[str]) -> bool:
     futures = run_commands(commands)
-    completed_futures: dict[Future[Command], str] = {}
+    completed_futures: dict[str, Command] = {}
     passed = True
 
     while True:
@@ -96,30 +85,29 @@ def main_loop(commands: list[str]) -> bool:
             logger.info(f"{CLEAR_LINE}\r{WHITE_BOLD}Running commands{NC} {icon}")
             time.sleep(0.1)
 
-        for future in as_completed(futures):
-            if future in completed_futures:
+        for command, future in futures.items():
+            if command in completed_futures:
                 continue
 
             logger.info(f"${CLEAR_LINE}\r")
 
-            completed_futures[future] = futures[future]
-            command = future.result()
-            if command.exit_code != 0:
+            if future.process.poll() is None:
+                continue
+
+            completed_futures[command] = future
+            if future.process.returncode != 0:
                 passed = False
-                logger.info(
-                    f"{RED_BOLD}{command.name} "
-                    f"[{timedelta(seconds=command.time_taken)}] "
-                    f": fail {X}{NC}\n"
-                    f"{indent(command.output.decode())}\n"
-                )
+                logger.info(f"{RED_BOLD}{future.name} : fail {X}{NC}\n")
+                if future.process.stdout:
+                    output = future.process.stdout.read()
+                    if output:
+                        logger.info(f"{indent(output.decode())}\n")
             else:
-                logger.info(
-                    f"{GREEN_BOLD}{command.name} "
-                    f"[{timedelta(seconds=command.time_taken)}] "
-                    f": pass {TICK}{NC}\n"
-                )
-                if command.output:
-                    logger.debug(f"{indent(command.output.decode())}\n")
+                logger.info(f"{GREEN_BOLD}{future.name} " f": pass {TICK}{NC}\n")
+                if future.process.stdout:
+                    output = future.process.stdout.read()
+                    if output:
+                        logger.debug(f"{indent(output.decode())}\n")
 
         if len(completed_futures) == len(futures):
             break
