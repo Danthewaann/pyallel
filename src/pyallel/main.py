@@ -110,6 +110,10 @@ def indent(output: str) -> str:
     return "\n".join("    " + line for line in output.splitlines())
 
 
+def format_time_taken(time_taken: float) -> str:
+    return str(timedelta(seconds=time_taken))
+
+
 def print_command_status(process: Process, passed: bool, debug: bool = False) -> None:
     colour = RED_BOLD
     msg = "failed"
@@ -128,7 +132,7 @@ def print_command_status(process: Process, passed: bool, debug: bool = False) ->
 
     if debug:
         elapsed = time.perf_counter() - process.start
-        print(f"in {timedelta(seconds=elapsed)} ", end="")
+        print(f"in {format_time_taken(elapsed)} ", end="")
 
     print(f"{icon}{NC}")
 
@@ -207,5 +211,5 @@ def run() -> None:
 
     elapsed_time = time.perf_counter() - start_time
     if args.verbose:
-        print(f"\nTime taken : {timedelta(seconds=elapsed_time)}")
+        print(f"\nTime taken : {format_time_taken(elapsed_time)}")
     sys.exit(exit_code)
