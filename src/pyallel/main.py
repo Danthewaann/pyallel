@@ -144,7 +144,7 @@ def run() -> None:
     args = parser.parse_args(namespace=Arguments())
     if args.version:
         my_version = importlib.metadata.version("pyallel")
-        print("%s\n", my_version)
+        print(my_version)
         sys.exit(0)
 
     start_time = time.perf_counter()
