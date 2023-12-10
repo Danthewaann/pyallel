@@ -32,18 +32,21 @@ class Arguments:
 
 
 @dataclass
-class Command:
+class Process:
     name: str
+    args: list[str]
     start: float
     process: subprocess.Popen[bytes]
 
 
-def run_command(command: str) -> Command:
+def run_command(command: str) -> Process:
     start = time.perf_counter()
+    executable, *args = command.split()
+
     process = subprocess.Popen(
-        command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        [executable, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
-    return Command(name=command.split()[0], start=start, process=process)
+    return Process(name=executable, args=args, start=start, process=process)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -74,13 +77,8 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run_commands(commands: list[str]) -> dict[str, Command]:
-    futures: dict[str, Command] = {}
-
-    for command in commands:
-        futures[command] = run_command(command)
-
-    return futures
+def run_commands(commands: list[str]) -> list[Process]:
+    return [run_command(command) for command in commands]
 
 
 def indent(output: str) -> str:
@@ -88,8 +86,8 @@ def indent(output: str) -> str:
 
 
 def main_loop(commands: list[str], fail_fast: bool = False) -> bool:
-    futures = run_commands(commands)
-    completed_futures: dict[str, Command] = {}
+    processes = run_commands(commands)
+    completed_processes: set[str] = set()
     passed = True
 
     while True:
@@ -97,39 +95,38 @@ def main_loop(commands: list[str], fail_fast: bool = False) -> bool:
             logger.info(f"{CLEAR_LINE}\r{WHITE_BOLD}Running commands{NC} {icon}")
             time.sleep(0.1)
 
-        for command, future in futures.items():
-            if command in completed_futures:
+        for process in processes:
+            if process.name in completed_processes:
+                continue
+
+            if process.process.poll() is None:
                 continue
 
             logger.info(f"${CLEAR_LINE}\r")
-
-            if future.process.poll() is None:
-                continue
-
-            elapsed = time.perf_counter() - future.start
-            completed_futures[command] = future
-            if future.process.returncode != 0:
+            elapsed = time.perf_counter() - process.start
+            completed_processes.add(process.name)
+            if process.process.returncode != 0:
                 passed = False
-                logger.info(f"{RED_BOLD}{future.name} ")
+                logger.info(f"{RED_BOLD}{process.name} ")
                 logger.debug(f"[{timedelta(seconds=elapsed)}] ")
                 logger.info(f": fail {X}{NC}\n")
-                if future.process.stdout:
-                    output = future.process.stdout.read()
+                if process.process.stdout:
+                    output = process.process.stdout.read()
                     if output:
                         logger.info(f"{indent(output.decode())}\n")
 
                 if fail_fast:
                     return False
             else:
-                logger.info(f"{GREEN_BOLD}{future.name} ")
+                logger.info(f"{GREEN_BOLD}{process.name} ")
                 logger.debug(f"[{timedelta(seconds=elapsed)}] ")
                 logger.info(f": pass {TICK}{NC}\n")
-                if future.process.stdout:
-                    output = future.process.stdout.read()
+                if process.process.stdout:
+                    output = process.process.stdout.read()
                     if output:
                         logger.debug(f"{indent(output.decode())}\n")
 
-        if len(completed_futures) == len(futures):
+        if len(completed_processes) == len(processes):
             break
 
     return passed
