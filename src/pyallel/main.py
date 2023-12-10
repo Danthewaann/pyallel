@@ -34,14 +34,20 @@ class Command:
     name: str
     exit_code: int
     output: bytes
+    time_taken: float
 
 
 def run_command(command: str) -> Command:
+    start = time.perf_counter()
     process = subprocess.run(
         command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
+    end = time.perf_counter()
     return Command(
-        name=command.split()[0], exit_code=process.returncode, output=process.stdout
+        name=command.split()[0],
+        exit_code=process.returncode,
+        output=process.stdout,
+        time_taken=end - start,
     )
 
 
@@ -80,9 +86,10 @@ def indent(output: str) -> str:
     return "\n".join("    " + line for line in output.splitlines())
 
 
-def main_loop(commands: list[str]) -> None:
+def main_loop(commands: list[str]) -> bool:
     futures = run_commands(commands)
     completed_futures: dict[Future[Command], str] = {}
+    passed = True
 
     while True:
         for icon in ICONS:
@@ -96,17 +103,28 @@ def main_loop(commands: list[str]) -> None:
             logger.info(f"${CLEAR_LINE}\r")
 
             completed_futures[future] = futures[future]
-            result = future.result()
-            if result.exit_code != 0:
-                logger.info(f"{RED_BOLD}{result.name} : fail {X}{NC}\n")
-                logger.info(indent(result.output.decode()))
+            command = future.result()
+            if command.exit_code != 0:
+                passed = False
+                logger.info(
+                    f"{RED_BOLD}{command.name} "
+                    f"[{timedelta(seconds=command.time_taken)}] "
+                    f": fail {X}{NC}\n"
+                    f"{indent(command.output.decode())}\n"
+                )
             else:
-                logger.info(f"{GREEN_BOLD}{result.name} : pass {TICK}{NC}\n")
-                if result.output:
-                    logger.debug(indent(result.output.decode()))
+                logger.info(
+                    f"{GREEN_BOLD}{command.name} "
+                    f"[{timedelta(seconds=command.time_taken)}] "
+                    f": pass {TICK}{NC}\n"
+                )
+                if command.output:
+                    logger.debug(f"{indent(command.output.decode())}\n")
 
         if len(completed_futures) == len(futures):
             break
+
+    return passed
 
 
 def run() -> None:
@@ -118,11 +136,12 @@ def run() -> None:
     else:
         logger.setLevel(logging.INFO)
 
-    logger.debug(f"CLI arguments : {args}\n")
-
     start_time = time.perf_counter()
 
-    main_loop(args.commands)
+    if not main_loop(args.commands):
+        logger.info(f"\n{RED_BOLD}A command failed!{NC}\n")
+    else:
+        logger.info(f"\n{GREEN_BOLD}Success!{NC}\n")
 
     elapsed_time = time.perf_counter() - start_time
-    logger.info(f"Time taken : {timedelta(seconds=elapsed_time)}\n")
+    logger.debug(f"Time taken : {timedelta(seconds=elapsed_time)}\n")
