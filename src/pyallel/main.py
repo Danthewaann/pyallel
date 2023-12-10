@@ -112,19 +112,19 @@ def indent(output: str) -> str:
 
 def print_command_status(process: Process, passed: bool, debug: bool = False) -> None:
     colour = RED_BOLD
-    msg = "fail"
+    msg = "failed"
     icon = X
     if passed:
         colour = GREEN_BOLD
         msg = "done"
         icon = TICK
 
-    print(f"{colour}{process.name} ", end="")
+    print(f"[{colour}{process.name}", end="")
 
     if debug:
-        print(f"{' '.join(process.args)} ", end="")
+        print(f" {' '.join(process.args)}", end="")
 
-    print(f"| {msg} ", end="")
+    print(f"{NC}]{colour} {msg} ", end="")
 
     if debug:
         elapsed = time.perf_counter() - process.start
