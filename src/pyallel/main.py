@@ -86,6 +86,30 @@ def indent(output: str) -> str:
     return "\n".join("    " + line for line in output.splitlines())
 
 
+def print_command_status(process: Process, passed: bool, verbose: bool = False) -> None:
+    colour = RED_BOLD
+    msg = "fail"
+    icon = X
+    if passed:
+        colour = GREEN_BOLD
+        msg = "pass"
+        icon = TICK
+
+    print(f"{colour}{process.name} ", end="")
+    if verbose:
+        elapsed = time.perf_counter() - process.start
+        print(f"[{timedelta(seconds=elapsed)}] ", end="")
+    print(f": {msg} {icon}{NC}")
+
+
+def print_command_output(process: Process, verbose: bool = False) -> None:
+    if verbose and process.process.stdout:
+        output = process.process.stdout.read()
+        if output:
+            print(f"{indent(output.decode())}")
+    print()
+
+
 def main_loop(
     commands: list[str], fail_fast: bool = False, verbose: bool = False
 ) -> bool:
@@ -99,39 +123,22 @@ def main_loop(
             time.sleep(0.1)
 
         for process in processes:
-            if process.name in completed_processes:
-                continue
-
-            if process.process.poll() is None:
+            if process.name in completed_processes or process.process.poll() is None:
                 continue
 
             print(f"${CLEAR_LINE}\r", end="")
-            elapsed = time.perf_counter() - process.start
             completed_processes.add(process.name)
+
             if process.process.returncode != 0:
+                print_command_status(process, passed=False, verbose=verbose)
+                print_command_output(process, verbose=True)
                 passed = False
-                print(f"{RED_BOLD}{process.name} ", end="")
-                if verbose:
-                    print(f"[{timedelta(seconds=elapsed)}] ", end="")
-                print(f": fail {X}{NC}")
-                if process.process.stdout:
-                    output = process.process.stdout.read()
-                    if output:
-                        print(f"{indent(output.decode())}")
-                print()
 
                 if fail_fast:
                     return False
             else:
-                print(f"{GREEN_BOLD}{process.name} ", end="")
-                if verbose:
-                    print(f"[{timedelta(seconds=elapsed)}] ", end="")
-                print(f": pass {TICK}{NC}")
-                if verbose and process.process.stdout:
-                    output = process.process.stdout.read()
-                    if output:
-                        print(f"{indent(output.decode())}")
-                print()
+                print_command_status(process, passed=True, verbose=verbose)
+                print_command_output(process, verbose=verbose)
 
         if len(completed_processes) == len(processes):
             break
