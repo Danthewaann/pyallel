@@ -2,7 +2,7 @@
 
 Run and handle the output of multiple executables in `pyallel` (as in parallel)
 
-Requires Python >=3.8 
+Requires Python >=3.8
 
 # Quick start
 
@@ -29,6 +29,9 @@ pyallel "black --color --check --diff ." "mypy ." "ruff check --no-fix ."
 
 ## TODOs
 
+- [ ] Allow a single main command output to be streamed to stdout, while all other
+      commands will only get outputted after the main command has completed (such as running
+      `pytest` as the main command, whilst running `mypy`, `ruff` etc. as other commands)
 - [ ] Allow list of files to be provided to supply as input arguments to each command
 - [ ] Allow input to be piped into `pyallel` via stdin to supply as standard input to each
       command
@@ -38,6 +41,6 @@ pyallel "black --color --check --diff ." "mypy ." "ruff check --no-fix ."
       `pyproject.toml` file in the current working directory
 - [ ] Maybe allow command dependencies to be defined in a python file where commands are
       decorated with info that details it's dependencies?
-- [ ] Add test suite
+- [x] Add test suite
 - [ ] Improve error handling when parsing provided commands (check they are valid executables)
 - [ ] Add visual examples of `pyallel` in action
