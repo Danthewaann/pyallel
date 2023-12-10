@@ -154,10 +154,14 @@ def run() -> None:
 
     start_time = time.perf_counter()
 
-    if not main_loop(args.commands, args.fail_fast):
+    exit_code = 0
+    status = main_loop(args.commands, args.fail_fast)
+    if not status:
         logger.info(f"\n{RED_BOLD}A command failed!{NC}\n")
+        exit_code = 1
     else:
         logger.info(f"\n{GREEN_BOLD}Success!{NC}\n")
 
     elapsed_time = time.perf_counter() - start_time
     logger.debug(f"Time taken : {timedelta(seconds=elapsed_time)}\n")
+    sys.exit(exit_code)
