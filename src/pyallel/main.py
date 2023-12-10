@@ -79,7 +79,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-V",
         "--verbose",
-        help="print all output for provided commands",
+        help="run in verbose mode",
         action="store_true",
         default=False,
     )
@@ -108,18 +108,25 @@ def print_command_status(process: Process, passed: bool, verbose: bool = False) 
     icon = X
     if passed:
         colour = GREEN_BOLD
-        msg = "pass"
+        msg = "done"
         icon = TICK
 
     print(f"{colour}{process.name} ", end="")
+
+    if verbose:
+        print(f"{' '.join(process.args)} ", end="")
+
+    print(f"| {msg} ", end="")
+
     if verbose:
         elapsed = time.perf_counter() - process.start
-        print(f"[{timedelta(seconds=elapsed)}] ", end="")
-    print(f": {msg} {icon}{NC}")
+        print(f"in {timedelta(seconds=elapsed)} ", end="")
+
+    print(f"{icon}{NC}")
 
 
-def print_command_output(process: Process, verbose: bool = False) -> None:
-    if verbose and process.process.stdout:
+def print_command_output(process: Process) -> None:
+    if process.process.stdout:
         output = process.process.stdout.read()
         if output:
             print(f"{indent(output.decode())}")
@@ -154,14 +161,14 @@ def main_loop(
 
             if process.process.returncode != 0:
                 print_command_status(process, passed=False, verbose=verbose)
-                print_command_output(process, verbose=True)
+                print_command_output(process)
                 passed = False
 
                 if fail_fast:
                     return False
             else:
                 print_command_status(process, passed=True, verbose=verbose)
-                print_command_output(process, verbose=verbose)
+                print_command_output(process)
 
         if len(completed_processes) == len(processes):
             break
