@@ -60,8 +60,11 @@ def run_command(command: str) -> Process:
 
 
 def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser("pyallel")
-    parser.add_argument("commands", help="list of commands to run", nargs="+")
+    parser = argparse.ArgumentParser(
+        prog="pyallel",
+        description="Run and handle the output of multiple executables in pyallel (as in parallel)",
+    )
+    parser.add_argument("commands", help="list of commands to run", nargs="*")
     parser.add_argument(
         "-f",
         "--fail-fast",
@@ -198,6 +201,10 @@ def run() -> None:
 
     if args.verbose:
         print(args)
+
+    if not args.commands:
+        print(f"{RED_BOLD}A command is required!{NC}")
+        sys.exit(1)
 
     start_time = time.perf_counter()
 
