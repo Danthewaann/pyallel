@@ -24,6 +24,7 @@ class Arguments:
     commands: list[str]
     fail_fast: bool
     interactive: bool
+    debug: bool
     verbose: bool
     version: bool
 
@@ -77,6 +78,13 @@ def create_parser() -> argparse.ArgumentParser:
         default=True,
     )
     parser.add_argument(
+        "-d",
+        "--debug",
+        help="output debug info for each command",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
         "-V",
         "--verbose",
         help="run in verbose mode",
@@ -102,7 +110,7 @@ def indent(output: str) -> str:
     return "\n".join("    " + line for line in output.splitlines())
 
 
-def print_command_status(process: Process, passed: bool, verbose: bool = False) -> None:
+def print_command_status(process: Process, passed: bool, debug: bool = False) -> None:
     colour = RED_BOLD
     msg = "fail"
     icon = X
@@ -113,12 +121,12 @@ def print_command_status(process: Process, passed: bool, verbose: bool = False) 
 
     print(f"{colour}{process.name} ", end="")
 
-    if verbose:
+    if debug:
         print(f"{' '.join(process.args)} ", end="")
 
     print(f"| {msg} ", end="")
 
-    if verbose:
+    if debug:
         elapsed = time.perf_counter() - process.start
         print(f"in {timedelta(seconds=elapsed)} ", end="")
 
@@ -137,7 +145,7 @@ def main_loop(
     commands: list[str],
     fail_fast: bool = False,
     interactive: bool = False,
-    verbose: bool = False,
+    debug: bool = False,
 ) -> bool:
     processes = run_commands(commands)
     completed_processes: set[str] = set()
@@ -160,14 +168,14 @@ def main_loop(
             completed_processes.add(process.name)
 
             if process.process.returncode != 0:
-                print_command_status(process, passed=False, verbose=verbose)
+                print_command_status(process, passed=False, debug=debug)
                 print_command_output(process)
                 passed = False
 
                 if fail_fast:
                     return False
             else:
-                print_command_status(process, passed=True, verbose=verbose)
+                print_command_status(process, passed=True, debug=debug)
                 print_command_output(process)
 
         if len(completed_processes) == len(processes):
@@ -190,7 +198,7 @@ def run() -> None:
     start_time = time.perf_counter()
 
     exit_code = 0
-    status = main_loop(args.commands, args.fail_fast, args.interactive, args.verbose)
+    status = main_loop(args.commands, args.fail_fast, args.interactive, args.debug)
     if not status:
         print(f"{RED_BOLD}A command failed!{NC}")
         exit_code = 1
