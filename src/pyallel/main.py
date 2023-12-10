@@ -1,5 +1,4 @@
 import argparse
-from dataclasses import dataclass, field
 import logging
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 import subprocess
@@ -8,12 +7,11 @@ logging.basicConfig(format="%(message)s")
 logger = logging.getLogger("pyallel")
 
 
-@dataclass
 class Arguments:
-    commands: list[str] = field(default_factory=list)
-    lint_only: bool = False
-    fail_fast: bool = False
-    verbose: bool = False
+    commands: list[str]
+    lint_only: bool
+    fail_fast: bool
+    verbose: bool
 
 
 def run_command(command: str) -> bytes:
