@@ -105,29 +105,33 @@ def main_loop(
             if process.process.poll() is None:
                 continue
 
-            print(f"${CLEAR_LINE}\r", end = "")
+            print(f"${CLEAR_LINE}\r", end="")
             elapsed = time.perf_counter() - process.start
             completed_processes.add(process.name)
             if process.process.returncode != 0:
                 passed = False
                 print(f"{RED_BOLD}{process.name} ", end="")
-                print(f"[{timedelta(seconds=elapsed)}] ", end="")
+                if verbose:
+                    print(f"[{timedelta(seconds=elapsed)}] ", end="")
                 print(f": fail {X}{NC}")
                 if process.process.stdout:
                     output = process.process.stdout.read()
                     if output:
                         print(f"{indent(output.decode())}")
+                print()
 
                 if fail_fast:
                     return False
             else:
                 print(f"{GREEN_BOLD}{process.name} ", end="")
-                print(f"[{timedelta(seconds=elapsed)}] ", end="")
+                if verbose:
+                    print(f"[{timedelta(seconds=elapsed)}] ", end="")
                 print(f": pass {TICK}{NC}")
-                if process.process.stdout:
+                if verbose and process.process.stdout:
                     output = process.process.stdout.read()
                     if output:
                         print(f"{indent(output.decode())}")
+                print()
 
         if len(completed_processes) == len(processes):
             break
@@ -148,11 +152,12 @@ def run() -> None:
     exit_code = 0
     status = main_loop(args.commands, args.fail_fast, args.verbose)
     if not status:
-        print(f"\n{RED_BOLD}A command failed!{NC}")
+        print(f"{RED_BOLD}A command failed!{NC}")
         exit_code = 1
     else:
-        print(f"\n{GREEN_BOLD}Success!{NC}")
+        print(f"{GREEN_BOLD}Success!{NC}")
 
     elapsed_time = time.perf_counter() - start_time
-    print(f"Time taken : {timedelta(seconds=elapsed_time)}")
+    if args.verbose:
+        print(f"\nTime taken : {timedelta(seconds=elapsed_time)}")
     sys.exit(exit_code)
