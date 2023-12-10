@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import sys
 import time
 from datetime import timedelta
@@ -40,11 +41,16 @@ class Process:
 
 
 def run_command(command: str) -> Process:
-    start = time.perf_counter()
     executable, *args = command.split()
-
+    env = os.environ.copy()
+    start = time.perf_counter()
     process = subprocess.Popen(
-        [executable, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        [executable, *args],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        # TODO: need to provide a way to supply environment variables
+        # for each provided command
+        env=env | {"MYPY_FORCE_COLOR": "1"},
     )
     return Process(name=executable, args=args, start=start, process=process)
 
