@@ -32,8 +32,10 @@ pyallel "black --color --check --diff ." "mypy ." "ruff check --no-fix ."
       command
 - [ ] Add custom config file for `pyallel` to read from as an alternative to providing
       arguments via the command line
-- [ ] Add support for providing config via a `pyproject.toml` file in the current
-      working directory
+- [ ] Add support for providing config via a `[tool.pyallel]` section in a
+      `pyproject.toml` file in the current working directory
+- [ ] Maybe allow command dependencies to be defined in a python file where commands are
+      decorated with info that details it's dependencies?
 - [ ] Add test suite
 - [ ] Improve error handling when parsing provided commands (check they are valid executables)
 - [ ] Add visual examples of `pyallel` in action
