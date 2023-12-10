@@ -55,7 +55,7 @@ def run_command(command: str) -> Process:
         stderr=subprocess.STDOUT,
         # TODO: need to provide a way to supply environment variables
         # for each provided command
-        env=env | {"MYPY_FORCE_COLOR": "1"},
+        env=env | {"MYPY_FORCE_COLOR": "1" if IN_TTY else "0"},
     )
     return Process(name=executable, args=args, start=start, process=process)
 
