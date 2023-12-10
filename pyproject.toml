@@ -19,7 +19,7 @@ classifiers = [
 pyallel = "pyallel.main:run"
 
 [tool.poetry.dependencies]
-python = ">=3.11"
+python = ">=3.11,<4.0"
 
 [tool.mypy]
 strict = true
