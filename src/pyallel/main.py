@@ -34,14 +34,16 @@ class Arguments:
 @dataclass
 class Command:
     name: str
+    start: float
     process: subprocess.Popen[bytes]
 
 
 def run_command(command: str) -> Command:
+    start = time.perf_counter()
     process = subprocess.Popen(
         command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
-    return Command(name=command.split()[0], process=process)
+    return Command(name=command.split()[0], start=start, process=process)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -104,10 +106,13 @@ def main_loop(commands: list[str], fail_fast: bool = False) -> bool:
             if future.process.poll() is None:
                 continue
 
+            elapsed = time.perf_counter() - future.start
             completed_futures[command] = future
             if future.process.returncode != 0:
                 passed = False
-                logger.info(f"{RED_BOLD}{future.name} : fail {X}{NC}\n")
+                logger.info(f"{RED_BOLD}{future.name} ")
+                logger.debug(f"[{timedelta(seconds=elapsed)}] ")
+                logger.info(f": fail {X}{NC}\n")
                 if future.process.stdout:
                     output = future.process.stdout.read()
                     if output:
@@ -116,7 +121,9 @@ def main_loop(commands: list[str], fail_fast: bool = False) -> bool:
                 if fail_fast:
                     return False
             else:
-                logger.info(f"{GREEN_BOLD}{future.name} " f": pass {TICK}{NC}\n")
+                logger.info(f"{GREEN_BOLD}{future.name} ")
+                logger.debug(f"[{timedelta(seconds=elapsed)}] ")
+                logger.info(f": pass {TICK}{NC}\n")
                 if future.process.stdout:
                     output = future.process.stdout.read()
                     if output:
