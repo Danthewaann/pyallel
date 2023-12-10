@@ -115,7 +115,27 @@ def indent(output: str) -> str:
 
 
 def format_time_taken(time_taken: float) -> str:
-    return str(timedelta(seconds=time_taken))
+    seconds = int(time_taken) % (24 * 3600)
+    hour = seconds // 3600
+    seconds %= 3600
+    minutes = seconds // 60
+    seconds %= 60
+
+    msg = ""
+    if time_taken < 60:
+        msg = f"{seconds}s"
+    elif 60 <= time_taken < 3600:
+        msg = f"{minutes}m"
+        if seconds:
+            msg += f" {seconds}s" 
+    elif time_taken >= 3600:
+        msg = f"{hour}h"
+        if minutes:
+            msg += f" {minutes}m" 
+        if seconds:
+            msg += f" {seconds}s" 
+
+    return msg
 
 
 def print_command_status(process: Process, passed: bool, debug: bool = False) -> None:
@@ -199,6 +219,9 @@ def run() -> None:
         my_version = importlib.metadata.version("pyallel")
         print(my_version)
         sys.exit(0)
+
+    if not sys.stdin.isatty():
+        print(sys.stdin.read())
 
     if args.verbose:
         print(args)
