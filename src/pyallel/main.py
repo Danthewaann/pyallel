@@ -2,7 +2,6 @@ import argparse
 import os
 import sys
 import time
-from datetime import timedelta
 from dataclasses import dataclass
 import importlib.metadata
 import subprocess
@@ -127,13 +126,13 @@ def format_time_taken(time_taken: float) -> str:
     elif 60 <= time_taken < 3600:
         msg = f"{minutes}m"
         if seconds:
-            msg += f" {seconds}s" 
+            msg += f" {seconds}s"
     elif time_taken >= 3600:
         msg = f"{hour}h"
         if minutes:
-            msg += f" {minutes}m" 
+            msg += f" {minutes}m"
         if seconds:
-            msg += f" {seconds}s" 
+            msg += f" {seconds}s"
 
     return msg
 
@@ -219,9 +218,6 @@ def run() -> None:
         my_version = importlib.metadata.version("pyallel")
         print(my_version)
         sys.exit(0)
-
-    if not sys.stdin.isatty():
-        print(sys.stdin.read())
 
     if args.verbose:
         print(args)
