@@ -9,6 +9,7 @@ import subprocess
 
 WHITE_BOLD = "\033[1m"
 GREEN_BOLD = "\033[1;32m"
+BLUE_BOLD = "\033[1;34m"
 RED_BOLD = "\033[1;31m"
 NC = "\033[0m"
 CLEAR_LINE = "\033[2K"
@@ -126,7 +127,7 @@ def print_command_status(process: Process, passed: bool, debug: bool = False) ->
         msg = "done"
         icon = TICK
 
-    print(f"[{colour}{process.name}", end="")
+    print(f"[{BLUE_BOLD}{process.name}", end="")
 
     if debug:
         print(f" {' '.join(process.args)}", end="")
