@@ -27,6 +27,13 @@ class Arguments:
     verbose: bool
     version: bool
 
+    def __repr__(self) -> str:
+        msg = "Arguments:\n"
+        padding = len(sorted(self.__dict__.keys(), key=len, reverse=True)[0]) + 1
+        for field, value in self.__dict__.items():
+            msg += f"    {field: <{padding}}: {value}\n"
+        return msg
+
 
 @dataclass
 class Process:
@@ -169,6 +176,9 @@ def run() -> None:
         my_version = importlib.metadata.version("pyallel")
         print(my_version)
         sys.exit(0)
+
+    if args.verbose:
+        print(args)
 
     start_time = time.perf_counter()
 
