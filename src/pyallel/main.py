@@ -75,7 +75,7 @@ def indent(output: str) -> str:
     return "\n".join("    " + line for line in output.splitlines())
 
 
-def main_loop(commands: list[str]) -> bool:
+def main_loop(commands: list[str], fail_fast: bool = False) -> bool:
     futures = run_commands(commands)
     completed_futures: dict[str, Command] = {}
     passed = True
@@ -102,6 +102,9 @@ def main_loop(commands: list[str]) -> bool:
                     output = future.process.stdout.read()
                     if output:
                         logger.info(f"{indent(output.decode())}\n")
+
+                if fail_fast:
+                    return False
             else:
                 logger.info(f"{GREEN_BOLD}{future.name} " f": pass {TICK}{NC}\n")
                 if future.process.stdout:
@@ -126,7 +129,7 @@ def run() -> None:
 
     start_time = time.perf_counter()
 
-    if not main_loop(args.commands):
+    if not main_loop(args.commands, args.fail_fast):
         logger.info(f"\n{RED_BOLD}A command failed!{NC}\n")
     else:
         logger.info(f"\n{GREEN_BOLD}Success!{NC}\n")
