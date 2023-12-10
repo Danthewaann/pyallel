@@ -36,3 +36,4 @@ pyallel "black --color --check --diff ." "mypy ." "ruff check --no-fix ."
       working directory
 - [ ] Add test suite
 - [ ] Improve error handling when parsing provided commands (check they are valid executables)
+- [ ] Add visual examples of `pyallel` in action
