@@ -2,6 +2,8 @@
 
 Run and handle the output of multiple executables in `pyallel` (as in parallel)
 
+Requires Python >=3.8 
+
 # Quick start
 
 `pyallel` can be installed using pip:

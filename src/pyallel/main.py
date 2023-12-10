@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import time
@@ -48,14 +50,15 @@ def run_command(command: str) -> Process:
     executable, *args = command.split(maxsplit=1)
     args = shlex.split(" ".join(args))
     env = os.environ.copy()
+    # TODO: need to provide a way to supply environment variables
+    # for each provided command
+    env["MYPY_FORCE_COLOR"] = "1" if IN_TTY else "0"
     start = time.perf_counter()
     process = subprocess.Popen(
         [executable, *args],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        # TODO: need to provide a way to supply environment variables
-        # for each provided command
-        env=env | {"MYPY_FORCE_COLOR": "1" if IN_TTY else "0"},
+        env=env,
     )
     return Process(name=executable, args=args, start=start, process=process)
 
