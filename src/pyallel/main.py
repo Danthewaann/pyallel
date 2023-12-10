@@ -1,10 +1,11 @@
-import argparse
 import os
 import sys
 import time
 from dataclasses import dataclass
 import importlib.metadata
 import subprocess
+
+from pyallel.parser import Arguments, create_parser
 
 WHITE_BOLD = "\033[1m"
 GREEN_BOLD = "\033[1;32m"
@@ -18,22 +19,6 @@ ICONS = ("/", "-", "\\", "|")
 # Unicode character bytes to render different symbols in the terminal
 TICK = "\u2713"
 X = "\u2717"
-
-
-class Arguments:
-    commands: list[str]
-    fail_fast: bool
-    interactive: bool
-    debug: bool
-    verbose: bool
-    version: bool
-
-    def __repr__(self) -> str:
-        msg = "Arguments:\n"
-        padding = len(sorted(self.__dict__.keys(), key=len, reverse=True)[0]) + 1
-        for field, value in self.__dict__.items():
-            msg += f"    {field: <{padding}}: {value}\n"
-        return msg
 
 
 @dataclass
@@ -57,52 +42,6 @@ def run_command(command: str) -> Process:
         env=env | {"MYPY_FORCE_COLOR": "1"},
     )
     return Process(name=executable, args=args, start=start, process=process)
-
-
-def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="pyallel",
-        description="Run and handle the output of multiple executables in pyallel (as in parallel)",
-    )
-    parser.add_argument("commands", help="list of commands to run", nargs="*")
-    parser.add_argument(
-        "-f",
-        "--fail-fast",
-        help="exit immediately when a command fails",
-        action="store_true",
-        default=False,
-    )
-    parser.add_argument(
-        "-n",
-        "--non-interactive",
-        help="run in non-interactive mode",
-        action="store_false",
-        dest="interactive",
-        default=True,
-    )
-    parser.add_argument(
-        "-d",
-        "--debug",
-        help="output debug info for each command",
-        action="store_true",
-        default=False,
-    )
-    parser.add_argument(
-        "-V",
-        "--verbose",
-        help="run in verbose mode",
-        action="store_true",
-        default=False,
-    )
-    parser.add_argument(
-        "-v",
-        "--version",
-        help="print version and exit",
-        action="store_true",
-        default=False,
-    )
-
-    return parser
 
 
 def run_commands(commands: list[str]) -> list[Process]:
@@ -211,32 +150,43 @@ def main_loop(
     return passed
 
 
-def run() -> None:
+def run(*args: str) -> int:
     parser = create_parser()
-    args = parser.parse_args(namespace=Arguments())
-    if args.version:
+    parsed_args = parser.parse_args(args=args, namespace=Arguments())
+
+    if parsed_args.version:
         my_version = importlib.metadata.version("pyallel")
         print(my_version)
-        sys.exit(0)
+        return 0
 
-    if args.verbose:
-        print(args)
+    if parsed_args.verbose:
+        print(parsed_args)
 
-    if not args.commands:
+    if not parsed_args.commands:
         parser.print_help()
-        sys.exit(2)
+        return 2
 
-    start_time = time.perf_counter()
+    start = time.perf_counter()
 
     exit_code = 0
-    status = main_loop(args.commands, args.fail_fast, args.interactive, args.debug)
+    status = main_loop(
+        parsed_args.commands,
+        parsed_args.fail_fast,
+        parsed_args.interactive,
+        parsed_args.debug,
+    )
     if not status:
         print(f"{RED_BOLD}A command failed!{NC}")
         exit_code = 1
     else:
         print(f"{GREEN_BOLD}Success!{NC}")
 
-    elapsed_time = time.perf_counter() - start_time
-    if args.debug:
-        print(f"\nTime taken : {format_time_taken(elapsed_time)}")
-    sys.exit(exit_code)
+    if parsed_args.debug:
+        elapsed = time.perf_counter() - start
+        print(f"\nTime taken : {format_time_taken(elapsed)}")
+
+    return exit_code
+
+
+def entry_point() -> None:
+    sys.exit(run(*sys.argv[1:]))
