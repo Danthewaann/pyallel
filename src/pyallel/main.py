@@ -2,20 +2,35 @@ import os
 import sys
 import time
 from dataclasses import dataclass
+import shlex
 import importlib.metadata
 import subprocess
 
 from pyallel.parser import Arguments, create_parser
 
-WHITE_BOLD = "\033[1m"
-GREEN_BOLD = "\033[1;32m"
-BLUE_BOLD = "\033[1;34m"
-RED_BOLD = "\033[1;31m"
-NC = "\033[0m"
-CLEAR_LINE = "\033[2K"
-UP_LINE = "\033[1F"
-ICONS = ("/", "-", "\\", "|")
+IN_TTY = sys.__stdin__.isatty()
 
+if IN_TTY:
+    WHITE_BOLD = "\033[1m"
+    GREEN_BOLD = "\033[1;32m"
+    BLUE_BOLD = "\033[1;34m"
+    RED_BOLD = "\033[1;31m"
+    CLEAR_LINE = "\033[2K"
+    UP_LINE = "\033[1F"
+    NC = "\033[0m"
+    CR = "\r"
+else:
+    WHITE_BOLD = ""
+    GREEN_BOLD = ""
+    BLUE_BOLD = ""
+    RED_BOLD = ""
+    CLEAR_LINE = ""
+    UP_LINE = ""
+    NC = ""
+    CR = ""
+
+
+ICONS = ("/", "-", "\\", "|")
 # Unicode character bytes to render different symbols in the terminal
 TICK = "\u2713"
 X = "\u2717"
@@ -30,7 +45,8 @@ class Process:
 
 
 def run_command(command: str) -> Process:
-    executable, *args = command.split()
+    executable, *args = command.split(maxsplit=1)
+    args = shlex.split(" ".join(args))
     env = os.environ.copy()
     start = time.perf_counter()
     process = subprocess.Popen(
@@ -117,20 +133,22 @@ def main_loop(
     completed_processes: set[str] = set()
     passed = True
 
-    if not interactive:
+    if not interactive or not IN_TTY:
         print(f"{WHITE_BOLD}Running commands...{NC}\n")
 
     while True:
-        if interactive:
+        if interactive and IN_TTY:
             for icon in ICONS:
-                print(f"{CLEAR_LINE}\r{WHITE_BOLD}Running commands{NC} {icon}", end="")
+                print(
+                    f"{CLEAR_LINE}{CR}{WHITE_BOLD}Running commands{NC} {icon}", end=""
+                )
                 time.sleep(0.1)
 
         for process in processes:
             if process.name in completed_processes or process.process.poll() is None:
                 continue
 
-            print(f"${CLEAR_LINE}\r", end="")
+            print(f"{CLEAR_LINE}{CR}", end="")
             completed_processes.add(process.name)
 
             if process.process.returncode != 0:
