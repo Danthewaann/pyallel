@@ -23,6 +23,7 @@ X = "\u2717"
 class Arguments:
     commands: list[str]
     fail_fast: bool
+    interactive: bool
     verbose: bool
     version: bool
 
@@ -59,6 +60,14 @@ def create_parser() -> argparse.ArgumentParser:
         help="exit immediately when a command fails",
         action="store_true",
         default=False,
+    )
+    parser.add_argument(
+        "-n",
+        "--non-interactive",
+        help="run in non-interactive mode",
+        action="store_false",
+        dest="interactive",
+        default=True,
     )
     parser.add_argument(
         "-V",
@@ -111,16 +120,23 @@ def print_command_output(process: Process, verbose: bool = False) -> None:
 
 
 def main_loop(
-    commands: list[str], fail_fast: bool = False, verbose: bool = False
+    commands: list[str],
+    fail_fast: bool = False,
+    interactive: bool = False,
+    verbose: bool = False,
 ) -> bool:
     processes = run_commands(commands)
     completed_processes: set[str] = set()
     passed = True
 
+    if not interactive:
+        print(f"{WHITE_BOLD}Running commands...{NC}\n")
+
     while True:
-        for icon in ICONS:
-            print(f"{CLEAR_LINE}\r{WHITE_BOLD}Running commands{NC} {icon}", end="")
-            time.sleep(0.1)
+        if interactive:
+            for icon in ICONS:
+                print(f"{CLEAR_LINE}\r{WHITE_BOLD}Running commands{NC} {icon}", end="")
+                time.sleep(0.1)
 
         for process in processes:
             if process.name in completed_processes or process.process.poll() is None:
@@ -157,7 +173,7 @@ def run() -> None:
     start_time = time.perf_counter()
 
     exit_code = 0
-    status = main_loop(args.commands, args.fail_fast, args.verbose)
+    status = main_loop(args.commands, args.fail_fast, args.interactive, args.verbose)
     if not status:
         print(f"{RED_BOLD}A command failed!{NC}")
         exit_code = 1
