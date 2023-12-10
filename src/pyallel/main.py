@@ -203,8 +203,8 @@ def run() -> None:
         print(args)
 
     if not args.commands:
-        print(f"{RED_BOLD}A command is required!{NC}")
-        sys.exit(1)
+        parser.print_help()
+        sys.exit(2)
 
     start_time = time.perf_counter()
 
