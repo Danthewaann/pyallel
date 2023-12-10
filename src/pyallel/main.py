@@ -1,8 +1,10 @@
 import argparse
 import logging
+import sys
 import time
 from datetime import timedelta
 from dataclasses import dataclass
+import importlib.metadata
 import subprocess
 
 logging.basicConfig(format="%(message)s")
@@ -26,6 +28,7 @@ class Arguments:
     commands: list[str]
     fail_fast: bool
     verbose: bool
+    version: bool
 
 
 @dataclass
@@ -55,6 +58,13 @@ def create_parser() -> argparse.ArgumentParser:
         "-V",
         "--verbose",
         help="print all output for provided commands",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        help="print version and exit",
         action="store_true",
         default=False,
     )
@@ -126,6 +136,11 @@ def run() -> None:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
+
+    if args.version:
+        my_version = importlib.metadata.version("pyallel")
+        logger.info("%s\n", my_version)
+        sys.exit(0)
 
     start_time = time.perf_counter()
 
