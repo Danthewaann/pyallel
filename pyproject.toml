@@ -29,6 +29,9 @@ mypy = "^1.7.0"
 strict = true
 show_error_codes = true
 
+[tool.pytest.ini_options]
+addopts = "-vvv"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
