@@ -4,6 +4,8 @@ Run and handle the output of multiple executables in `pyallel` (as in parallel)
 
 Requires Python >=3.8
 
+Tested on Linux and MacOS only
+
 # Quick start
 
 `pyallel` can be installed using pip:
@@ -29,9 +31,14 @@ pyallel "black --color --check --diff ." "MYPY_FORCE_COLOR=1 mypy ." "ruff check
 
 ## TODOs
 
-- [ ] Allow a single main command output to be streamed to stdout, while all other
-      commands will only get outputted after the main command has completed (such as running
-      `pytest` as the main command, whilst running `mypy`, `ruff` etc. as other commands)
+- [ ] Allow output for all provided commands to be streamed to stdout (this will require a
+      re-work of how we print command output as we currently just print output once the command
+      finishes)
+- [ ] Allow specific command outputs to be streamed to stdout, while all other
+      commands will only get outputted after the streamed commands have completed (such as running
+      `pytest` as a streamed command, whilst running `mypy`, `ruff` etc. as non-streamed commands).
+      This will require adding special arguments/modes to each command so they are treated
+      differently from other commands
 - [x] Provide a way to set environment variables for each command to run with
 - [ ] Allow list of files to be provided to supply as input arguments to each command
 - [ ] Allow input to be piped into `pyallel` via stdin to supply as standard input to each
