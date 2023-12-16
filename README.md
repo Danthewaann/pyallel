@@ -32,7 +32,7 @@ pyallel "black --color --check --diff ." "mypy ." "ruff check --no-fix ."
 - [ ] Allow a single main command output to be streamed to stdout, while all other
       commands will only get outputted after the main command has completed (such as running
       `pytest` as the main command, whilst running `mypy`, `ruff` etc. as other commands)
-- [ ] Provide a way to set environment variables for each command to run with
+- [x] Provide a way to set environment variables for each command to run with
 - [ ] Allow list of files to be provided to supply as input arguments to each command
 - [ ] Allow input to be piped into `pyallel` via stdin to supply as standard input to each
       command

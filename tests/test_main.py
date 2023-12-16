@@ -16,6 +16,19 @@ def test_run_single_command(capsys: CaptureFixture[str]) -> None:
     ]
 
 
+def test_run_single_command_with_env(capsys: CaptureFixture[str]) -> None:
+    assert main.run("TEST_VAR=1 sleep 0.1") == 0
+    captured = capsys.readouterr()
+    out = captured.out.splitlines(keepends=True)
+    assert out == [
+        "Running commands...\n",
+        "\n",
+        "[sleep] done ✓\n",
+        "\n",
+        "Success!\n",
+    ]
+
+
 def test_run_multiple_commands(capsys: CaptureFixture[str]) -> None:
     assert main.run("sleep 0.1", "echo 'hi'") == 0
     captured = capsys.readouterr()

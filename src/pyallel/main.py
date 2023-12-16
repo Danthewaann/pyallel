@@ -1,18 +1,12 @@
 from __future__ import annotations
-import io
 
-import os
 import sys
 import time
-import shutil
-from dataclasses import dataclass
-import shlex
 import importlib.metadata
-import subprocess
-from typing import IO
 
 from pyallel.errors import InvalidExecutableErrors, InvalidExecutableError
 from pyallel.parser import Arguments, create_parser
+from pyallel.process import Process
 
 IN_TTY = sys.__stdin__.isatty()
 
@@ -42,57 +36,13 @@ TICK = "\u2713"
 X = "\u2717"
 
 
-@dataclass
-class Process:
-    name: str
-    args: list[str]
-    start: float = 0.0
-    process: subprocess.Popen[bytes] | None = None
-
-    def run(self) -> None:
-        env = os.environ.copy()
-        # TODO: need to provide a way to supply environment variablesreturn
-        # for each provided command
-        env["MYPY_FORCE_COLOR"] = "1" if IN_TTY else "0"
-        self.start = time.perf_counter()
-        self.process = subprocess.Popen(
-            [self.name, *self.args],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            env=env,
-        )
-
-    def poll(self) -> int | None:
-        if self.process:
-            return self.process.poll()
-        return None
-
-    def stdout(self) -> IO[bytes]:
-        if self.process and self.process.stdout:
-            return self.process.stdout
-        return io.BytesIO(b"")
-
-    def return_code(self) -> int | None:
-        if self.process:
-            return self.process.returncode
-        return None
-
-
-def parse_command(command: str) -> Process:
-    executable, *args = command.split(maxsplit=1)
-    if not shutil.which(executable):
-        raise InvalidExecutableError(executable)
-    args = shlex.split(" ".join(args))
-    return Process(name=executable, args=args)
-
-
 def run_commands(commands: list[str]) -> list[Process]:
     processes: list[Process] = []
     errors: list[InvalidExecutableError] = []
 
     for command in commands:
         try:
-            processes.append(parse_command(command))
+            processes.append(Process.from_command(command))
         except InvalidExecutableError as e:
             errors.append(e)
 
@@ -257,3 +207,7 @@ def run(*args: str) -> int:
 
 def entry_point() -> None:
     sys.exit(run(*sys.argv[1:]))
+
+
+if __name__ == "__main__":
+    entry_point()
