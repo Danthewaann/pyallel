@@ -1,3 +1,4 @@
+import subprocess
 from pyallel import main
 from pytest import CaptureFixture
 
@@ -32,7 +33,7 @@ def test_run_multiple_commands(capsys: CaptureFixture[str]) -> None:
 
 
 def test_run_fail_fast(capsys: CaptureFixture[str]) -> None:
-    assert main.run("sleep 1", 'sh -c "exit 1"', "-f") == 1
+    assert main.run("sleep 0.1", 'sh -c "exit 1"', "-f") == 1
     captured = capsys.readouterr()
     out = captured.out.splitlines(keepends=True)
     assert out == [
@@ -96,3 +97,9 @@ def test_handles_many_invalid_executables(capsys: CaptureFixture[str]) -> None:
     assert out == [
         "Error: executables [invalid_exe, other_invalid_exe] were not found\n",
     ]
+
+
+def test_does_not_run_executables_on_parsing_error() -> None:
+    assert main.run("invalid_exe", "other_invalid_exe", "sleep 10") == 1
+    status = subprocess.run(["pgrep", "sleep"])
+    assert status.returncode == 1, "sleep shouldn't be running!"

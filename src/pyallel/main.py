@@ -1,4 +1,5 @@
 from __future__ import annotations
+import io
 
 import os
 import sys
@@ -8,6 +9,7 @@ from dataclasses import dataclass
 import shlex
 import importlib.metadata
 import subprocess
+from typing import IO
 
 from pyallel.errors import InvalidExecutableErrors, InvalidExecutableError
 from pyallel.parser import Arguments, create_parser
@@ -44,27 +46,44 @@ X = "\u2717"
 class Process:
     name: str
     args: list[str]
-    start: float
-    process: subprocess.Popen[bytes]
+    start: float = 0.0
+    process: subprocess.Popen[bytes] | None = None
+
+    def run(self) -> None:
+        env = os.environ.copy()
+        # TODO: need to provide a way to supply environment variablesreturn
+        # for each provided command
+        env["MYPY_FORCE_COLOR"] = "1" if IN_TTY else "0"
+        self.start = time.perf_counter()
+        self.process = subprocess.Popen(
+            [self.name, *self.args],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env=env,
+        )
+
+    def poll(self) -> int | None:
+        if self.process:
+            return self.process.poll()
+        return None
+
+    def stdout(self) -> IO[bytes]:
+        if self.process and self.process.stdout:
+            return self.process.stdout
+        return io.BytesIO(b"")
+
+    def return_code(self) -> int | None:
+        if self.process:
+            return self.process.returncode
+        return None
 
 
-def run_command(command: str) -> Process:
+def parse_command(command: str) -> Process:
     executable, *args = command.split(maxsplit=1)
     if not shutil.which(executable):
         raise InvalidExecutableError(executable)
     args = shlex.split(" ".join(args))
-    env = os.environ.copy()
-    # TODO: need to provide a way to supply environment variables
-    # for each provided command
-    env["MYPY_FORCE_COLOR"] = "1" if IN_TTY else "0"
-    start = time.perf_counter()
-    process = subprocess.Popen(
-        [executable, *args],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        env=env,
-    )
-    return Process(name=executable, args=args, start=start, process=process)
+    return Process(name=executable, args=args)
 
 
 def run_commands(commands: list[str]) -> list[Process]:
@@ -73,12 +92,15 @@ def run_commands(commands: list[str]) -> list[Process]:
 
     for command in commands:
         try:
-            processes.append(run_command(command))
+            processes.append(parse_command(command))
         except InvalidExecutableError as e:
             errors.append(e)
 
     if errors:
         raise InvalidExecutableErrors(*errors)
+
+    for process in processes:
+        process.run()
 
     return processes
 
@@ -135,10 +157,9 @@ def print_command_status(process: Process, passed: bool, debug: bool = False) ->
 
 
 def print_command_output(process: Process) -> None:
-    if process.process.stdout:
-        output = process.process.stdout.read()
-        if output:
-            print(f"{indent(output.decode())}")
+    output = process.stdout().read()
+    if output:
+        print(f"{indent(output.decode())}")
     print()
 
 
@@ -164,13 +185,13 @@ def main_loop(
                 time.sleep(0.1)
 
         for process in processes:
-            if process.name in completed_processes or process.process.poll() is None:
+            if process.name in completed_processes or process.poll() is None:
                 continue
 
             print(f"{CLEAR_LINE}{CR}", end="")
             completed_processes.add(process.name)
 
-            if process.process.returncode != 0:
+            if process.return_code() != 0:
                 print_command_status(process, passed=False, debug=debug)
                 print_command_output(process)
                 passed = False
