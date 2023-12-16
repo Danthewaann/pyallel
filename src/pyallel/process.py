@@ -7,6 +7,7 @@ import io
 import shutil
 import os
 from typing import IO
+import asyncio
 
 from dataclasses import dataclass, field
 from pyallel.errors import InvalidExecutableError
@@ -18,26 +19,49 @@ class Process:
     args: list[str]
     env: dict[str, str] = field(default_factory=dict)
     start: float = 0.0
-    process: subprocess.Popen[bytes] | None = None
+    process: asyncio.subprocess.Process | None = None
+    output: bytes = field(default_factory=bytes)
 
-    def run(self) -> None:
+    async def run(self) -> None:
         self.start = time.perf_counter()
-        self.process = subprocess.Popen(
-            [self.name, *self.args],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            env=self.env,
+        self.process = await asyncio.create_subprocess_exec(
+            self.name,
+            *self.args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=self.env
         )
+        # self.process = subprocess.Popen(
+        #     [self.name, *self.args],
+        #     stdout=subprocess.PIPE,
+        #     stderr=subprocess.STDOUT,
+        #     env=self.env,
+        # )
 
-    def poll(self) -> int | None:
+    async def wait(self) -> int:
         if self.process:
-            return self.process.poll()
-        return None
+            return await self.process.wait()
+        return -1
 
-    def stdout(self) -> IO[bytes]:
+    async def stream(self) -> bytes:
+        line = await self.stdout().readline()
+        self.output += line
+        return line
+
+    async def read(self) -> bytes:
+        out = await self.stdout().read()
+        self.output += out
+        return out
+
+    # def poll(self) -> int | None:
+    #     if self.process:
+    #         return self.process.process
+    #     return None
+
+    def stdout(self) -> asyncio.StreamReader:
         if self.process and self.process.stdout:
             return self.process.stdout
-        return io.BytesIO(b"")
+        return asyncio.StreamReader()
 
     def return_code(self) -> int | None:
         if self.process:
@@ -47,7 +71,14 @@ class Process:
     @classmethod
     def from_command(cls, command: str) -> Process:
         env = os.environ.copy()
-        args = command.split()
+        if " :: " in command:
+            command_modes, args = command.split(" :: ")
+            command_modes = command_modes.split()
+            args = args.split()
+        else:
+            args = command.split()
+            command_modes = ""
+
         parsed_args: list[str] = []
         for arg in args:
             if "=" in arg:
@@ -59,5 +90,5 @@ class Process:
         if not shutil.which(parsed_args[0]):
             raise InvalidExecutableError(parsed_args[0])
 
-        args = shlex.split(" ".join(parsed_args[1:]))
-        return Process(name=parsed_args[0], args=args, env=env)
+        str_args = shlex.split(" ".join(parsed_args[1:]))
+        return Process(name=parsed_args[0], args=str_args, env=env)

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 
 import sys
 import time
@@ -16,6 +17,9 @@ if IN_TTY:
     BLUE_BOLD = "\033[1;34m"
     RED_BOLD = "\033[1;31m"
     CLEAR_LINE = "\033[2K"
+    CLEAR_SCREEN = "\033[2J"
+    SAVE_CURSOR = "\033[s"
+    RESTORE_CURSOR = "\033[u"
     UP_LINE = "\033[1F"
     NC = "\033[0m"
     CR = "\r"
@@ -25,6 +29,9 @@ else:
     BLUE_BOLD = ""
     RED_BOLD = ""
     CLEAR_LINE = ""
+    CLEAR_SCREEN = ""
+    SAVE_CURSOR = ""
+    RESTORE_CURSOR = ""
     UP_LINE = ""
     NC = ""
     CR = ""
@@ -36,7 +43,7 @@ TICK = "\u2713"
 X = "\u2717"
 
 
-def run_commands(commands: list[str]) -> list[Process]:
+def create_processes(commands: list[str]) -> list[Process]:
     processes: list[Process] = []
     errors: list[InvalidExecutableError] = []
 
@@ -48,9 +55,6 @@ def run_commands(commands: list[str]) -> list[Process]:
 
     if errors:
         raise InvalidExecutableErrors(*errors)
-
-    for process in processes:
-        process.run()
 
     return processes
 
@@ -105,21 +109,82 @@ def print_command_status(process: Process, passed: bool, debug: bool = False) ->
 
     print(f"{icon}{NC}")
 
-
-def print_command_output(process: Process) -> None:
-    output = process.stdout().read()
+async def print_command_output(process: Process) -> None:
+    output = await process.stdout().read()
     if output:
         print(f"{indent(output.decode())}")
     print()
 
 
-def main_loop(
+async def main_loop(
+    commands: list[str],
+    fail_fast: bool = False,
+    interactive: bool = False,
+    debug: bool = False,
+    stream: bool = False,
+) -> bool:
+    if not stream:
+        return await non_streamed_mode(commands, fail_fast, interactive, debug)
+
+    return await streamed_mode(commands, fail_fast, interactive, debug)
+
+
+async def streamed_mode(
     commands: list[str],
     fail_fast: bool = False,
     interactive: bool = False,
     debug: bool = False,
 ) -> bool:
-    processes = run_commands(commands)
+    processes = create_processes(commands)
+
+    for process in processes:
+        await process.run()
+
+    completed_processes: set[str] = set()
+    passed = True
+    old_command_output = ""
+
+    print(f"{SAVE_CURSOR}", end="")
+
+    while True:
+        command_output = ""
+        for process in processes:
+            if process.return_code() is not None:
+                completed_processes.add(process.name)
+            print(f"\n[{process.name}] running...")
+            await process.stream()
+            print(indent(process.output.decode()))
+            command_output += f"\n[{process.name}] running...\n"
+            command_output += indent(process.output.decode()) + "\n"
+
+        if len(completed_processes) == len(processes):
+            break
+
+        old_command_output = command_output
+        # print(f"\033[{len(command_output.splitlines()) +1}F{CLEAR_LINE}", end="")
+        # print(f"{RESTORE_CURSOR}", end="")
+        # print("\033]0J", end="")
+        # print(f"{SAVE_CURSOR}", end="")
+        # print(f"{CLEAR_SCREEN}", end="")
+        for _ in command_output.splitlines():
+            print(f"{UP_LINE}{CLEAR_LINE}{CR}", end="")
+
+    return passed
+
+
+async def non_streamed_mode(
+    commands: list[str],
+    fail_fast: bool = False,
+    interactive: bool = False,
+    debug: bool = False,
+) -> bool:
+    processes = create_processes(commands)
+    tasks: dict[str, asyncio.Task] = {}
+
+    for process in processes:
+        await process.run()
+        tasks[process.name] = asyncio.create_task(process.wait())
+
     completed_processes: set[str] = set()
     passed = True
 
@@ -132,10 +197,10 @@ def main_loop(
                 print(
                     f"{CLEAR_LINE}{CR}{WHITE_BOLD}Running commands{NC} {icon}", end=""
                 )
-                time.sleep(0.1)
+                await asyncio.sleep(0.1)
 
         for process in processes:
-            if process.name in completed_processes or process.poll() is None:
+            if not tasks[process.name].done() or process.name in completed_processes:
                 continue
 
             print(f"{CLEAR_LINE}{CR}", end="")
@@ -143,14 +208,14 @@ def main_loop(
 
             if process.return_code() != 0:
                 print_command_status(process, passed=False, debug=debug)
-                print_command_output(process)
+                await print_command_output(process)
                 passed = False
 
                 if fail_fast:
                     return False
             else:
                 print_command_status(process, passed=True, debug=debug)
-                print_command_output(process)
+                await print_command_output(process)
 
         if len(completed_processes) == len(processes):
             break
@@ -158,7 +223,7 @@ def main_loop(
     return passed
 
 
-def run(*args: str) -> int:
+async def run(*args: str) -> int:
     parser = create_parser()
     parsed_args = parser.parse_args(args=args, namespace=Arguments())
 
@@ -179,11 +244,12 @@ def run(*args: str) -> int:
     exit_code = 0
     message = None
     try:
-        status = main_loop(
+        status = await main_loop(
             parsed_args.commands,
             parsed_args.fail_fast,
             parsed_args.interactive,
             parsed_args.debug,
+            parsed_args.stream,
         )
     except Exception as e:
         status = False
@@ -206,7 +272,7 @@ def run(*args: str) -> int:
 
 
 def entry_point() -> None:
-    sys.exit(run(*sys.argv[1:]))
+    sys.exit(asyncio.run(run(*sys.argv[1:])))
 
 
 if __name__ == "__main__":
