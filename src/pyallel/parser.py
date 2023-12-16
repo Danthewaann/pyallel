@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawTextHelpFormatter
 
 
 class Arguments:
@@ -23,8 +23,15 @@ def create_parser() -> ArgumentParser:
     parser = ArgumentParser(
         prog="pyallel",
         description="Run and handle the output of multiple executables in pyallel (as in parallel)",
+        formatter_class=RawTextHelpFormatter,
     )
-    parser.add_argument("commands", help="list of commands to run", nargs="*")
+    parser.add_argument(
+        "commands",
+        help='list of quoted commands to run e.g "mypy ." "black ."\n\n'
+        "can provide environment variables to each command like so:\n\n"
+        '     "MYPY_FORCE_COLOR=1 mypy ."',
+        nargs="*",
+    )
     parser.add_argument(
         "-f",
         "--fail-fast",
