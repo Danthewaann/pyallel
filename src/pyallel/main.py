@@ -109,6 +109,7 @@ def print_command_status(process: Process, passed: bool, debug: bool = False) ->
 
     print(f"{icon}{NC}")
 
+
 async def print_command_output(process: Process) -> None:
     output = await process.stdout().read()
     if output:
@@ -200,27 +201,29 @@ async def non_streamed_mode(
                 await asyncio.sleep(0.1)
 
         for process in processes:
-            if not tasks[process.name].done() or process.name in completed_processes:
-                continue
-
-            print(f"{CLEAR_LINE}{CR}", end="")
-            completed_processes.add(process.name)
-
-            if process.return_code() != 0:
-                print_command_status(process, passed=False, debug=debug)
-                await print_command_output(process)
-                passed = False
-
-                if fail_fast:
-                    return False
-            else:
-                print_command_status(process, passed=True, debug=debug)
-                await print_command_output(process)
+            if tasks[process.name].done():
+                passed = await run_process(process, debug=debug)
 
         if len(completed_processes) == len(processes):
             break
 
     return passed
+
+
+async def run_process(process: Process, debug: bool = False) -> bool:
+    output, _ = await process.process.communicate()
+    print(f"{CLEAR_LINE}{CR}", end="")
+
+    if process.return_code() != 0:
+        print_command_status(process, passed=False, debug=debug)
+        if output:
+            print(f"{indent(output.decode())}")
+        return True
+    else:
+        print_command_status(process, passed=True, debug=debug)
+        if output:
+            print(f"{indent(output.decode())}")
+        return False
 
 
 async def run(*args: str) -> int:
@@ -272,7 +275,7 @@ async def run(*args: str) -> int:
 
 
 def entry_point() -> None:
-    sys.exit(asyncio.run(run(*sys.argv[1:])))
+    sys.exit(asyncio.run(run(*sys.argv[1:]), debug=True))
 
 
 if __name__ == "__main__":
