@@ -7,7 +7,7 @@ import importlib.metadata
 from pyallel.errors import InvalidExecutableErrors, InvalidExecutableError
 from pyallel.parser import Arguments, create_parser
 from pyallel.process import Process
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 IN_TTY = sys.__stdin__.isatty()
 
@@ -138,8 +138,10 @@ def streamed_mode(
 ) -> bool:
     processes = create_processes(commands)
 
-    for process in processes:
-        process.run()
+    with ProcessPoolExecutor(max_workers=2) as executor:
+        for process in processes:
+            process.run()
+            executor.submit(process.stream)
 
     completed_processes: set[str] = set()
     passed = True
@@ -150,25 +152,19 @@ def streamed_mode(
             if process.output:
                 print(indent(process.output.decode()))
 
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            for process in processes:
-                if process.name in completed_processes:
-                    continue
+            if process.name in completed_processes:
+                continue
 
-                if process.poll() is not None:
-                    completed_processes.add(process.name)
+            if process.poll() is not None:
+                completed_processes.add(process.name)
 
-                executor.submit(process.readline)
-
-        lines = sum(len(process.output.splitlines()) for process in processes)
-        print(lines)
+            lines = sum(len(process.output.splitlines()) for process in processes)
+            print(lines)
         # for line in range(lines):
         #     print(f"{CLEAR_LINE}\033[1F", end="")
 
         # lines = sum(len(process.output.splitlines()) for process in processes)
         # print(f"\033[{lines +1}F{CLEAR_LINE}", end="")
-
-        for process in processes:
             print(f"[{process.name}] running...")
             if process.output:
                 print(indent(process.output.decode()))

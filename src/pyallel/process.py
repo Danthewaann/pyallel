@@ -40,6 +40,11 @@ class Process:
             self.output += self.process.stdout.readline()
         return self.output
 
+    def stream(self) -> None:
+        while self.poll() is None:
+            for line in iter(self.process.stdout.readline, b""):
+                self.output += line
+
     def stdout(self) -> IO[bytes]:
         if self.process and self.process.stdout:
             return self.process.stdout
