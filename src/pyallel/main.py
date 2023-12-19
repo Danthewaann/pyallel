@@ -7,6 +7,7 @@ import importlib.metadata
 from pyallel.errors import InvalidExecutableErrors, InvalidExecutableError
 from pyallel.parser import Arguments, create_parser
 from pyallel.process import Process
+from concurrent.futures import ThreadPoolExecutor
 
 IN_TTY = sys.__stdin__.isatty()
 
@@ -143,30 +144,51 @@ def streamed_mode(
     completed_processes: set[str] = set()
     passed = True
 
-    print(f"{SAVE_CURSOR}", end="")
-
     while True:
-        command_output = ""
         for process in processes:
-            if process.return_code() is not None:
-                completed_processes.add(process.name)
-            print(f"\n[{process.name}] running...")
-            process.stream()
-            print(indent(process.output.decode()))
-            command_output += f"\n[{process.name}] running...\n"
-            command_output += indent(process.output.decode()) + "\n"
+            print(f"[{process.name}] running...")
+            if process.output:
+                print(indent(process.output.decode()))
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            for process in processes:
+                if process.name in completed_processes:
+                    continue
+
+                if process.poll() is not None:
+                    completed_processes.add(process.name)
+
+                executor.submit(process.readline)
+
+        lines = sum(len(process.output.splitlines()) for process in processes)
+        print(lines)
+        # for line in range(lines):
+        #     print(f"{CLEAR_LINE}\033[1F", end="")
+
+        # lines = sum(len(process.output.splitlines()) for process in processes)
+        # print(f"\033[{lines +1}F{CLEAR_LINE}", end="")
+
+        for process in processes:
+            print(f"[{process.name}] running...")
+            if process.output:
+                print(indent(process.output.decode()))
 
         if len(completed_processes) == len(processes):
             break
 
-        old_command_output = command_output
-        # print(f"\033[{len(command_output.splitlines()) +1}F{CLEAR_LINE}", end="")
+        # print(f"\033[{lines +1}F{CLEAR_LINE}", end="")
+        lines = sum(len(process.output.splitlines()) for process in processes)
+        print(lines)
+        # for line in range(lines + 2):
+        #     print(f"{CLEAR_LINE}\033[1F", end="")
+
+        # old_command_output = command_output
         # print(f"{RESTORE_CURSOR}", end="")
         # print("\033]0J", end="")
         # print(f"{SAVE_CURSOR}", end="")
         # print(f"{CLEAR_SCREEN}", end="")
-        for _ in command_output.splitlines():
-            print(f"{UP_LINE}{CLEAR_LINE}{CR}", end="")
+        # for _ in command_output.splitlines():
+        #     print(f"{UP_LINE}{CLEAR_LINE}{CR}", end="")
 
     return passed
 

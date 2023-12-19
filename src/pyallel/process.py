@@ -19,6 +19,7 @@ class Process:
     env: dict[str, str] = field(default_factory=dict)
     start: float = 0.0
     process: subprocess.Popen[bytes] | None = None
+    output: bytes = b""
 
     def run(self) -> None:
         self.start = time.perf_counter()
@@ -33,6 +34,11 @@ class Process:
         if self.process:
             return self.process.poll()
         return None
+
+    def readline(self) -> bytes:
+        if self.process and self.process.stdout:
+            self.output += self.process.stdout.readline()
+        return self.output
 
     def stdout(self) -> IO[bytes]:
         if self.process and self.process.stdout:
