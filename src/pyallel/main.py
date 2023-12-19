@@ -1,5 +1,4 @@
 from __future__ import annotations
-import asyncio
 
 import sys
 import time
@@ -110,14 +109,14 @@ def print_command_status(process: Process, passed: bool, debug: bool = False) ->
     print(f"{icon}{NC}")
 
 
-async def print_command_output(process: Process) -> None:
-    output = await process.stdout().read()
+def print_command_output(process: Process) -> None:
+    output = process.stdout().read()
     if output:
         print(f"{indent(output.decode())}")
     print()
 
 
-async def main_loop(
+def main_loop(
     commands: list[str],
     fail_fast: bool = False,
     interactive: bool = False,
@@ -125,12 +124,12 @@ async def main_loop(
     stream: bool = False,
 ) -> bool:
     if not stream:
-        return await non_streamed_mode(commands, fail_fast, interactive, debug)
+        return non_streamed_mode(commands, fail_fast, interactive, debug)
 
-    return await streamed_mode(commands, fail_fast, interactive, debug)
+    return streamed_mode(commands, fail_fast, interactive, debug)
 
 
-async def streamed_mode(
+def streamed_mode(
     commands: list[str],
     fail_fast: bool = False,
     interactive: bool = False,
@@ -139,11 +138,10 @@ async def streamed_mode(
     processes = create_processes(commands)
 
     for process in processes:
-        await process.run()
+        process.run()
 
     completed_processes: set[str] = set()
     passed = True
-    old_command_output = ""
 
     print(f"{SAVE_CURSOR}", end="")
 
@@ -153,7 +151,7 @@ async def streamed_mode(
             if process.return_code() is not None:
                 completed_processes.add(process.name)
             print(f"\n[{process.name}] running...")
-            await process.stream()
+            process.stream()
             print(indent(process.output.decode()))
             command_output += f"\n[{process.name}] running...\n"
             command_output += indent(process.output.decode()) + "\n"
@@ -173,18 +171,16 @@ async def streamed_mode(
     return passed
 
 
-async def non_streamed_mode(
+def non_streamed_mode(
     commands: list[str],
     fail_fast: bool = False,
     interactive: bool = False,
     debug: bool = False,
 ) -> bool:
     processes = create_processes(commands)
-    tasks: dict[str, asyncio.Task] = {}
 
     for process in processes:
-        await process.run()
-        tasks[process.name] = asyncio.create_task(process.wait())
+        process.run()
 
     completed_processes: set[str] = set()
     passed = True
@@ -198,11 +194,16 @@ async def non_streamed_mode(
                 print(
                     f"{CLEAR_LINE}{CR}{WHITE_BOLD}Running commands{NC} {icon}", end=""
                 )
-                await asyncio.sleep(0.1)
+                time.sleep(0.1)
 
         for process in processes:
-            if tasks[process.name].done():
-                passed = await run_process(process, debug=debug)
+            if process.name in completed_processes or process.poll() is None:
+                continue
+
+            completed_processes.add(process.name)
+            passed = run_process(process, debug=debug)
+            if fail_fast and not passed:
+                return False
 
         if len(completed_processes) == len(processes):
             break
@@ -210,23 +211,20 @@ async def non_streamed_mode(
     return passed
 
 
-async def run_process(process: Process, debug: bool = False) -> bool:
-    output, _ = await process.process.communicate()
+def run_process(process: Process, debug: bool = False) -> bool:
     print(f"{CLEAR_LINE}{CR}", end="")
 
     if process.return_code() != 0:
         print_command_status(process, passed=False, debug=debug)
-        if output:
-            print(f"{indent(output.decode())}")
-        return True
+        print_command_output(process)
+        return False
     else:
         print_command_status(process, passed=True, debug=debug)
-        if output:
-            print(f"{indent(output.decode())}")
-        return False
+        print_command_output(process)
+        return True
 
 
-async def run(*args: str) -> int:
+def run(*args: str) -> int:
     parser = create_parser()
     parsed_args = parser.parse_args(args=args, namespace=Arguments())
 
@@ -247,7 +245,7 @@ async def run(*args: str) -> int:
     exit_code = 0
     message = None
     try:
-        status = await main_loop(
+        status = main_loop(
             parsed_args.commands,
             parsed_args.fail_fast,
             parsed_args.interactive,
@@ -275,7 +273,7 @@ async def run(*args: str) -> int:
 
 
 def entry_point() -> None:
-    sys.exit(asyncio.run(run(*sys.argv[1:]), debug=True))
+    sys.exit(run(*sys.argv[1:]))
 
 
 if __name__ == "__main__":

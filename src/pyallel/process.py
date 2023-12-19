@@ -7,7 +7,6 @@ import io
 import shutil
 import os
 from typing import IO
-import asyncio
 
 from dataclasses import dataclass, field
 from pyallel.errors import InvalidExecutableError
@@ -19,49 +18,26 @@ class Process:
     args: list[str]
     env: dict[str, str] = field(default_factory=dict)
     start: float = 0.0
-    process: asyncio.subprocess.Process | None = None
-    output: bytes = field(default_factory=bytes)
+    process: subprocess.Popen[bytes] | None = None
 
-    async def run(self) -> None:
+    def run(self) -> None:
         self.start = time.perf_counter()
-        self.process = await asyncio.create_subprocess_exec(
-            self.name,
-            *self.args,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            env=self.env
+        self.process = subprocess.Popen(
+            [self.name, *self.args],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env=self.env,
         )
-        # self.process = subprocess.Popen(
-        #     [self.name, *self.args],
-        #     stdout=subprocess.PIPE,
-        #     stderr=subprocess.STDOUT,
-        #     env=self.env,
-        # )
 
-    async def wait(self) -> int:
+    def poll(self) -> int | None:
         if self.process:
-            return await self.process.wait()
-        return -1
+            return self.process.poll()
+        return None
 
-    async def stream(self) -> bytes:
-        line = await self.stdout().readline()
-        self.output += line
-        return line
-
-    async def read(self) -> bytes:
-        out = await self.stdout().read()
-        self.output += out
-        return out
-
-    # def poll(self) -> int | None:
-    #     if self.process:
-    #         return self.process.process
-    #     return None
-
-    def stdout(self) -> asyncio.StreamReader:
+    def stdout(self) -> IO[bytes]:
         if self.process and self.process.stdout:
             return self.process.stdout
-        return asyncio.StreamReader()
+        return io.BytesIO(b"")
 
     def return_code(self) -> int | None:
         if self.process:
