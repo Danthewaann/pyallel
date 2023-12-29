@@ -66,6 +66,24 @@ def test_run_multiple_commands(capsys: CaptureFixture[str]) -> None:
     ]
 
 
+def test_run_multiple_commands_streamed_mode(capsys: CaptureFixture[str]) -> None:
+    exit_code = main.run("sh -c 'sleep 0.1; echo \"first\"'", "echo 'hi'", "-s")
+    captured = capsys.readouterr()
+    out = captured.out.splitlines(keepends=True)
+    assert exit_code == 0, prettify_error(captured.out)
+    assert out == [
+        "Running commands...\n",
+        "\n",
+        "[sh] done ✓\n",
+        "    first\n",
+        "\n",
+        "[echo] done ✓\n",
+        "    hi\n",
+        "\n",
+        "Success!\n",
+    ]
+
+
 def test_run_fail_fast(capsys: CaptureFixture[str]) -> None:
     exit_code = main.run("sleep 0.1", 'sh -c "exit 1"', "-f")
     captured = capsys.readouterr()
