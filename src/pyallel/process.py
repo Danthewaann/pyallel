@@ -2,14 +2,26 @@ from __future__ import annotations
 
 import time
 import subprocess
+import tempfile
 import shlex
-import io
 import shutil
 import os
-from typing import IO
+from pathlib import Path
+from concurrent.futures import ProcessPoolExecutor
 
 from dataclasses import dataclass, field
 from pyallel.errors import InvalidExecutableError
+
+
+@dataclass
+class ProcessGroup:
+    processes: list[Process]
+    output: dict[str, bytes] = field(default_factory=dict)
+
+    def run(self) -> None:
+        with ProcessPoolExecutor(max_workers=len(self.processes)) as executor:
+            for process in self.processes:
+                executor.submit(process.run)
 
 
 @dataclass
@@ -20,12 +32,16 @@ class Process:
     start: float = 0.0
     process: subprocess.Popen[bytes] | None = None
     output: bytes = b""
+    fd_name: Path | None = None
+    fd: int | None = None
 
     def run(self) -> None:
         self.start = time.perf_counter()
+        self.fd, fd_name = tempfile.mkstemp()
+        self.fd_name = Path(fd_name)
         self.process = subprocess.Popen(
             [self.name, *self.args],
-            stdout=subprocess.PIPE,
+            stdout=self.fd,
             stderr=subprocess.STDOUT,
             env=self.env,
         )
@@ -35,20 +51,15 @@ class Process:
             return self.process.poll()
         return None
 
-    def readline(self) -> bytes:
-        if self.process and self.process.stdout:
-            self.output += self.process.stdout.readline()
-        return self.output
+    def read(self) -> bytes:
+        if self.fd_name:
+            return self.fd_name.read_bytes()
+        return b""
 
     def stream(self) -> None:
         while self.poll() is None:
             for line in iter(self.process.stdout.readline, b""):
                 self.output += line
-
-    def stdout(self) -> IO[bytes]:
-        if self.process and self.process.stdout:
-            return self.process.stdout
-        return io.BytesIO(b"")
 
     def return_code(self) -> int | None:
         if self.process:

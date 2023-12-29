@@ -111,7 +111,7 @@ def print_command_status(process: Process, passed: bool, debug: bool = False) ->
 
 
 def print_command_output(process: Process) -> None:
-    output = process.stdout().read()
+    output = process.read()
     if output:
         print(f"{indent(output.decode())}")
     print()
@@ -159,7 +159,7 @@ def streamed_mode(
                 completed_processes.add(process.name)
 
             lines = sum(len(process.output.splitlines()) for process in processes)
-            print(lines)
+            # print(lines)
         # for line in range(lines):
         #     print(f"{CLEAR_LINE}\033[1F", end="")
 
@@ -174,7 +174,7 @@ def streamed_mode(
 
         # print(f"\033[{lines +1}F{CLEAR_LINE}", end="")
         lines = sum(len(process.output.splitlines()) for process in processes)
-        print(lines)
+        # print(lines)
         # for line in range(lines + 2):
         #     print(f"{CLEAR_LINE}\033[1F", end="")
 

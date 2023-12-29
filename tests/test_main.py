@@ -49,18 +49,18 @@ def test_run_single_command_with_env(capsys: CaptureFixture[str]) -> None:
 
 
 def test_run_multiple_commands(capsys: CaptureFixture[str]) -> None:
-    exit_code = main.run("sh -c 'sleep 0.1; echo \"first\"'", "echo 'hi'", "-s")
+    exit_code = main.run("sh -c 'sleep 0.1; echo \"first\"'", "echo 'hi'")
     captured = capsys.readouterr()
     out = captured.out.splitlines(keepends=True)
     assert exit_code == 0, prettify_error(captured.out)
     assert out == [
         "Running commands...\n",
         "\n",
-        "[sh] done ✓\n",
-        "    first!\n",
-        "\n",
         "[echo] done ✓\n",
         "    hi\n",
+        "\n",
+        "[sh] done ✓\n",
+        "    first\n",
         "\n",
         "Success!\n",
     ]
