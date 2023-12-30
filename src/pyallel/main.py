@@ -6,7 +6,7 @@ import importlib.metadata
 
 from pyallel.parser import Arguments, create_parser
 from pyallel.process import ProcessGroup, format_time_taken
-from pyallel import contants
+from pyallel import constants
 
 
 def main_loop(
@@ -57,12 +57,12 @@ def run(*args: str) -> int:
 
     if not status:
         if not message:
-            print(f"{contants.RED_BOLD}A command failed!{contants.NC}")
+            print(f"{constants.RED_BOLD}A command failed!{constants.NC}")
         else:
-            print(f"{contants.RED_BOLD}Error: {message}{contants.NC}")
+            print(f"{constants.RED_BOLD}Error: {message}{constants.NC}")
         exit_code = 1
     else:
-        print(f"{contants.GREEN_BOLD}Success!{contants.NC}")
+        print(f"{constants.GREEN_BOLD}Success!{constants.NC}")
 
     if parsed_args.debug:
         elapsed = time.perf_counter() - start

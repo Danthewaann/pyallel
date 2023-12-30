@@ -7,7 +7,7 @@ import shlex
 import shutil
 import os
 from pathlib import Path
-from pyallel import contants
+from pyallel import constants
 
 from dataclasses import dataclass, field
 from pyallel.errors import InvalidExecutableErrors, InvalidExecutableError
@@ -42,26 +42,26 @@ def format_time_taken(time_taken: float) -> str:
 
 
 def print_command_status(process: Process, passed: bool, debug: bool = False) -> None:
-    colour = contants.RED_BOLD
+    colour = constants.RED_BOLD
     msg = "failed"
-    icon = contants.X
+    icon = constants.X
     if passed:
-        colour = contants.GREEN_BOLD
+        colour = constants.GREEN_BOLD
         msg = "done"
-        icon = contants.TICK
+        icon = constants.TICK
 
-    print(f"[{contants.BLUE_BOLD}{process.name}", end="")
+    print(f"[{constants.BLUE_BOLD}{process.name}", end="")
 
     if debug:
         print(f" {' '.join(process.args)}", end="")
 
-    print(f"{contants.NC}]{colour} {msg} ", end="")
+    print(f"{constants.NC}]{colour} {msg} ", end="")
 
     if debug:
         elapsed = time.perf_counter() - process.start
         print(f"in {format_time_taken(elapsed)} ", end="")
 
-    print(f"{icon}{contants.NC}")
+    print(f"{icon}{constants.NC}")
 
 
 def print_command_output(process: Process) -> None:
@@ -72,7 +72,7 @@ def print_command_output(process: Process) -> None:
 
 
 def run_process(process: Process, debug: bool = False) -> bool:
-    print(f"{contants.CLEAR_LINE}{contants.CR}", end="")
+    print(f"{constants.CLEAR_LINE}{constants.CR}", end="")
 
     if process.return_code() != 0:
         print_command_status(process, passed=False, debug=debug)
@@ -99,14 +99,14 @@ class ProcessGroup:
         completed_processes: set[str] = set()
         passed = True
 
-        if not self.interactive or not contants.IN_TTY:
-            print(f"{contants.WHITE_BOLD}Running commands...{contants.NC}\n")
+        if not self.interactive or not constants.IN_TTY:
+            print(f"{constants.WHITE_BOLD}Running commands...{constants.NC}\n")
 
         while True:
-            if self.interactive and contants.IN_TTY:
-                for icon in contants.ICONS:
+            if self.interactive and constants.IN_TTY:
+                for icon in constants.ICONS:
                     print(
-                        f"{contants.CLEAR_LINE}{contants.CR}{contants.WHITE_BOLD}Running commands{contants.NC} {icon}",
+                        f"{constants.CLEAR_LINE}{constants.CR}{constants.WHITE_BOLD}Running commands{constants.NC} {icon}",
                         end="",
                     )
                     time.sleep(0.1)
@@ -126,34 +126,41 @@ class ProcessGroup:
         return passed
 
     def stream(self) -> bool:
+        for process in self.processes:
+            process.run()
+
         completed_processes: set[str] = set()
         passed = True
 
         while True:
+            output = ""
             for process in self.processes:
-                print(f"[{process.name}] running...")
-                output = process.read().decode()
-                if output:
-                    print(indent(process.output.decode()))
-
-                if process.name in completed_processes:
-                    continue
-
-                lines = len(output.splitlines())
+                # self.output[process.name] = process.read()
+                output += f"[{process.name}] running...\n"
+                process_output = process.read()
+                if process_output:
+                    output += indent(process_output.decode())
+                    output += "\n\n"
 
                 if process.poll() is not None:
                     completed_processes.add(process.name)
+                # for line in range(lines):
+                #     print(f"{constants.CLEAR_LINE}\033[1F", end="")
 
-                for line in range(lines):
-                    print(f"{CLEAR_LINE}\033[1F", end="")
-
-                # lines = sum(len(process.output.splitlines()) for process in processes)
-                # print(f"\033[{lines +1}F{CLEAR_LINE}", end="")
-                print(f"[{process.name}] running...")
-                if process.output:
-                    print(indent(process.output.decode()))
+            lines = len(output.splitlines()) + len(self.processes)
+            print(output)
+            for _ in range(lines - (len(self.processes) - 1)):
+                # print(f"\r{constants.CLEAR_LINE}\033[1F", end="")
+                print(f"\033[1F{constants.CLEAR_LINE}", end="")
+            # lines = sum(len(process.output.splitlines()) for process in processes)
+            # print(f"\033[{lines - 1}F{constants.CLEAR_LINE}", end="")
+            # print(constants.CLEAR_SCREEN, end="")
+            # print(f"[{process.name}] running...")
+            # if process.output:
+            #     print(indent(process.output.decode()))
 
             if len(completed_processes) == len(self.processes):
+                print(output)
                 break
 
             time.sleep(0.1)
