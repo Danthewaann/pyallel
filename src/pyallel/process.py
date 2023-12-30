@@ -135,7 +135,6 @@ class ProcessGroup:
         while True:
             output = ""
             for process in self.processes:
-                # self.output[process.name] = process.read()
                 output += f"[{process.name}] running...\n"
                 process_output = process.read()
                 if process_output:
@@ -144,39 +143,17 @@ class ProcessGroup:
 
                 if process.poll() is not None:
                     completed_processes.add(process.name)
-                # for line in range(lines):
-                #     print(f"{constants.CLEAR_LINE}\033[1F", end="")
 
-            lines = len(output.splitlines()) + len(self.processes)
             print(output)
+            lines = len(output.splitlines()) + len(self.processes)
             for _ in range(lines - (len(self.processes) - 1)):
-                # print(f"\r{constants.CLEAR_LINE}\033[1F", end="")
-                print(f"\033[1F{constants.CLEAR_LINE}", end="")
-            # lines = sum(len(process.output.splitlines()) for process in processes)
-            # print(f"\033[{lines - 1}F{constants.CLEAR_LINE}", end="")
-            # print(constants.CLEAR_SCREEN, end="")
-            # print(f"[{process.name}] running...")
-            # if process.output:
-            #     print(indent(process.output.decode()))
+                print(f"{constants.CLEAR_LINE}\033[1F", end="")
 
             if len(completed_processes) == len(self.processes):
                 print(output)
                 break
 
-            time.sleep(0.1)
-            # print(f"\033[{lines +1}F{CLEAR_LINE}", end="")
-            # lines = sum(len(process.output.splitlines()) for process in processes)
-            # print(lines)
-            # for line in range(lines + 2):
-            #     print(f"{CLEAR_LINE}\033[1F", end="")
-
-            # old_command_output = command_output
-            # print(f"{RESTORE_CURSOR}", end="")
-            # print("\033]0J", end="")
-            # print(f"{SAVE_CURSOR}", end="")
-            # print(f"{CLEAR_SCREEN}", end="")
-            # for _ in command_output.splitlines():
-            #     print(f"{UP_LINE}{CLEAR_LINE}{CR}", end="")
+            time.sleep(0.05)
 
         return passed
 
@@ -232,7 +209,7 @@ class Process:
 
     def __del__(self) -> None:
         if self.fd_name:
-            self.fd_name.unlink()
+            self.fd_name.unlink(missing_ok=True)
 
     def poll(self) -> int | None:
         if self.process:
