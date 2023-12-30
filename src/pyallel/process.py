@@ -90,7 +90,7 @@ class ProcessGroup:
     fail_fast: bool = False
     interactive: bool = False
     debug: bool = False
-    output: dict[str, bytes] = field(default_factory=dict)
+    output: dict[str, str] = field(default_factory=dict)
 
     def run(self) -> bool:
         for process in self.processes:
@@ -134,12 +134,17 @@ class ProcessGroup:
 
         while True:
             output = ""
-            for process in self.processes:
+            for i, process in enumerate(self.processes, start=1):
                 output += f"[{process.name}] running...\n"
-                process_output = process.read()
+                process_output = process.read().decode()
                 if process_output:
-                    output += indent(process_output.decode())
-                    output += "\n\n"
+                    self.output[process.name] = process_output
+                    output += "\n".join(
+                        indent(process_output).splitlines()[-10:]
+                    )
+                    output += "\n"
+                    if i != len(self.processes):
+                        output += "\n"
 
                 if process.poll() is not None:
                     completed_processes.add(process.name)
