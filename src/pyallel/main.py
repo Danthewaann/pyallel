@@ -16,7 +16,9 @@ def main_loop(
     debug: bool = False,
     stream: bool = False,
 ) -> bool:
-    process_group = ProcessGroup.from_commands(commands, fail_fast, interactive, debug)
+    process_group = ProcessGroup.from_commands(
+        commands, interactive=interactive, fail_fast=fail_fast, debug=debug
+    )
     if not stream:
         return process_group.run()
 
