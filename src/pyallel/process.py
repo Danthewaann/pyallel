@@ -136,33 +136,43 @@ class ProcessGroup:
 
         completed_processes: set[UUID] = set()
         passed = True
+        icon = 0
 
+        print("\033 7", end="")
         while True:
             output = ""
             for i, process in enumerate(self.processes, start=1):
-                output += f"[{process.name}] running...\n"
+                if process.poll() is not None:
+                    completed_processes.add(process.id)
+                    output += f"[{process.name}] done\n"
+                else:
+                    output += f"[{process.name}] running {constants.ICONS[icon]}\n"
+
                 process_output = process.read().decode()
                 if process_output:
                     self.output[process.id] = process_output
-                    output += "\n".join(indent(process_output).splitlines()[-10:])
+                    output += indent(process_output)
                     output += "\n"
                     if i != len(self.processes):
                         output += "\n"
-
-                if process.poll() is not None:
-                    completed_processes.add(process.id)
+            
+            icon += 1
+            if icon == len(constants.ICONS):
+                icon = 0
 
             print(output)
             lines = len(output.splitlines()) + len(self.processes)
             for _ in range(lines - (len(self.processes) - 1)):
-                print(f"{constants.CLEAR_LINE}\033[1F", end="")
+                print(f"{constants.CLEAR_LINE}{constants.UP_LINE}", end="")
 
             if len(completed_processes) == len(self.processes):
-                print(output)
                 break
 
-            time.sleep(0.05)
+            time.sleep(0.1)
 
+        print("\033 8", end="")
+        print("\033[3J", end="")
+        print(output)
         return passed
 
     def stream_non_interactive(self) -> bool:
@@ -172,7 +182,7 @@ class ProcessGroup:
 
         while True:
             output = ""
-            for i, process in enumerate(self.processes, start=1):
+            for process in self.processes:
                 if running_process is None and process.id not in completed_processes:
                     output += f"[{process.name}] running...\n"
                     running_process = process
@@ -185,6 +195,11 @@ class ProcessGroup:
                     output += "\n"
 
                 if process.poll() is not None:
+                    while process_output_2 := process.readline().decode():
+                        output += indent(process_output_2)
+                        output += "\n"
+
+                    output += "\n"
                     completed_processes.add(process.id)
                     running_process = None
 

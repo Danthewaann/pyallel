@@ -77,13 +77,12 @@ def test_run_multiple_commands_streamed_mode(capsys: CaptureFixture[str]) -> Non
     out = captured.out.splitlines(keepends=True)
     assert exit_code == 0, prettify_error(captured.out)
     assert out == [
-        "Running commands...\n",
-        "\n",
-        "[sh] done ✓\n",
+        "[sh] running...\n",
         "    first\n",
         "\n",
-        "[echo] done ✓\n",
+        "[sh] running...\n",
         "    hi\n",
+        "    bye\n",
         "\n",
         "Success!\n",
     ]
