@@ -7,6 +7,8 @@ import shlex
 import shutil
 import os
 from pathlib import Path
+from uuid import UUID, uuid4
+from typing import BinaryIO
 from pyallel import constants
 
 from dataclasses import dataclass, field
@@ -90,13 +92,13 @@ class ProcessGroup:
     fail_fast: bool = False
     interactive: bool = False
     debug: bool = False
-    output: dict[str, str] = field(default_factory=dict)
+    output: dict[UUID, str] = field(default_factory=dict)
 
     def run(self) -> bool:
         for process in self.processes:
             process.run()
 
-        completed_processes: set[str] = set()
+        completed_processes: set[UUID] = set()
         passed = True
 
         if not self.interactive or not constants.IN_TTY:
@@ -112,10 +114,10 @@ class ProcessGroup:
                     time.sleep(0.1)
 
             for process in self.processes:
-                if process.name in completed_processes or process.poll() is None:
+                if process.id in completed_processes or process.poll() is None:
                     continue
 
-                completed_processes.add(process.name)
+                completed_processes.add(process.id)
                 passed = run_process(process, debug=self.debug)
                 if self.fail_fast and not passed:
                     return False
@@ -129,7 +131,10 @@ class ProcessGroup:
         for process in self.processes:
             process.run()
 
-        completed_processes: set[str] = set()
+        if not self.interactive:
+            return self.stream_non_interactive()
+
+        completed_processes: set[UUID] = set()
         passed = True
 
         while True:
@@ -138,16 +143,14 @@ class ProcessGroup:
                 output += f"[{process.name}] running...\n"
                 process_output = process.read().decode()
                 if process_output:
-                    self.output[process.name] = process_output
-                    output += "\n".join(
-                        indent(process_output).splitlines()[-10:]
-                    )
+                    self.output[process.id] = process_output
+                    output += "\n".join(indent(process_output).splitlines()[-10:])
                     output += "\n"
                     if i != len(self.processes):
                         output += "\n"
 
                 if process.poll() is not None:
-                    completed_processes.add(process.name)
+                    completed_processes.add(process.id)
 
             print(output)
             lines = len(output.splitlines()) + len(self.processes)
@@ -156,6 +159,39 @@ class ProcessGroup:
 
             if len(completed_processes) == len(self.processes):
                 print(output)
+                break
+
+            time.sleep(0.05)
+
+        return passed
+
+    def stream_non_interactive(self) -> bool:
+        completed_processes: set[UUID] = set()
+        passed = True
+        running_process = None
+
+        while True:
+            output = ""
+            for i, process in enumerate(self.processes, start=1):
+                if running_process is None and process.id not in completed_processes:
+                    output += f"[{process.name}] running...\n"
+                    running_process = process
+                elif running_process is not process:
+                    continue
+
+                process_output = process.readline().decode()
+                if process_output:
+                    output += indent(process_output)
+                    output += "\n"
+
+                if process.poll() is not None:
+                    completed_processes.add(process.id)
+                    running_process = None
+
+            if output:
+                print(output, end="")
+
+            if len(completed_processes) == len(self.processes):
                 break
 
             time.sleep(0.05)
@@ -192,6 +228,7 @@ class ProcessGroup:
 
 @dataclass
 class Process:
+    id: UUID
     name: str
     args: list[str]
     env: dict[str, str] = field(default_factory=dict)
@@ -199,6 +236,7 @@ class Process:
     process: subprocess.Popen[bytes] | None = None
     output: bytes = b""
     fd_name: Path | None = None
+    fd_read: BinaryIO | None = None
     fd: int | None = None
 
     def run(self) -> None:
@@ -213,6 +251,8 @@ class Process:
         )
 
     def __del__(self) -> None:
+        if self.fd_read:
+            self.fd_read.close()
         if self.fd_name:
             self.fd_name.unlink(missing_ok=True)
 
@@ -226,10 +266,12 @@ class Process:
             return self.fd_name.read_bytes()
         return b""
 
-    def stream(self) -> None:
-        while self.poll() is None:
-            for line in iter(self.process.stdout.readline, b""):
-                self.output += line
+    def readline(self) -> bytes:
+        if self.fd_name:
+            if not self.fd_read:
+                self.fd_read = open(self.fd_name, "rb")
+            return self.fd_read.readline()
+        return b""
 
     def return_code(self) -> int | None:
         if self.process:
@@ -259,4 +301,4 @@ class Process:
             raise InvalidExecutableError(parsed_args[0])
 
         str_args = shlex.split(" ".join(parsed_args[1:]))
-        return cls(name=parsed_args[0], args=str_args, env=env)
+        return cls(id=uuid4(), name=parsed_args[0], args=str_args, env=env)
