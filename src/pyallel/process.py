@@ -43,27 +43,40 @@ def format_time_taken(time_taken: float) -> str:
     return msg
 
 
-def print_command_status(process: Process, passed: bool, debug: bool = False) -> None:
-    colour = constants.RED_BOLD
-    msg = "failed"
-    icon = constants.X
-    if passed:
+def get_command_status(
+    process: Process,
+    icon: str | None = None,
+    passed: bool | None = None,
+    debug: bool = False,
+) -> str:
+    if passed is True:
         colour = constants.GREEN_BOLD
         msg = "done"
-        icon = constants.TICK
+        icon = icon or constants.TICK
+    elif passed is False:
+        colour = constants.RED_BOLD
+        msg = "failed"
+        icon = icon or constants.X
+    else:
+        colour = constants.WHITE_BOLD
+        msg = "running"
+        icon = icon or ""
+        if not icon:
+            msg += "..."
 
-    print(f"[{constants.BLUE_BOLD}{process.name}", end="")
+    output = f"[{constants.BLUE_BOLD}{process.name}"
 
     if debug:
-        print(f" {' '.join(process.args)}", end="")
+        output += f" {' '.join(process.args)}"
 
-    print(f"{constants.NC}]{colour} {msg} ", end="")
+    output += f"{constants.NC}]{colour} {msg} "
 
     if debug:
         elapsed = time.perf_counter() - process.start
-        print(f"in {format_time_taken(elapsed)} ", end="")
+        output += f"in {format_time_taken(elapsed)} "
 
-    print(f"{icon}{constants.NC}")
+    output += f"{icon}{constants.NC}"
+    return output
 
 
 def print_command_output(process: Process) -> None:
@@ -77,11 +90,11 @@ def run_process(process: Process, debug: bool = False) -> bool:
     print(f"{constants.CLEAR_LINE}{constants.CR}", end="")
 
     if process.return_code() != 0:
-        print_command_status(process, passed=False, debug=debug)
+        print(get_command_status(process, passed=False, debug=debug))
         print_command_output(process)
         return False
     else:
-        print_command_status(process, passed=True, debug=debug)
+        print(get_command_status(process, passed=True, debug=debug))
         print_command_output(process)
         return True
 
@@ -144,9 +157,15 @@ class ProcessGroup:
             for i, process in enumerate(self.processes, start=1):
                 if process.poll() is not None:
                     completed_processes.add(process.id)
-                    output += f"[{process.name}] done\n"
+                    output += get_command_status(
+                        process, passed=process.return_code() == 0, debug=self.debug
+                    )
+                    output += "\n"
                 else:
-                    output += f"[{process.name}] running {constants.ICONS[icon]}\n"
+                    output += get_command_status(
+                        process, icon=constants.ICONS[icon], debug=self.debug
+                    )
+                    output += "\n"
 
                 process_output = process.read().decode()
                 if process_output:
@@ -155,7 +174,7 @@ class ProcessGroup:
                     output += "\n"
                     if i != len(self.processes):
                         output += "\n"
-            
+
             icon += 1
             if icon == len(constants.ICONS):
                 icon = 0
@@ -163,7 +182,10 @@ class ProcessGroup:
             print(output)
             lines = len(output.splitlines()) + len(self.processes)
             for _ in range(lines - (len(self.processes) - 1)):
-                print(f"{constants.CLEAR_LINE}{constants.UP_LINE}", end="")
+                print(
+                    f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}",
+                    end="",
+                )
 
             if len(completed_processes) == len(self.processes):
                 break
@@ -180,11 +202,14 @@ class ProcessGroup:
         passed = True
         running_process = None
 
+        print(f"{constants.WHITE_BOLD}Running commands...{constants.NC}\n")
+
         while True:
             output = ""
             for process in self.processes:
                 if running_process is None and process.id not in completed_processes:
-                    output += f"[{process.name}] running...\n"
+                    output += get_command_status(process)
+                    output += "\n"
                     running_process = process
                 elif running_process is not process:
                     continue
@@ -195,11 +220,16 @@ class ProcessGroup:
                     output += "\n"
 
                 if process.poll() is not None:
-                    while process_output_2 := process.readline().decode():
+                    process_output_2 = process.readline().decode()
+                    while process_output_2:
                         output += indent(process_output_2)
                         output += "\n"
+                        process_output_2 = process.readline().decode()
 
-                    output += "\n"
+                    output += get_command_status(
+                        process, passed=process.return_code() == 0, debug=self.debug
+                    )
+                    output += "\n\n"
                     completed_processes.add(process.id)
                     running_process = None
 
