@@ -72,7 +72,10 @@ def get_command_status(
     output += f"{constants.NC}]{colour} {msg} "
 
     if debug:
-        elapsed = time.perf_counter() - process.start
+        end = process.end
+        if not process.end:
+            end = time.perf_counter()
+        elapsed = end - process.start
         output += f"in {format_time_taken(elapsed)} "
 
     output += f"{icon}{constants.NC}"
@@ -278,6 +281,7 @@ class Process:
     args: list[str]
     env: dict[str, str] = field(default_factory=dict)
     start: float = 0.0
+    end: float = 0.0
     process: subprocess.Popen[bytes] | None = None
     output: bytes = b""
     fd_name: Path | None = None
@@ -303,7 +307,10 @@ class Process:
 
     def poll(self) -> int | None:
         if self.process:
-            return self.process.poll()
+            poll = self.process.poll()
+            if poll is not None and not self.end:
+                self.end = time.perf_counter()
+            return poll
         return None
 
     def read(self) -> bytes:
