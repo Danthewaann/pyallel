@@ -334,12 +334,10 @@ class Process:
     def from_command(cls, command: str) -> Process:
         env = os.environ.copy()
         if " :: " in command:
-            command_modes, args = command.split(" :: ")
-            command_modes = command_modes.split()
-            args = args.split()
+            _, _args = command.split(" :: ")
+            args = _args.split()
         else:
             args = command.split()
-            command_modes = ""
 
         parsed_args: list[str] = []
         for arg in args:
