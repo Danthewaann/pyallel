@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyallel"
-version = "0.5.0"
+version = "0.5.1"
 description = "Run and handle the output of multiple executables in pyallel (as in parallel)"
 authors = ["Daniel Black <danielcrblack@gmail.com>"]
 license = "MIT"
