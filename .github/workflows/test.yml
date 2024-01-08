@@ -23,9 +23,6 @@ jobs:
           - name: macOS
             matrix: macos
             runs-on: [macos-latest]
-          - name: Windows
-            matrix: windows
-            runs-on: [windows-latest]
 
     steps:
       - name: Checkout
