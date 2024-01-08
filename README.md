@@ -34,12 +34,15 @@ pyallel "black --color --check --diff ." "MYPY_FORCE_COLOR=1 mypy ." "ruff check
 - [x] Allow output for all provided commands to be streamed to stdout (this will require a
       re-work of how we print command output as we currently just print output once the command
       finishes)
+- [ ] Add CI checks to run the tests and linters against Python versions > 3.8
 - [ ] Allow specific command outputs to be streamed to stdout, while all other
       commands will only get outputted after the streamed commands have completed (such as running
       `pytest` as a streamed command, whilst running `mypy`, `ruff` etc. as non-streamed commands).
       This will require adding special arguments/modes to each command so they are treated
       differently from other commands
 - [ ] Add visual examples of `pyallel` in action
+- [ ] Add custom parsing of command output to support filtering for errors (like vim's
+      `errorformat`)
 - [x] Provide a way to set environment variables for each command to run with
 - [ ] Allow list of files to be provided to supply as input arguments to each command
 - [ ] Allow input to be piped into `pyallel` via stdin to supply as standard input to each
