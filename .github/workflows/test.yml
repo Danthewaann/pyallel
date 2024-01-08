@@ -1,0 +1,49 @@
+name: Tests
+
+on:
+  - pull_request
+  - workflow_dispatch
+ 
+jobs:
+  tests:
+    name: ${{ matrix.os.name }} ${{ matrix.python }}
+    runs-on: ${{ matrix.os.runs-on }}
+    strategy:
+      matrix:
+        python:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+        os:
+          - name: Linux
+            matrix: linux
+            runs-on: [ubuntu-latest]
+          - name: macOS
+            matrix: macos
+            runs-on: [macos-latest]
+          - name: Windows
+            matrix: windows
+            runs-on: [windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install pyallel
+        run: |
+          pip install pyallel==0.5.0
+
+      - name: Install dev dependencies
+        run: |
+          pip install -r requirements_dev.txt
+
+      - name: Run pyallel
+        run: |
+          pyallel "MYPY_FORCE_COLOR=1 mypy ." "pytest ."
