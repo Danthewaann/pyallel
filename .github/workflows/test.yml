@@ -38,7 +38,7 @@ jobs:
 
       - name: Install pyallel
         run: |
-          pip install pyallel==0.5.0
+          pip install pyallel==0.5.1
 
       - name: Install dev dependencies
         run: |
