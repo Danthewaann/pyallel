@@ -302,8 +302,6 @@ class Process:
     def __del__(self) -> None:
         if self.fd_read:
             self.fd_read.close()
-        if self.fd_name:
-            self.fd_name.unlink(missing_ok=True)
 
     def poll(self) -> int | None:
         if self.process:
