@@ -10,6 +10,7 @@ class Arguments:
     debug: bool
     verbose: bool
     version: bool
+    stream: bool
 
     def __repr__(self) -> str:
         msg = "Arguments:\n"
@@ -51,6 +52,13 @@ def create_parser() -> ArgumentParser:
         "-d",
         "--debug",
         help="output debug info for each command",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "-s",
+        "--stream",
+        help="stream output of first command",
         action="store_true",
         default=False,
     )
