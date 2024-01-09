@@ -2,7 +2,9 @@ import subprocess
 from pyallel import main
 from pytest import CaptureFixture
 
-from tests.utils import prettify_error
+
+def prettify_error(out: str) -> str:
+    return f"Got an error\n\n{out}"
 
 
 def test_run_single_command(capsys: CaptureFixture[str]) -> None:
@@ -36,6 +38,20 @@ def test_run_single_command_with_output(capsys: CaptureFixture[str]) -> None:
 
 def test_run_single_command_with_env(capsys: CaptureFixture[str]) -> None:
     exit_code = main.run("TEST_VAR=1 sleep 0.1")
+    captured = capsys.readouterr()
+    out = captured.out.splitlines(keepends=True)
+    assert exit_code == 0, prettify_error(captured.out)
+    assert out == [
+        "Running commands...\n",
+        "\n",
+        "[sleep] done ✓\n",
+        "\n",
+        "Success!\n",
+    ]
+
+
+def test_run_single_command_with_tail_mode(capsys: CaptureFixture[str]) -> None:
+    exit_code = main.run("tail=10 :: sleep 0.1")
     captured = capsys.readouterr()
     out = captured.out.splitlines(keepends=True)
     assert exit_code == 0, prettify_error(captured.out)

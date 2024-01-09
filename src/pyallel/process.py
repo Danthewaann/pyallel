@@ -173,6 +173,10 @@ class ProcessGroup:
                 process_output = process.read().decode()
                 if process_output:
                     self.output[process.id] = process_output
+                    if process.tail_mode.enabled:
+                        process_output = "\n".join(
+                            process_output.splitlines()[-process.tail_mode.lines :]
+                        )
                     output += indent(process_output)
                     output += "\n"
                     if i != len(self.processes):
@@ -275,8 +279,14 @@ class ProcessGroup:
 
 
 @dataclass
+class TailMode:
+    enabled: bool = False
+    lines: int = 0
+
+
+@dataclass
 class Process:
-    id: UUID
+    id: UUID = field(repr=False, compare=False)
     name: str
     args: list[str]
     env: dict[str, str] = field(default_factory=dict)
@@ -287,6 +297,7 @@ class Process:
     fd_name: Path | None = None
     fd_read: BinaryIO | None = None
     fd: int | None = None
+    tail_mode: TailMode = field(default_factory=TailMode)
 
     def run(self) -> None:
         self.start = time.perf_counter()
@@ -330,9 +341,16 @@ class Process:
 
     @classmethod
     def from_command(cls, command: str) -> Process:
+        tail_mode = TailMode()
         env = os.environ.copy()
         if " :: " in command:
-            _, _args = command.split(" :: ")
+            modes, _args = command.split(" :: ")
+            if modes:
+                for mode in modes.split():
+                    name, value = mode.split("=", maxsplit=1)
+                    if name == "tail":
+                        tail_mode.enabled = True
+                        tail_mode.lines = int(value)
             args = _args.split()
         else:
             args = command.split()
@@ -349,4 +367,6 @@ class Process:
             raise InvalidExecutableError(parsed_args[0])
 
         str_args = shlex.split(" ".join(parsed_args[1:]))
-        return cls(id=uuid4(), name=parsed_args[0], args=str_args, env=env)
+        return cls(
+            id=uuid4(), name=parsed_args[0], args=str_args, env=env, tail_mode=tail_mode
+        )

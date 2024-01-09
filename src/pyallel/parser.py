@@ -20,6 +20,20 @@ class Arguments:
         return msg
 
 
+COMMANDS_HELP = """list of quoted commands to run e.g "mypy ." "black ."
+
+can provide environment variables to each command like so:
+
+     "MYPY_FORCE_COLOR=1 mypy ."
+
+command modes:
+
+can also provide modes to commands to do extra things:
+
+    "tail=10 :: pytest ." <-- only output the last 10 lines, only works in --stream mode
+"""
+
+
 def create_parser() -> ArgumentParser:
     parser = ArgumentParser(
         prog="pyallel",
@@ -28,9 +42,7 @@ def create_parser() -> ArgumentParser:
     )
     parser.add_argument(
         "commands",
-        help='list of quoted commands to run e.g "mypy ." "black ."\n\n'
-        "can provide environment variables to each command like so:\n\n"
-        '     "MYPY_FORCE_COLOR=1 mypy ."',
+        help=COMMANDS_HELP,
         nargs="*",
     )
     parser.add_argument(

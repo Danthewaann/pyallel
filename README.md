@@ -35,7 +35,7 @@ pyallel "black --color --check --diff ." "MYPY_FORCE_COLOR=1 mypy ." "ruff check
       re-work of how we print command output as we currently just print output once the command
       finishes)
 - [x] Add CI checks to run the tests and linters against Python versions > 3.8
-- [ ] Add command mode arguments to support things like only tailing the last 10 lines
+- [x] Add command mode arguments to support things like only tailing the last 10 lines
       of a command whilst it is running e.g. `"tail=10 :: pytest ."`
 - [ ] Add visual examples of `pyallel` in action
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's

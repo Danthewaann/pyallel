@@ -3,7 +3,7 @@ name: Tests
 on:
   - pull_request
   - workflow_dispatch
- 
+
 jobs:
   tests:
     name: ${{ matrix.os.name }} ${{ matrix.python }}
@@ -43,4 +43,4 @@ jobs:
 
       - name: Run pyallel
         run: |
-          pyallel "MYPY_FORCE_COLOR=1 mypy ." "pytest ."
+          PYTHONPATH=./src pyallel "MYPY_FORCE_COLOR=1 mypy ." "pytest ."
