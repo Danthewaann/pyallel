@@ -35,11 +35,8 @@ pyallel "black --color --check --diff ." "MYPY_FORCE_COLOR=1 mypy ." "ruff check
       re-work of how we print command output as we currently just print output once the command
       finishes)
 - [x] Add CI checks to run the tests and linters against Python versions > 3.8
-- [ ] Allow specific command outputs to be streamed to stdout, while all other
-      commands will only get outputted after the streamed commands have completed (such as running
-      `pytest` as a streamed command, whilst running `mypy`, `ruff` etc. as non-streamed commands).
-      This will require adding special arguments/modes to each command so they are treated
-      differently from other commands
+- [ ] Add command mode arguments to support things like only tailing the last 10 lines
+      of a command whilst it is running e.g. `"tail=10 :: pytest ."`
 - [ ] Add visual examples of `pyallel` in action
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
       `errorformat`)
