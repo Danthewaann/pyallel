@@ -23,7 +23,7 @@ pyallel
 Currently you can provide a variable number of `commands` to run to `pyallel`, like so:
 
 > [!IMPORTANT]
-> If your need to provide arguments to a command, you must surround the command and it's arguments in quotes!
+> If you need to provide arguments to a command, you must surround the command and it's arguments in quotes!
 
 ```bash
 pyallel "black --color --check --diff ." "MYPY_FORCE_COLOR=1 mypy ." "ruff check --no-fix ."
