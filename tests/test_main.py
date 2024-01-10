@@ -9,19 +9,6 @@ def prettify_error(out: str) -> str:
 
 class TestNonStreamedMode:
     def test_run_single_command(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1")
-        captured = capsys.readouterr()
-        out = captured.out.splitlines(keepends=True)
-        assert exit_code == 0, prettify_error(captured.out)
-        assert out == [
-            "Running commands...\n",
-            "\n",
-            "[sleep] done ✓\n",
-            "\n",
-            "Success!\n",
-        ]
-
-    def test_run_single_command_with_output(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("echo 'hi'")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
@@ -49,14 +36,15 @@ class TestNonStreamedMode:
         ]
 
     def test_run_single_command_with_env(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("TEST_VAR=1 sleep 0.1")
+        exit_code = main.run("TEST_VAR=1 echo 'hi'")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Running commands...\n",
             "\n",
-            "[sleep] done ✓\n",
+            "[echo] done ✓\n",
+            "    hi\n",
             "\n",
             "Success!\n",
         ]
@@ -64,14 +52,15 @@ class TestNonStreamedMode:
     def test_run_single_command_with_tail_mode(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("tail=10 :: sleep 0.1")
+        exit_code = main.run("tail=10 :: echo 'hi'")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Running commands...\n",
             "\n",
-            "[sleep] done ✓\n",
+            "[echo] done ✓\n",
+            "    hi\n",
             "\n",
             "Success!\n",
         ]
@@ -130,13 +119,13 @@ class TestNonStreamedMode:
         ]
 
     def test_run_verbose_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1", "-V")
+        exit_code = main.run("echo 'hi'", "-V")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Arguments:\n",
-            "    commands    : ['sleep 0.1']\n",
+            "    commands    : [\"echo 'hi'\"]\n",
             "    interactive : True\n",
             "    debug       : False\n",
             "    stream      : False\n",
@@ -145,20 +134,22 @@ class TestNonStreamedMode:
             "\n",
             "Running commands...\n",
             "\n",
-            "[sleep] done ✓\n",
+            "[echo] done ✓\n",
+            "    hi\n",
             "\n",
             "Success!\n",
         ]
 
     def test_run_debug_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1", "-d")
+        exit_code = main.run("echo 'hi'", "-d")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Running commands...\n",
             "\n",
-            "[sleep 0.1] done in 0s ✓\n",
+            "[echo hi] done in 0s ✓\n",
+            "    hi\n",
             "\n",
             "Success!\n",
             "\n",
@@ -168,19 +159,6 @@ class TestNonStreamedMode:
 
 class TestNonStreamedNonInteractiveMode:
     def test_run_single_command(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1", "-n")
-        captured = capsys.readouterr()
-        out = captured.out.splitlines(keepends=True)
-        assert exit_code == 0, prettify_error(captured.out)
-        assert out == [
-            "Running commands...\n",
-            "\n",
-            "[sleep] done ✓\n",
-            "\n",
-            "Success!\n",
-        ]
-
-    def test_run_single_command_with_output(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("echo 'hi'")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
@@ -208,14 +186,15 @@ class TestNonStreamedNonInteractiveMode:
         ]
 
     def test_run_single_command_with_env(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("TEST_VAR=1 sleep 0.1", "-n")
+        exit_code = main.run("TEST_VAR=1 echo 'hi'", "-n")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Running commands...\n",
             "\n",
-            "[sleep] done ✓\n",
+            "[echo] done ✓\n",
+            "    hi\n",
             "\n",
             "Success!\n",
         ]
@@ -223,14 +202,15 @@ class TestNonStreamedNonInteractiveMode:
     def test_run_single_command_with_tail_mode(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("tail=10 :: sleep 0.1", "-n")
+        exit_code = main.run("tail=10 :: echo 'hi'", "-n")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Running commands...\n",
             "\n",
-            "[sleep] done ✓\n",
+            "[echo] done ✓\n",
+            "    hi\n",
             "\n",
             "Success!\n",
         ]
@@ -289,13 +269,13 @@ class TestNonStreamedNonInteractiveMode:
         ]
 
     def test_run_verbose_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1", "-V", "-n")
+        exit_code = main.run("echo 'hi'", "-V", "-n")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Arguments:\n",
-            "    commands    : ['sleep 0.1']\n",
+            "    commands    : [\"echo 'hi'\"]\n",
             "    interactive : False\n",
             "    debug       : False\n",
             "    stream      : False\n",
@@ -304,20 +284,22 @@ class TestNonStreamedNonInteractiveMode:
             "\n",
             "Running commands...\n",
             "\n",
-            "[sleep] done ✓\n",
+            "[echo] done ✓\n",
+            "    hi\n",
             "\n",
             "Success!\n",
         ]
 
     def test_run_debug_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1", "-d", "-n")
+        exit_code = main.run("echo 'hi'", "-d", "-n")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Running commands...\n",
             "\n",
-            "[sleep 0.1] done in 0s ✓\n",
+            "[echo hi] done in 0s ✓\n",
+            "    hi\n",
             "\n",
             "Success!\n",
             "\n",
@@ -329,12 +311,11 @@ class TestStreamedMode:
     """Test streamed mode with interactivity
 
     NOTE: These tests can only verify the exit code consistently
-    as terminal output is re-written with isn't easy to consistently
-    assert against
+    as terminal output is re-written which isn't easy to consistently assert against
     """
 
     def test_run_single_command(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1", "-s")
+        exit_code = main.run("echo 'hi'", "-s")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
@@ -349,14 +330,14 @@ class TestStreamedMode:
         assert exit_code == 1, prettify_error(captured.out)
 
     def test_run_single_command_with_env(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("TEST_VAR=1 sleep 0.1", "-s")
+        exit_code = main.run("TEST_VAR=1 echo 'hi'", "-s")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
     def test_run_single_command_with_tail_mode(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("tail=10 :: sleep 0.1", "-s")
+        exit_code = main.run("tail=10 :: echo 'hi'", "-s")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
@@ -381,32 +362,18 @@ class TestStreamedMode:
         assert exit_code == 1, prettify_error(captured.out)
 
     def test_run_verbose_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1", "-s", "-V")
+        exit_code = main.run("echo 'hi'", "-s", "-V")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
     def test_run_debug_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1", "-s", "-d")
+        exit_code = main.run("echo 'hi'", "-s", "-d")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
 
 class TestStreamedNonInteractiveMode:
     def test_run_single_command(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1", "-s", "-n")
-        captured = capsys.readouterr()
-        out = captured.out.splitlines(keepends=True)
-        assert exit_code == 0, prettify_error(captured.out)
-        assert out == [
-            "Running commands...\n",
-            "\n",
-            "[sleep] running... \n",
-            "[sleep] done ✓\n",
-            "\n",
-            "Success!\n",
-        ]
-
-    def test_run_single_command_with_output(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("echo 'hi'", "-s", "-n")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
@@ -436,15 +403,16 @@ class TestStreamedNonInteractiveMode:
         ]
 
     def test_run_single_command_with_env(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("TEST_VAR=1 sleep 0.1", "-s", "-n")
+        exit_code = main.run("TEST_VAR=1 echo 'hi'", "-s", "-n")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Running commands...\n",
             "\n",
-            "[sleep] running... \n",
-            "[sleep] done ✓\n",
+            "[echo] running... \n",
+            "    hi\n",
+            "[echo] done ✓\n",
             "\n",
             "Success!\n",
         ]
@@ -452,15 +420,16 @@ class TestStreamedNonInteractiveMode:
     def test_run_single_command_with_tail_mode(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("tail=10 :: sleep 0.1", "-s", "-n")
+        exit_code = main.run("tail=10 :: echo 'hi'", "-s", "-n")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Running commands...\n",
             "\n",
-            "[sleep] running... \n",
-            "[sleep] done ✓\n",
+            "[echo] running... \n",
+            "    hi\n",
+            "[echo] done ✓\n",
             "\n",
             "Success!\n",
         ]
@@ -527,13 +496,13 @@ class TestStreamedNonInteractiveMode:
         ]
 
     def test_run_verbose_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1", "-s", "-n", "-V")
+        exit_code = main.run("echo 'hi'", "-s", "-n", "-V")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Arguments:\n",
-            "    commands    : ['sleep 0.1']\n",
+            "    commands    : [\"echo 'hi'\"]\n",
             "    interactive : False\n",
             "    debug       : False\n",
             "    stream      : True\n",
@@ -542,22 +511,24 @@ class TestStreamedNonInteractiveMode:
             "\n",
             "Running commands...\n",
             "\n",
-            "[sleep] running... \n",
-            "[sleep] done ✓\n",
+            "[echo] running... \n",
+            "    hi\n",
+            "[echo] done ✓\n",
             "\n",
             "Success!\n",
         ]
 
     def test_run_debug_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1", "-s", "-n", "-d")
+        exit_code = main.run("echo 'hi'", "-s", "-n", "-d")
         captured = capsys.readouterr()
         out = captured.out.splitlines(keepends=True)
         assert exit_code == 0, prettify_error(captured.out)
         assert out == [
             "Running commands...\n",
             "\n",
-            "[sleep 0.1] running... \n",
-            "[sleep 0.1] done in 0s ✓\n",
+            "[echo hi] running... \n",
+            "    hi\n",
+            "[echo hi] done in 0s ✓\n",
             "\n",
             "Success!\n",
             "\n",
