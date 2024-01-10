@@ -43,4 +43,4 @@ jobs:
 
       - name: Run pyallel
         run: |
-          PYTHONPATH=./src pyallel "MYPY_FORCE_COLOR=1 mypy ." "pytest ."
+          PYTHONPATH=./src pyallel "MYPY_FORCE_COLOR=1 mypy ." "pytest ." --non-interactive
