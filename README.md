@@ -2,6 +2,8 @@
 
 Run and handle the output of multiple executables in `pyallel` (as in parallel)
 
+https://github.com/Danthewaann/pyallel/assets/22531177/be12efc4-439d-416d-8112-dc57cc4c291a
+
 Requires Python >=3.8
 
 Tested on Linux and MacOS only
