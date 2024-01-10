@@ -65,7 +65,7 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [x] Add CI checks to run the tests and linters against Python versions > 3.8
 - [x] Add command mode arguments to support things like only tailing the last 10 lines
       of a command whilst it is running e.g. `"tail=10 :: pytest ."`
-- [ ] Add visual examples of `pyallel` in action
+- [x] Add visual examples of `pyallel` in action
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
       `errorformat`)
 - [ ] Add graceful Ctrl-C interrupt handling
