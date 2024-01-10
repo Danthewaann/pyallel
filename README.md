@@ -66,6 +66,7 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [ ] Add visual examples of `pyallel` in action
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
       `errorformat`)
+- [ ] Add graceful Ctrl-C interrupt handling
 - [x] Provide a way to set environment variables for each command to run with
 - [ ] Allow list of files to be provided to supply as input arguments to each command
 - [ ] Allow input to be piped into `pyallel` via stdin to supply as standard input to each
