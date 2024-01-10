@@ -156,6 +156,35 @@ class TestNonStreamedMode:
             "Time taken : 0s\n",
         ]
 
+    def test_handles_invalid_executable(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run("invalid_exe", "-s")
+        captured = capsys.readouterr()
+        out = captured.out.splitlines(keepends=True)
+        assert exit_code == 1, prettify_error(captured.out)
+        assert out == [
+            "Error: executables [invalid_exe] were not found\n",
+        ]
+
+    def test_handles_many_invalid_executables(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("invalid_exe", "other_invalid_exe", "-s")
+        captured = capsys.readouterr()
+        out = captured.out.splitlines(keepends=True)
+        assert exit_code == 1, prettify_error(captured.out)
+        assert out == [
+            "Error: executables [invalid_exe, other_invalid_exe] were not found\n",
+        ]
+
+    def test_does_not_run_executables_on_parsing_error(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10", "-s")
+        captured = capsys.readouterr()
+        assert exit_code == 1, prettify_error(captured.out)
+        status = subprocess.run(["pgrep", "sleep"])
+        assert status.returncode == 1, "sleep shouldn't be running!"
+
 
 class TestNonStreamedNonInteractiveMode:
     def test_run_single_command(self, capsys: CaptureFixture[str]) -> None:
@@ -308,6 +337,35 @@ class TestNonStreamedNonInteractiveMode:
             "Time taken : 0s\n",
         ]
 
+    def test_handles_invalid_executable(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run("invalid_exe", "-n", "-s")
+        captured = capsys.readouterr()
+        out = captured.out.splitlines(keepends=True)
+        assert exit_code == 1, prettify_error(captured.out)
+        assert out == [
+            "Error: executables [invalid_exe] were not found\n",
+        ]
+
+    def test_handles_many_invalid_executables(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("invalid_exe", "other_invalid_exe", "-n", "-s")
+        captured = capsys.readouterr()
+        out = captured.out.splitlines(keepends=True)
+        assert exit_code == 1, prettify_error(captured.out)
+        assert out == [
+            "Error: executables [invalid_exe, other_invalid_exe] were not found\n",
+        ]
+
+    def test_does_not_run_executables_on_parsing_error(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10", "-n", "-s")
+        captured = capsys.readouterr()
+        assert exit_code == 1, prettify_error(captured.out)
+        status = subprocess.run(["pgrep", "sleep"])
+        assert status.returncode == 1, "sleep shouldn't be running!"
+
 
 class TestStreamedMode:
     """Test streamed mode with interactivity
@@ -372,6 +430,39 @@ class TestStreamedMode:
         exit_code = main.run("echo 'hi'", "-d")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
+
+    def test_handles_invalid_executable(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run("invalid_exe")
+        captured = capsys.readouterr()
+        out = captured.out.splitlines(keepends=True)
+        assert exit_code == 1, prettify_error(captured.out)
+        assert out == [
+            "Error: executables [invalid_exe] were not found\n",
+        ]
+
+    def test_handles_many_invalid_executables(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("invalid_exe", "other_invalid_exe")
+        captured = capsys.readouterr()
+        out = captured.out.splitlines(keepends=True)
+        assert exit_code == 1, prettify_error(captured.out)
+        assert out == [
+            "Error: executables [invalid_exe, other_invalid_exe] were not found\n",
+        ]
+
+    def test_does_not_run_executables_on_parsing_error(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10")
+        captured = capsys.readouterr()
+        out = captured.out.splitlines(keepends=True)
+        assert exit_code == 1, prettify_error(captured.out)
+        assert out == [
+            "Error: executables [invalid_exe, other_invalid_exe] were not found\n",
+        ]
+        status = subprocess.run(["pgrep", "sleep"])
+        assert status.returncode == 1, "sleep shouldn't be running!"
 
 
 class TestStreamedNonInteractiveMode:
@@ -535,30 +626,31 @@ class TestStreamedNonInteractiveMode:
             "Time taken : 0s\n",
         ]
 
+    def test_handles_invalid_executable(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run("invalid_exe", "-n")
+        captured = capsys.readouterr()
+        out = captured.out.splitlines(keepends=True)
+        assert exit_code == 1, prettify_error(captured.out)
+        assert out == [
+            "Error: executables [invalid_exe] were not found\n",
+        ]
 
-def test_handles_invalid_executable(capsys: CaptureFixture[str]) -> None:
-    exit_code = main.run("invalid_exe")
-    captured = capsys.readouterr()
-    out = captured.out.splitlines(keepends=True)
-    assert exit_code == 1, prettify_error(captured.out)
-    assert out == [
-        "Error: executables [invalid_exe] were not found\n",
-    ]
+    def test_handles_many_invalid_executables(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("invalid_exe", "other_invalid_exe", "-n")
+        captured = capsys.readouterr()
+        out = captured.out.splitlines(keepends=True)
+        assert exit_code == 1, prettify_error(captured.out)
+        assert out == [
+            "Error: executables [invalid_exe, other_invalid_exe] were not found\n",
+        ]
 
-
-def test_handles_many_invalid_executables(capsys: CaptureFixture[str]) -> None:
-    exit_code = main.run("invalid_exe", "other_invalid_exe")
-    captured = capsys.readouterr()
-    out = captured.out.splitlines(keepends=True)
-    assert exit_code == 1, prettify_error(captured.out)
-    assert out == [
-        "Error: executables [invalid_exe, other_invalid_exe] were not found\n",
-    ]
-
-
-def test_does_not_run_executables_on_parsing_error(capsys: CaptureFixture[str]) -> None:
-    exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10")
-    captured = capsys.readouterr()
-    assert exit_code == 1, prettify_error(captured.out)
-    status = subprocess.run(["pgrep", "sleep"])
-    assert status.returncode == 1, "sleep shouldn't be running!"
+    def test_does_not_run_executables_on_parsing_error(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10", "-n")
+        captured = capsys.readouterr()
+        assert exit_code == 1, prettify_error(captured.out)
+        status = subprocess.run(["pgrep", "sleep"])
+        assert status.returncode == 1, "sleep shouldn't be running!"
