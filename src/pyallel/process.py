@@ -16,7 +16,13 @@ from pyallel.errors import InvalidExecutableErrors, InvalidExecutableError
 
 
 def indent(output: str) -> str:
-    return "\n".join("    " + line for line in output.splitlines())
+    length = 200
+    indented_output = []
+    for line in output.splitlines():
+        if len(line) > length:
+            line = line[:length] + "..."
+        indented_output.append(line)
+    return "\n".join("    " + line for line in indented_output)
 
 
 def format_time_taken(time_taken: float) -> str:
