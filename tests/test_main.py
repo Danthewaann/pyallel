@@ -182,7 +182,7 @@ class TestNonStreamedMode:
         exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10", "-s")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
-        status = subprocess.run(["pgrep", "sleep"])
+        status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
         assert status.returncode == 1, "sleep shouldn't be running!"
 
 
@@ -363,7 +363,7 @@ class TestNonStreamedNonInteractiveMode:
         exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10", "-n", "-s")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
-        status = subprocess.run(["pgrep", "sleep"])
+        status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
         assert status.returncode == 1, "sleep shouldn't be running!"
 
 
@@ -461,7 +461,7 @@ class TestStreamedMode:
         assert out == [
             "Error: executables [invalid_exe, other_invalid_exe] were not found\n",
         ]
-        status = subprocess.run(["pgrep", "sleep"])
+        status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
         assert status.returncode == 1, "sleep shouldn't be running!"
 
 
@@ -652,5 +652,5 @@ class TestStreamedNonInteractiveMode:
         exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10", "-n")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
-        status = subprocess.run(["pgrep", "sleep"])
+        status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
         assert status.returncode == 1, "sleep shouldn't be running!"
