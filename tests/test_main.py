@@ -126,8 +126,8 @@ class TestNonStreamedMode:
         assert out == [
             "Arguments:\n",
             "    commands    : [\"echo 'hi'\"]\n",
-            "    interactive : True\n",
             "    debug       : False\n",
+            "    interactive : True\n",
             "    stream      : False\n",
             "    verbose     : True\n",
             "    version     : False\n",
@@ -278,8 +278,8 @@ class TestNonStreamedNonInteractiveMode:
         assert out == [
             "Arguments:\n",
             "    commands    : [\"echo 'hi'\"]\n",
-            "    interactive : False\n",
             "    debug       : False\n",
+            "    interactive : False\n",
             "    stream      : False\n",
             "    verbose     : True\n",
             "    version     : False\n",
@@ -503,8 +503,8 @@ class TestStreamedNonInteractiveMode:
         assert out == [
             "Arguments:\n",
             "    commands    : [\"echo 'hi'\"]\n",
-            "    interactive : False\n",
             "    debug       : False\n",
+            "    interactive : False\n",
             "    stream      : True\n",
             "    verbose     : True\n",
             "    version     : False\n",

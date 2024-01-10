@@ -16,8 +16,32 @@ pip install pyallel
 
 Once installed, you can run `pyallel` to see usage information, like so:
 
-```bash
-pyallel
+```
+usage: pyallel [-h] [-d] [-n] [-s] [-V] [-v] [commands ...]
+
+Run and handle the output of multiple executables in pyallel (as in parallel)
+
+positional arguments:
+  commands              list of quoted commands to run e.g "mypy ." "black ."
+
+                        can provide environment variables to each command like so:
+
+                             "MYPY_FORCE_COLOR=1 mypy ."
+
+                        command modes:
+
+                        can also provide modes to commands to do extra things:
+
+                            "tail=10 :: pytest ." <-- only output the last 10 lines, doesn't work in --no-stream mode
+
+options:
+  -h, --help            show this help message and exit
+  -d, --debug           output debug info for each command
+  -n, --non-interactive
+                        run in non-interactive mode
+  -s, --no-stream       don't stream output of each command
+  -V, --verbose         run in verbose mode
+  -v, --version         print version and exit
 ```
 
 Currently you can provide a variable number of `commands` to run to `pyallel`, like so:
@@ -26,7 +50,9 @@ Currently you can provide a variable number of `commands` to run to `pyallel`, l
 > If you need to provide arguments to a command, you must surround the command and it's arguments in quotes!
 
 ```bash
-pyallel "black --color --check --diff ." "MYPY_FORCE_COLOR=1 mypy ." "ruff check --no-fix ."
+pyallel "MYPY_FORCE_COLOR=1 mypy ." \
+        "black --check --diff ." \
+        "tail=20 :: pytest ."
 ```
 
 ## TODOs

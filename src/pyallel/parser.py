@@ -29,7 +29,7 @@ command modes:
 
 can also provide modes to commands to do extra things:
 
-    "tail=10 :: pytest ." <-- only output the last 10 lines, only works in --stream mode
+    "tail=10 :: pytest ." <-- only output the last 10 lines, doesn't work in --no-stream mode
 """
 
 
@@ -45,19 +45,19 @@ def create_parser() -> ArgumentParser:
         nargs="*",
     )
     parser.add_argument(
+        "-d",
+        "--debug",
+        help="output debug info for each command",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
         "-n",
         "--non-interactive",
         help="run in non-interactive mode",
         action="store_false",
         dest="interactive",
         default=True,
-    )
-    parser.add_argument(
-        "-d",
-        "--debug",
-        help="output debug info for each command",
-        action="store_true",
-        default=False,
     )
     parser.add_argument(
         "-s",
