@@ -106,7 +106,6 @@ def run_process(process: Process, debug: bool = False) -> bool:
 @dataclass
 class ProcessGroup:
     processes: list[Process]
-    fail_fast: bool = False
     interactive: bool = False
     debug: bool = False
     output: dict[UUID, str] = field(default_factory=dict)
@@ -138,8 +137,6 @@ class ProcessGroup:
                 process_passed = run_process(process, debug=self.debug)
                 if not process_passed:
                     passed = False
-                    if self.fail_fast:
-                        return False
 
             if len(completed_processes) == len(self.processes):
                 break
@@ -163,6 +160,8 @@ class ProcessGroup:
             for i, process in enumerate(self.processes, start=1):
                 if process.poll() is not None:
                     completed_processes.add(process.id)
+                    if process.return_code() != 0:
+                        passed = False
                     output += get_command_status(
                         process,
                         passed=process.return_code() == 0,
@@ -171,8 +170,6 @@ class ProcessGroup:
                     )
                     output += "\n"
                 else:
-                    if not process.return_code() == 0:
-                        passed = False
                     output += get_command_status(
                         process,
                         icon=constants.ICONS[icon],
@@ -271,7 +268,6 @@ class ProcessGroup:
         cls,
         commands: list[str],
         interactive: bool = False,
-        fail_fast: bool = False,
         debug: bool = False,
     ) -> ProcessGroup:
         processes: list[Process] = []
@@ -289,7 +285,6 @@ class ProcessGroup:
         return cls(
             processes=processes,
             interactive=interactive,
-            fail_fast=fail_fast,
             debug=debug,
         )
 

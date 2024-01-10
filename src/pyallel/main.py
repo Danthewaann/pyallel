@@ -11,13 +11,12 @@ from pyallel import constants
 
 def main_loop(
     commands: list[str],
-    fail_fast: bool = False,
     interactive: bool = False,
     debug: bool = False,
     stream: bool = False,
 ) -> bool:
     process_group = ProcessGroup.from_commands(
-        commands, interactive=interactive, fail_fast=fail_fast, debug=debug
+        commands, interactive=interactive, debug=debug
     )
     if not stream:
         return process_group.run()
@@ -48,7 +47,6 @@ def run(*args: str) -> int:
     try:
         status = main_loop(
             parsed_args.commands,
-            parsed_args.fail_fast,
             parsed_args.interactive,
             parsed_args.debug,
             parsed_args.stream,

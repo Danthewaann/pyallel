@@ -5,7 +5,6 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 
 class Arguments:
     commands: list[str]
-    fail_fast: bool
     interactive: bool
     debug: bool
     verbose: bool
@@ -44,13 +43,6 @@ def create_parser() -> ArgumentParser:
         "commands",
         help=COMMANDS_HELP,
         nargs="*",
-    )
-    parser.add_argument(
-        "-f",
-        "--fail-fast",
-        help="exit immediately when a command fails",
-        action="store_true",
-        default=False,
     )
     parser.add_argument(
         "-n",
