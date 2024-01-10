@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import sys
+import traceback
 import time
 import importlib.metadata
+from pyallel.errors import InvalidExecutableErrors
 
 from pyallel.parser import Arguments, create_parser
 from pyallel.process import ProcessGroup, format_time_taken
@@ -51,9 +53,12 @@ def run(*args: str) -> int:
             parsed_args.debug,
             parsed_args.stream,
         )
-    except Exception as e:
+    except InvalidExecutableErrors as e:
         status = False
         message = str(e)
+    except Exception:
+        status = False
+        message = traceback.format_exc()
 
     if not status:
         if not message:

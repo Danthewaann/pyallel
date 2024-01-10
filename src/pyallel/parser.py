@@ -61,10 +61,11 @@ def create_parser() -> ArgumentParser:
     )
     parser.add_argument(
         "-s",
-        "--stream",
-        help="stream output of first command",
-        action="store_true",
-        default=False,
+        "--no-stream",
+        help="don't stream output of each command",
+        action="store_false",
+        default=True,
+        dest="stream",
     )
     parser.add_argument(
         "-V",
