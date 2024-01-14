@@ -6,7 +6,6 @@ import tempfile
 import shlex
 import shutil
 import os
-from pathlib import Path
 from uuid import UUID, uuid4
 from typing import BinaryIO
 from pyallel import constants
@@ -185,13 +184,14 @@ class ProcessGroup:
                     output += "\n"
 
                 process_output = process.read().decode()
-                if process_output:
-                    self.output[process.id] = process_output
+                if process.id not in self.output:
+                    self.output[process.id] = ""
+                self.output[process.id] += process_output
+                out = self.output[process.id]
+                if out:
                     if process.tail_mode.enabled:
-                        process_output = "\n".join(
-                            process_output.splitlines()[-process.tail_mode.lines :]
-                        )
-                    output += indent(process_output)
+                        out = "\n".join(out.splitlines()[-process.tail_mode.lines :])
+                    output += indent(out)
                     output += "\n"
                     if i != len(self.processes):
                         output += "\n"
@@ -311,7 +311,6 @@ class Process:
     end: float = 0.0
     process: subprocess.Popen[bytes] | None = None
     output: bytes = b""
-    fd_name: Path | None = None
     fd_read: BinaryIO | None = None
     fd: int | None = None
     tail_mode: TailMode = field(default_factory=TailMode)
@@ -319,7 +318,7 @@ class Process:
     def run(self) -> None:
         self.start = time.perf_counter()
         self.fd, fd_name = tempfile.mkstemp()
-        self.fd_name = Path(fd_name)
+        self.fd_read = open(fd_name, "rb")
         self.process = subprocess.Popen(
             [self.name, *self.args],
             stdout=self.fd,
@@ -340,14 +339,12 @@ class Process:
         return None
 
     def read(self) -> bytes:
-        if self.fd_name:
-            return self.fd_name.read_bytes()
+        if self.fd_read:
+            return self.fd_read.read()
         return b""
 
     def readline(self) -> bytes:
-        if self.fd_name:
-            if not self.fd_read:
-                self.fd_read = open(self.fd_name, "rb")
+        if self.fd_read:
             return self.fd_read.readline()
         return b""
 
