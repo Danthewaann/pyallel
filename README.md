@@ -66,6 +66,14 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [x] Add command mode arguments to support things like only tailing the last 10 lines
       of a command whilst it is running e.g. `"tail=10 :: pytest ."`
 - [x] Add visual examples of `pyallel` in action
+- [ ] Fix bug in non-interactive streamed mode where all commands share the same amount of
+      time taken as the longest running command
+- [ ] Fix bug in non-interactive streamed mode where calling `readline` doesn't
+      account for `EOF` (if we are at `EOF` we shouldn't append a newline as more output could
+      be appended to the current line)
+- [ ] Fix bug in streamed mode where we should use the number of terminal columns when
+      determining when to truncate the line to fit within the screen (or properly handle wrapped
+      lines)
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
       `errorformat`)
 - [ ] Add graceful Ctrl-C interrupt handling
