@@ -1,6 +1,8 @@
+import os
 import sys
 
 IN_TTY = sys.__stdin__.isatty()
+
 
 if IN_TTY:
     WHITE_BOLD = "\033[1m"
@@ -14,6 +16,10 @@ if IN_TTY:
     UP_LINE = "\033[1F"
     NC = "\033[0m"
     CR = "\r"
+
+    def COLUMNS() -> int:
+        return os.get_terminal_size().columns
+
 else:
     WHITE_BOLD = ""
     GREEN_BOLD = ""
@@ -26,6 +32,9 @@ else:
     UP_LINE = ""
     NC = ""
     CR = ""
+
+    def COLUMNS() -> int:
+        return sys.maxsize
 
 
 ICONS = ("/", "-", "\\", "|")

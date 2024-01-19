@@ -71,7 +71,7 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [ ] Fix bug in non-interactive streamed mode where calling `readline` doesn't
       account for `EOF` (if we are at `EOF` we shouldn't append a newline as more output could
       be appended to the current line)
-- [ ] Fix bug in streamed mode where we should use the number of terminal columns when
+- [x] Fix bug in streamed mode where we should use the number of terminal columns when
       determining when to truncate the line to fit within the screen (or properly handle wrapped
       lines)
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's

@@ -14,14 +14,17 @@ from dataclasses import dataclass, field
 from pyallel.errors import InvalidExecutableErrors, InvalidExecutableError
 
 
-def indent(output: str) -> str:
-    length = 200
-    indented_output = []
+def get_num_lines(output: str, columns: int | None = None) -> int:
+    lines = 0
+    columns = columns or constants.COLUMNS()
     for line in output.splitlines():
-        if len(line) > length:
-            line = line[:length] + "..."
-        indented_output.append(line)
-    return "\n".join("    " + line for line in indented_output)
+        length = len(line)
+        lines += 1 * (length % columns + 1 if length > columns else 1)
+    return lines
+
+
+def indent(output: str) -> str:
+    return "\n".join("    " + line for line in output.splitlines())
 
 
 def format_time_taken(time_taken: float) -> str:
@@ -91,7 +94,7 @@ def get_command_status(
 def print_command_output(process: Process) -> None:
     output = process.read()
     if output:
-        print(f"{indent(output.decode())}")
+        print(indent(output.decode()))
     print()
 
 
@@ -158,10 +161,12 @@ class ProcessGroup:
         completed_processes: set[UUID] = set()
         passed = True
         icon = 0
+        num_processes = len(self.processes)
 
         print("\033 7", end="")
         while True:
             output = ""
+            lines = num_processes
             for i, process in enumerate(self.processes, start=1):
                 if process.poll() is not None:
                     completed_processes.add(process.id)
@@ -201,7 +206,8 @@ class ProcessGroup:
                 icon = 0
 
             print(output)
-            lines = len(output.splitlines()) + len(self.processes)
+
+            lines += get_num_lines(output)
             for _ in range(lines - (len(self.processes) - 1)):
                 print(
                     f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}",
