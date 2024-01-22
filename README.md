@@ -66,7 +66,7 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [x] Add command mode arguments to support things like only tailing the last 10 lines
       of a command whilst it is running e.g. `"tail=10 :: pytest ."`
 - [x] Add visual examples of `pyallel` in action
-- [ ] Fix bug in non-interactive streamed mode where all commands share the same amount of
+- [x] Fix bug in non-interactive streamed mode where all commands share the same amount of
       time taken as the longest running command
 - [ ] Fix bug in non-interactive streamed mode where calling `readline` doesn't
       account for `EOF` (if we are at `EOF` we shouldn't append a newline as more output could

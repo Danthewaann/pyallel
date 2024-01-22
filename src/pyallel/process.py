@@ -239,6 +239,9 @@ class ProcessGroup:
                     output += "\n"
                     running_process = process
                 elif running_process is not process:
+                    # Need to do this to properly keep track of how long all the other
+                    # commands are taking
+                    process.poll()
                     continue
 
                 process_output = process.readline().decode()

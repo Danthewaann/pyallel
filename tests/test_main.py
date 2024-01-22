@@ -626,6 +626,28 @@ class TestStreamedNonInteractiveMode:
             "Time taken : 0s\n",
         ]
 
+    def test_run_debug_mode_with_longer_first_command(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("sleep 1", "echo 'hi'", "-n", "-d")
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        want = [
+            "Running commands...\n",
+            "\n",
+            "[sleep 1] running... \n",
+            "[sleep 1] done in 1s ✓\n",
+            "\n",
+            "[echo hi] running... \n",
+            "    hi\n",
+            "[echo hi] done in 0s ✓\n",
+            "\n",
+            "Success!\n",
+            "\n",
+            "Time taken : 1s\n",
+        ]
+        assert captured.out == "".join(want)
+
     def test_handles_invalid_executable(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("invalid_exe", "-n")
         captured = capsys.readouterr()
