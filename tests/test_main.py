@@ -2,6 +2,8 @@ import subprocess
 from pyallel import main
 from pytest import CaptureFixture
 
+import pytest
+
 
 def prettify_error(out: str) -> str:
     return f"Got an error\n\n{out}"
@@ -162,6 +164,49 @@ class TestNonStreamedMode:
                 "Success!\n",
                 "\n",
                 "Time taken : 0s\n",
+            ]
+        )
+
+    @pytest.mark.parametrize("wait", ["0.1", "0.5"])
+    def test_handles_single_command_output_with_delayed_newlines(
+        self, capsys: CaptureFixture[str], wait: str
+    ) -> None:
+        exit_code = main.run(f"sh -c 'echo -n hi; sleep {wait}; echo bye'", "-s")
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        assert captured.out == "".join(
+            [
+                "Running commands...\n",
+                "\n",
+                "[sh] done ✓\n",
+                "    hibye\n",
+                "\n",
+                "Success!\n",
+            ]
+        )
+
+    @pytest.mark.parametrize("wait", ["0.1", "0.5"])
+    def test_handles_multiple_command_output_with_delayed_newlines(
+        self, capsys: CaptureFixture[str], wait: str
+    ) -> None:
+        exit_code = main.run(
+            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
+            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
+            "-s",
+        )
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        assert captured.out == "".join(
+            [
+                "Running commands...\n",
+                "\n",
+                "[sh] done ✓\n",
+                "    hibye\n",
+                "\n",
+                "[sh] done ✓\n",
+                "    hibye\n",
+                "\n",
+                "Success!\n",
             ]
         )
 
@@ -353,6 +398,50 @@ class TestNonStreamedNonInteractiveMode:
                 "Success!\n",
                 "\n",
                 "Time taken : 0s\n",
+            ]
+        )
+
+    @pytest.mark.parametrize("wait", ["0.1", "0.5"])
+    def test_handles_single_command_output_with_delayed_newlines(
+        self, capsys: CaptureFixture[str], wait: str
+    ) -> None:
+        exit_code = main.run(f"sh -c 'echo -n hi; sleep {wait}; echo bye'", "-n", "-s")
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        assert captured.out == "".join(
+            [
+                "Running commands...\n",
+                "\n",
+                "[sh] done ✓\n",
+                "    hibye\n",
+                "\n",
+                "Success!\n",
+            ]
+        )
+
+    @pytest.mark.parametrize("wait", ["0.1", "0.5"])
+    def test_handles_multiple_command_output_with_delayed_newlines(
+        self, capsys: CaptureFixture[str], wait: str
+    ) -> None:
+        exit_code = main.run(
+            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
+            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
+            "-n",
+            "-s",
+        )
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        assert captured.out == "".join(
+            [
+                "Running commands...\n",
+                "\n",
+                "[sh] done ✓\n",
+                "    hibye\n",
+                "\n",
+                "[sh] done ✓\n",
+                "    hibye\n",
+                "\n",
+                "Success!\n",
             ]
         )
 
@@ -673,6 +762,52 @@ class TestStreamedNonInteractiveMode:
                 "Success!\n",
                 "\n",
                 "Time taken : 1s\n",
+            ]
+        )
+
+    @pytest.mark.parametrize("wait", ["0.1", "0.5"])
+    def test_handles_single_command_output_with_delayed_newlines(
+        self, capsys: CaptureFixture[str], wait: str
+    ) -> None:
+        exit_code = main.run(f"sh -c 'echo -n hi; sleep {wait}; echo bye'", "-n")
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        assert captured.out == "".join(
+            [
+                "Running commands...\n",
+                "\n",
+                "[sh] running... \n",
+                "    hibye\n",
+                "[sh] done ✓\n",
+                "\n",
+                "Success!\n",
+            ]
+        )
+
+    @pytest.mark.parametrize("wait", ["0.1", "0.5"])
+    def test_handles_multiple_command_output_with_delayed_newlines(
+        self, capsys: CaptureFixture[str], wait: str
+    ) -> None:
+        exit_code = main.run(
+            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
+            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
+            "-n",
+        )
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        assert captured.out == "".join(
+            [
+                "Running commands...\n",
+                "\n",
+                "[sh] running... \n",
+                "    hibye\n",
+                "[sh] done ✓\n",
+                "\n",
+                "[sh] running... \n",
+                "    hibye\n",
+                "[sh] done ✓\n",
+                "\n",
+                "Success!\n",
             ]
         )
 

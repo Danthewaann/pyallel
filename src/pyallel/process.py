@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import defaultdict
 
 import time
 import subprocess
@@ -23,8 +24,11 @@ def get_num_lines(output: str, columns: int | None = None) -> int:
     return lines
 
 
-def indent(output: str) -> str:
-    return "\n".join("    " + line for line in output.splitlines())
+def indent(output: str, keepend: bool = True) -> str:
+    indented_output = "\n".join("    " + line for line in output.splitlines())
+    if keepend and output[-1] == "\n":
+        indented_output += "\n"
+    return indented_output
 
 
 def format_time_taken(time_taken: float) -> str:
@@ -94,7 +98,7 @@ def get_command_status(
 def print_command_output(process: Process) -> None:
     output = process.read()
     if output:
-        print(indent(output.decode()))
+        print(indent(output.decode(), keepend=False))
     print()
 
 
@@ -197,7 +201,6 @@ class ProcessGroup:
                     if process.tail_mode.enabled:
                         out = "\n".join(out.splitlines()[-process.tail_mode.lines :])
                     output += indent(out)
-                    output += "\n"
                     if i != len(self.processes):
                         output += "\n"
 
@@ -228,6 +231,7 @@ class ProcessGroup:
         completed_processes: set[UUID] = set()
         passed = True
         running_process = None
+        outputs: dict[UUID, list[str]] = defaultdict(list)
 
         print(f"{constants.WHITE_BOLD}Running commands...{constants.NC}\n")
 
@@ -245,9 +249,18 @@ class ProcessGroup:
                     continue
 
                 process_output = process.readline().decode()
-                if process_output:
-                    output += indent(process_output)
-                    output += "\n"
+
+                if not outputs[process.id] and process_output:
+                    process_output = indent(process_output)
+                    outputs[process.id].append(process_output)
+                    output += process_output
+                elif process_output:
+                    if outputs[process.id][-1][-1] != "\n":
+                        outputs[process.id][-1] += process_output
+                    else:
+                        process_output = indent(process_output)
+                        outputs[process.id].append(process_output)
+                    output += process_output
 
                 if process.poll() is not None:
                     if process.return_code() != 0:
@@ -255,7 +268,6 @@ class ProcessGroup:
                     process_output_2 = process.readline().decode()
                     while process_output_2:
                         output += indent(process_output_2)
-                        output += "\n"
                         process_output_2 = process.readline().decode()
 
                     output += get_command_status(
@@ -274,7 +286,7 @@ class ProcessGroup:
             if len(completed_processes) == len(self.processes):
                 break
 
-            time.sleep(0.05)
+            time.sleep(0.01)
 
         return passed
 

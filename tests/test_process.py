@@ -93,6 +93,19 @@ def test_readline_with_read() -> None:
     assert output == b"second\n"
 
 
+def test_readline_handles_delayed_newline() -> None:
+    process = Process.from_command(
+        'sh -c \'echo -n "first"; sleep 0.1; echo "second"\''
+    )
+    process.run()
+    time.sleep(0.01)
+    output = process.readline()
+    assert output == b"first"
+    time.sleep(0.1)
+    output = process.readline()
+    assert output == b"second\n"
+
+
 @pytest.mark.parametrize(
     "output,expected",
     (

@@ -68,7 +68,7 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [x] Add visual examples of `pyallel` in action
 - [x] Fix bug in non-interactive streamed mode where all commands share the same amount of
       time taken as the longest running command
-- [ ] Fix bug in non-interactive streamed mode where calling `readline` doesn't
+- [x] Fix bug in non-interactive streamed mode where calling `readline` doesn't
       account for `EOF` (if we are at `EOF` we shouldn't append a newline as more output could
       be appended to the current line)
 - [x] Fix bug in streamed mode where we should use the number of terminal columns when
