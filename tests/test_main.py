@@ -163,7 +163,7 @@ class TestNonStreamedMode:
     def test_handles_single_command_output_with_delayed_newlines(
         self, capsys: CaptureFixture[str], wait: str
     ) -> None:
-        exit_code = main.run(f"sh -c 'echo -n hi; sleep {wait}; echo bye'", "-s")
+        exit_code = main.run(f"sh -c 'printf hi; sleep {wait}; echo bye'", "-s")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
@@ -182,8 +182,8 @@ class TestNonStreamedMode:
         self, capsys: CaptureFixture[str], wait: str
     ) -> None:
         exit_code = main.run(
-            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
-            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
+            f"sh -c 'printf hi; sleep {wait}; echo bye'",
+            f"sh -c 'printf hi; sleep {wait}; echo bye'",
             "-s",
         )
         captured = capsys.readouterr()
@@ -389,7 +389,7 @@ class TestNonStreamedNonInteractiveMode:
     def test_handles_single_command_output_with_delayed_newlines(
         self, capsys: CaptureFixture[str], wait: str
     ) -> None:
-        exit_code = main.run(f"sh -c 'echo -n hi; sleep {wait}; echo bye'", "-n", "-s")
+        exit_code = main.run(f"sh -c 'printf hi; sleep {wait}; echo bye'", "-n", "-s")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
@@ -408,8 +408,8 @@ class TestNonStreamedNonInteractiveMode:
         self, capsys: CaptureFixture[str], wait: str
     ) -> None:
         exit_code = main.run(
-            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
-            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
+            f"sh -c 'printf hi; sleep {wait}; echo bye'",
+            f"sh -c 'printf hi; sleep {wait}; echo bye'",
             "-n",
             "-s",
         )
@@ -744,7 +744,7 @@ class TestStreamedNonInteractiveMode:
     def test_handles_single_command_output_with_delayed_newlines(
         self, capsys: CaptureFixture[str], wait: str
     ) -> None:
-        exit_code = main.run(f"sh -c 'echo -n hi; sleep {wait}; echo bye'", "-n")
+        exit_code = main.run(f"sh -c 'printf hi; sleep {wait}; echo bye'", "-n")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
@@ -764,8 +764,8 @@ class TestStreamedNonInteractiveMode:
         self, capsys: CaptureFixture[str], wait: str
     ) -> None:
         exit_code = main.run(
-            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
-            f"sh -c 'echo -n hi; sleep {wait}; echo bye'",
+            f"sh -c 'printf hi; sleep {wait}; echo bye'",
+            f"sh -c 'printf hi; sleep {wait}; echo bye'",
             "-n",
         )
         captured = capsys.readouterr()

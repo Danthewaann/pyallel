@@ -94,9 +94,7 @@ def test_readline_with_read() -> None:
 
 
 def test_readline_handles_delayed_newline() -> None:
-    process = Process.from_command(
-        'sh -c \'echo -n "first"; sleep 0.1; echo "second"\''
-    )
+    process = Process.from_command('sh -c \'printf "first"; sleep 0.1; echo "second"\'')
     process.run()
     time.sleep(0.01)
     output = process.readline()
