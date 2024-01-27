@@ -102,15 +102,15 @@ def print_command_output(process: Process) -> None:
     print()
 
 
-def run_process(process: Process, debug: bool = False, verbose: bool = False) -> bool:
+def run_process(process: Process, timer: bool = False, verbose: bool = False) -> bool:
     print(f"{constants.CLEAR_LINE}{constants.CR}", end="")
 
     if process.return_code() != 0:
-        print(get_command_status(process, passed=False, verbose=verbose, timer=debug))
+        print(get_command_status(process, passed=False, verbose=verbose, timer=timer))
         print_command_output(process)
         return False
     else:
-        print(get_command_status(process, passed=True, verbose=verbose, timer=debug))
+        print(get_command_status(process, passed=True, verbose=verbose, timer=timer))
         print_command_output(process)
         return True
 
@@ -119,7 +119,7 @@ def run_process(process: Process, debug: bool = False, verbose: bool = False) ->
 class ProcessGroup:
     processes: list[Process]
     interactive: bool = False
-    debug: bool = False
+    timer: bool = False
     verbose: bool = False
     output: dict[UUID, list[str]] = field(default_factory=lambda: defaultdict(list))
     completed_processes: set[UUID] = field(default_factory=set)
@@ -148,7 +148,7 @@ class ProcessGroup:
 
                 self.completed_processes.add(process.id)
                 process_passed = run_process(
-                    process, verbose=self.verbose, debug=self.debug
+                    process, verbose=self.verbose, timer=self.timer
                 )
                 if not process_passed:
                     self.passed = False
@@ -241,7 +241,7 @@ class ProcessGroup:
                         process,
                         passed=process.return_code() == 0,
                         verbose=self.verbose,
-                        timer=self.debug,
+                        timer=self.timer,
                     )
                     output += "\n\n"
                     self.completed_processes.add(process.id)
@@ -262,7 +262,7 @@ class ProcessGroup:
         cls,
         *commands: str,
         interactive: bool = False,
-        debug: bool = False,
+        timer: bool = False,
         verbose: bool = False,
     ) -> ProcessGroup:
         processes: list[Process] = []
@@ -280,7 +280,7 @@ class ProcessGroup:
         return cls(
             processes=processes,
             interactive=interactive,
-            debug=debug,
+            timer=timer,
             verbose=verbose,
         )
 
@@ -295,7 +295,7 @@ class ProcessGroup:
                     process,
                     passed=process.return_code() == 0,
                     verbose=self.verbose,
-                    timer=self.debug,
+                    timer=self.timer,
                 )
                 output += "\n"
             else:
@@ -303,7 +303,7 @@ class ProcessGroup:
                     process,
                     icon=constants.ICONS[self.icon],
                     verbose=self.verbose,
-                    timer=self.debug,
+                    timer=self.timer,
                 )
                 output += "\n"
 

@@ -6,7 +6,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 class Arguments:
     commands: list[str]
     interactive: bool
-    debug: bool
+    timer: bool
     verbose: bool
     version: bool
     stream: bool
@@ -45,9 +45,9 @@ def create_parser() -> ArgumentParser:
         nargs="*",
     )
     parser.add_argument(
-        "-d",
-        "--debug",
-        help="output debug info for each command",
+        "-t",
+        "--timer",
+        help="time how long each command is taking",
         action="store_true",
         default=False,
     )

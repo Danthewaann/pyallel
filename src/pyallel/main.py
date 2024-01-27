@@ -14,12 +14,12 @@ from pyallel import constants
 def main_loop(
     *commands: str,
     interactive: bool = False,
-    debug: bool = False,
+    timer: bool = False,
     verbose: bool = False,
     stream: bool = False,
 ) -> bool:
     process_group = ProcessGroup.from_commands(
-        *commands, interactive=interactive, debug=debug, verbose=verbose
+        *commands, interactive=interactive, timer=timer, verbose=verbose
     )
     if not stream:
         return process_group.run()
@@ -48,7 +48,7 @@ def run(*args: str) -> int:
         status = main_loop(
             *parsed_args.commands,
             interactive=parsed_args.interactive,
-            debug=parsed_args.debug,
+            timer=parsed_args.timer,
             verbose=parsed_args.verbose,
             stream=parsed_args.stream,
         )
@@ -68,7 +68,7 @@ def run(*args: str) -> int:
     else:
         print(f"{constants.GREEN_BOLD}Success!{constants.NC}")
 
-    if parsed_args.debug:
+    if parsed_args.timer:
         elapsed = time.perf_counter() - start
         print(f"\nTime taken : {format_time_taken(elapsed)}")
 

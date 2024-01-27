@@ -19,7 +19,7 @@ pip install pyallel
 Once installed, you can run `pyallel` to see usage information, like so:
 
 ```
-usage: pyallel [-h] [-d] [-n] [-s] [-V] [-v] [commands ...]
+usage: pyallel [-h] [-t] [-n] [-s] [-V] [-v] [commands ...]
 
 Run and handle the output of multiple executables in pyallel (as in parallel)
 
@@ -38,7 +38,7 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -d, --debug           output debug info for each command
+  -t, --timer           time how long each command is taking
   -n, --non-interactive
                         run in non-interactive mode
   -s, --no-stream       don't stream output of each command

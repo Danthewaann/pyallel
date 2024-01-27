@@ -142,8 +142,8 @@ class TestNonStreamedMode:
             ]
         )
 
-    def test_run_debug_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("echo 'hi'", "-d", "-s")
+    def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run("echo 'hi'", "-t", "-s")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
@@ -368,8 +368,8 @@ class TestNonStreamedNonInteractiveMode:
             ]
         )
 
-    def test_run_debug_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("echo 'hi'", "-d", "-n", "-s")
+    def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run("echo 'hi'", "-t", "-n", "-s")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
@@ -519,8 +519,8 @@ class TestStreamedMode:
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_run_debug_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("echo 'hi'", "-d")
+    def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run("echo 'hi'", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
@@ -699,8 +699,8 @@ class TestStreamedNonInteractiveMode:
             ]
         )
 
-    def test_run_debug_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("echo 'hi'", "-n", "-d")
+    def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run("echo 'hi'", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
@@ -717,10 +717,10 @@ class TestStreamedNonInteractiveMode:
             ]
         )
 
-    def test_run_debug_mode_with_longer_first_command(
+    def test_run_timer_mode_with_longer_first_command(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("sleep 1", "echo 'hi'", "-n", "-d")
+        exit_code = main.run("sleep 1", "echo 'hi'", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
