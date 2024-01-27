@@ -123,6 +123,7 @@ class ProcessGroup:
     output: dict[UUID, list[str]] = field(default_factory=lambda: defaultdict(list))
     completed_processes: set[UUID] = field(default_factory=set)
     passed: bool = True
+    icon: int = 0
 
     def run(self) -> bool:
         for process in self.processes:
@@ -161,17 +162,16 @@ class ProcessGroup:
         if not self.interactive:
             return self.stream_non_interactive()
 
-        icon = 0
         num_processes = len(self.processes)
 
         print("\033 7", end="")
         while True:
             lines = num_processes
-            output = self.complete_output(icon)
+            output = self.complete_output()
 
-            icon += 1
-            if icon == len(constants.ICONS):
-                icon = 0
+            self.icon += 1
+            if self.icon == len(constants.ICONS):
+                self.icon = 0
 
             print(output)
 
@@ -279,7 +279,7 @@ class ProcessGroup:
             debug=debug,
         )
 
-    def complete_output(self, icon: int = 0) -> str:
+    def complete_output(self) -> str:
         output = ""
         for i, process in enumerate(self.processes, start=1):
             if process.poll() is not None:
@@ -296,7 +296,7 @@ class ProcessGroup:
             else:
                 output += get_command_status(
                     process,
-                    icon=constants.ICONS[icon],
+                    icon=constants.ICONS[self.icon],
                     debug=self.debug,
                     timer=self.debug,
                 )
