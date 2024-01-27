@@ -120,14 +120,13 @@ class ProcessGroup:
     processes: list[Process]
     interactive: bool = False
     debug: bool = False
-    output: dict[UUID, str] = field(default_factory=dict)
+    output: dict[UUID, list[str]] = field(default_factory=lambda: defaultdict(list))
+    completed_processes: set[UUID] = field(default_factory=set)
+    passed: bool = True
 
     def run(self) -> bool:
         for process in self.processes:
             process.run()
-
-        completed_processes: set[UUID] = set()
-        passed = True
 
         if not self.interactive or not constants.IN_TTY:
             print(f"{constants.WHITE_BOLD}Running commands...{constants.NC}\n")
@@ -142,18 +141,18 @@ class ProcessGroup:
                     time.sleep(0.1)
 
             for process in self.processes:
-                if process.id in completed_processes or process.poll() is None:
+                if process.id in self.completed_processes or process.poll() is None:
                     continue
 
-                completed_processes.add(process.id)
+                self.completed_processes.add(process.id)
                 process_passed = run_process(process, debug=self.debug)
                 if not process_passed:
-                    passed = False
+                    self.passed = False
 
-            if len(completed_processes) == len(self.processes):
+            if len(self.completed_processes) == len(self.processes):
                 break
 
-        return passed
+        return self.passed
 
     def stream(self) -> bool:
         for process in self.processes:
@@ -162,47 +161,13 @@ class ProcessGroup:
         if not self.interactive:
             return self.stream_non_interactive()
 
-        completed_processes: set[UUID] = set()
-        passed = True
         icon = 0
         num_processes = len(self.processes)
 
         print("\033 7", end="")
         while True:
-            output = ""
             lines = num_processes
-            for i, process in enumerate(self.processes, start=1):
-                if process.poll() is not None:
-                    completed_processes.add(process.id)
-                    if process.return_code() != 0:
-                        passed = False
-                    output += get_command_status(
-                        process,
-                        passed=process.return_code() == 0,
-                        debug=self.debug,
-                        timer=self.debug,
-                    )
-                    output += "\n"
-                else:
-                    output += get_command_status(
-                        process,
-                        icon=constants.ICONS[icon],
-                        debug=self.debug,
-                        timer=self.debug,
-                    )
-                    output += "\n"
-
-                process_output = process.read().decode()
-                if process.id not in self.output:
-                    self.output[process.id] = ""
-                self.output[process.id] += process_output
-                out = self.output[process.id]
-                if out:
-                    if process.tail_mode.enabled:
-                        out = "\n".join(out.splitlines()[-process.tail_mode.lines :])
-                    output += indent(out)
-                    if i != len(self.processes):
-                        output += "\n"
+            output = self.complete_output(icon)
 
             icon += 1
             if icon == len(constants.ICONS):
@@ -217,7 +182,7 @@ class ProcessGroup:
                     end="",
                 )
 
-            if len(completed_processes) == len(self.processes):
+            if len(self.completed_processes) == len(self.processes):
                 break
 
             time.sleep(0.1)
@@ -225,20 +190,20 @@ class ProcessGroup:
         print("\033 8", end="")
         print("\033[3J", end="")
         print(output)
-        return passed
+        return self.passed
 
     def stream_non_interactive(self) -> bool:
-        completed_processes: set[UUID] = set()
-        passed = True
         running_process = None
-        outputs: dict[UUID, list[str]] = defaultdict(list)
 
         print(f"{constants.WHITE_BOLD}Running commands...{constants.NC}\n")
 
         while True:
             output = ""
             for process in self.processes:
-                if running_process is None and process.id not in completed_processes:
+                if (
+                    running_process is None
+                    and process.id not in self.completed_processes
+                ):
                     output += get_command_status(process, debug=self.debug)
                     output += "\n"
                     running_process = process
@@ -250,25 +215,24 @@ class ProcessGroup:
 
                 process_output = process.readline().decode()
 
-                if not outputs[process.id] and process_output:
+                if not self.output[process.id] and process_output:
                     process_output = indent(process_output)
-                    outputs[process.id].append(process_output)
+                    self.output[process.id].append(process_output)
                     output += process_output
                 elif process_output:
-                    if outputs[process.id][-1][-1] != "\n":
-                        outputs[process.id][-1] += process_output
+                    if self.output[process.id][-1][-1] != "\n":
+                        self.output[process.id][-1] += process_output
                     else:
                         process_output = indent(process_output)
-                        outputs[process.id].append(process_output)
+                        self.output[process.id].append(process_output)
                     output += process_output
 
                 if process.poll() is not None:
                     if process.return_code() != 0:
-                        passed = False
-                    process_output_2 = process.readline().decode()
-                    while process_output_2:
-                        output += indent(process_output_2)
-                        process_output_2 = process.readline().decode()
+                        self.passed = False
+                    process_output = process.read().decode()
+                    if process_output:
+                        output += indent(process_output)
 
                     output += get_command_status(
                         process,
@@ -277,18 +241,18 @@ class ProcessGroup:
                         timer=self.debug,
                     )
                     output += "\n\n"
-                    completed_processes.add(process.id)
+                    self.completed_processes.add(process.id)
                     running_process = None
 
             if output:
                 print(output, end="")
 
-            if len(completed_processes) == len(self.processes):
+            if len(self.completed_processes) == len(self.processes):
                 break
 
             time.sleep(0.01)
 
-        return passed
+        return self.passed
 
     @classmethod
     def from_commands(
@@ -315,11 +279,56 @@ class ProcessGroup:
             debug=debug,
         )
 
+    def complete_output(self, icon: int = 0) -> str:
+        output = ""
+        for i, process in enumerate(self.processes, start=1):
+            if process.poll() is not None:
+                self.completed_processes.add(process.id)
+                if process.return_code() != 0:
+                    self.passed = False
+                output += get_command_status(
+                    process,
+                    passed=process.return_code() == 0,
+                    debug=self.debug,
+                    timer=self.debug,
+                )
+                output += "\n"
+            else:
+                output += get_command_status(
+                    process,
+                    icon=constants.ICONS[icon],
+                    debug=self.debug,
+                    timer=self.debug,
+                )
+                output += "\n"
+
+            process_output = process.read().decode()
+            if not self.output[process.id]:
+                self.output[process.id].append("")
+            self.output[process.id][0] += process_output
+            process_output = self.output[process.id][0]
+            if process_output:
+                if process.tail_mode.enabled:
+                    process_output = "\n".join(
+                        process_output.splitlines()[-process.tail_mode.lines :]
+                    )
+                    process_output += "\n"
+                output += indent(process_output)
+                if i != len(self.processes):
+                    output += "\n"
+
+        return output
+
 
 @dataclass
 class TailMode:
     enabled: bool = False
     lines: int = 0
+
+
+@dataclass
+class DumpMode:
+    enabled: bool = False
 
 
 @dataclass
@@ -335,6 +344,7 @@ class Process:
     fd_read: BinaryIO | None = None
     fd: int | None = None
     tail_mode: TailMode = field(default_factory=TailMode)
+    dump_mode: DumpMode = field(default_factory=DumpMode)
 
     def run(self) -> None:
         self.start = time.perf_counter()
@@ -377,6 +387,7 @@ class Process:
     @classmethod
     def from_command(cls, command: str) -> Process:
         tail_mode = TailMode()
+        dump_mode = DumpMode()
         env = os.environ.copy()
         if " :: " in command:
             modes, _args = command.split(" :: ")
@@ -386,6 +397,8 @@ class Process:
                     if name == "tail":
                         tail_mode.enabled = True
                         tail_mode.lines = int(value)
+                    elif name == "dump":
+                        dump_mode.enabled = True
             args = _args.split()
         else:
             args = command.split()
@@ -403,5 +416,10 @@ class Process:
 
         str_args = shlex.split(" ".join(parsed_args[1:]))
         return cls(
-            id=uuid4(), name=parsed_args[0], args=str_args, env=env, tail_mode=tail_mode
+            id=uuid4(),
+            name=parsed_args[0],
+            args=str_args,
+            env=env,
+            tail_mode=tail_mode,
+            dump_mode=dump_mode,
         )

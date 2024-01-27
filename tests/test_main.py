@@ -551,7 +551,6 @@ class TestStreamedMode:
     ) -> None:
         exit_code = main.run("invalid_exe", "other_invalid_exe")
         captured = capsys.readouterr()
-        out = captured.out.splitlines(keepends=True)
         assert exit_code == 1, prettify_error(captured.out)
         assert (
             captured.out
