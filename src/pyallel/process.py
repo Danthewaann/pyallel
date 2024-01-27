@@ -257,7 +257,7 @@ class ProcessGroup:
     @classmethod
     def from_commands(
         cls,
-        commands: list[str],
+        *commands: str,
         interactive: bool = False,
         debug: bool = False,
     ) -> ProcessGroup:

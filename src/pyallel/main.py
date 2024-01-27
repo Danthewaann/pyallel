@@ -12,13 +12,13 @@ from pyallel import constants
 
 
 def main_loop(
-    commands: list[str],
+    *commands: str,
     interactive: bool = False,
     debug: bool = False,
     stream: bool = False,
 ) -> bool:
     process_group = ProcessGroup.from_commands(
-        commands, interactive=interactive, debug=debug
+        *commands, interactive=interactive, debug=debug
     )
     if not stream:
         return process_group.run()
@@ -48,10 +48,10 @@ def run(*args: str) -> int:
     message = None
     try:
         status = main_loop(
-            parsed_args.commands,
-            parsed_args.interactive,
-            parsed_args.debug,
-            parsed_args.stream,
+            *parsed_args.commands,
+            interactive=parsed_args.interactive,
+            debug=parsed_args.debug,
+            stream=parsed_args.stream,
         )
     except InvalidExecutableErrors as e:
         status = False
