@@ -74,11 +74,11 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [x] Fix bug in streamed mode where we should use the number of terminal columns when
       determining when to truncate the line to fit within the screen (or properly handle wrapped
       lines)
-- [ ] Add custom parsing of command output to support filtering for errors (like vim's
-      `errorformat`)
-- [ ] Add graceful Ctrl-C interrupt handling
 - [ ] Add something like a dump mode to print out all the output for a command after it
       finishes (to combine with the tail mode)
+- [ ] Add graceful Ctrl-C interrupt handling
+- [ ] Add custom parsing of command output to support filtering for errors (like vim's
+      `errorformat`)
 - [x] Provide a way to set environment variables for each command to run with
 - [ ] Allow list of files to be provided to supply as input arguments to each command
 - [ ] Allow input to be piped into `pyallel` via stdin to supply as standard input to each
