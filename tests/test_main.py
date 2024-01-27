@@ -133,17 +133,9 @@ class TestNonStreamedMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
             [
-                "Arguments:\n",
-                "    commands    : [\"echo 'hi'\"]\n",
-                "    debug       : False\n",
-                "    interactive : True\n",
-                "    stream      : False\n",
-                "    verbose     : True\n",
-                "    version     : False\n",
-                "\n",
                 "Running commands...\n",
                 "\n",
-                "[echo] done ✓\n",
+                "[echo hi] done ✓\n",
                 "    hi\n",
                 "\n",
                 "Success!\n",
@@ -158,7 +150,7 @@ class TestNonStreamedMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo hi] done in 0s ✓\n",
+                "[echo] done in 0s ✓\n",
                 "    hi\n",
                 "\n",
                 "Success!\n",
@@ -367,17 +359,9 @@ class TestNonStreamedNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
             [
-                "Arguments:\n",
-                "    commands    : [\"echo 'hi'\"]\n",
-                "    debug       : False\n",
-                "    interactive : False\n",
-                "    stream      : False\n",
-                "    verbose     : True\n",
-                "    version     : False\n",
-                "\n",
                 "Running commands...\n",
                 "\n",
-                "[echo] done ✓\n",
+                "[echo hi] done ✓\n",
                 "    hi\n",
                 "\n",
                 "Success!\n",
@@ -392,7 +376,7 @@ class TestNonStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo hi] done in 0s ✓\n",
+                "[echo] done in 0s ✓\n",
                 "    hi\n",
                 "\n",
                 "Success!\n",
@@ -705,19 +689,11 @@ class TestStreamedNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
             [
-                "Arguments:\n",
-                "    commands    : [\"echo 'hi'\"]\n",
-                "    debug       : False\n",
-                "    interactive : False\n",
-                "    stream      : True\n",
-                "    verbose     : True\n",
-                "    version     : False\n",
-                "\n",
                 "Running commands...\n",
                 "\n",
-                "[echo] running... \n",
+                "[echo hi] running... \n",
                 "    hi\n",
-                "[echo] done ✓\n",
+                "[echo hi] done ✓\n",
                 "\n",
                 "Success!\n",
             ]
@@ -731,9 +707,9 @@ class TestStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo hi] running... \n",
+                "[echo] running... \n",
                 "    hi\n",
-                "[echo hi] done in 0s ✓\n",
+                "[echo] done in 0s ✓\n",
                 "\n",
                 "Success!\n",
                 "\n",
@@ -751,12 +727,12 @@ class TestStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[sleep 1] running... \n",
-                "[sleep 1] done in 1s ✓\n",
+                "[sleep] running... \n",
+                "[sleep] done in 1s ✓\n",
                 "\n",
-                "[echo hi] running... \n",
+                "[echo] running... \n",
                 "    hi\n",
-                "[echo hi] done in 0s ✓\n",
+                "[echo] done in 0s ✓\n",
                 "\n",
                 "Success!\n",
                 "\n",

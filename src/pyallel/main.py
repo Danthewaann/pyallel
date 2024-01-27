@@ -15,10 +15,11 @@ def main_loop(
     *commands: str,
     interactive: bool = False,
     debug: bool = False,
+    verbose: bool = False,
     stream: bool = False,
 ) -> bool:
     process_group = ProcessGroup.from_commands(
-        *commands, interactive=interactive, debug=debug
+        *commands, interactive=interactive, debug=debug, verbose=verbose
     )
     if not stream:
         return process_group.run()
@@ -35,9 +36,6 @@ def run(*args: str) -> int:
         print(my_version)
         return 0
 
-    if parsed_args.verbose:
-        print(parsed_args)
-
     if not parsed_args.commands:
         parser.print_help()
         return 2
@@ -51,6 +49,7 @@ def run(*args: str) -> int:
             *parsed_args.commands,
             interactive=parsed_args.interactive,
             debug=parsed_args.debug,
+            verbose=parsed_args.verbose,
             stream=parsed_args.stream,
         )
     except InvalidExecutableErrors as e:

@@ -59,7 +59,7 @@ def get_command_status(
     process: Process,
     icon: str | None = None,
     passed: bool | None = None,
-    debug: bool = False,
+    verbose: bool = False,
     timer: bool = False,
 ) -> str:
     if passed is True:
@@ -79,7 +79,7 @@ def get_command_status(
 
     output = f"[{constants.BLUE_BOLD}{process.name}"
 
-    if debug:
+    if verbose:
         output += f" {' '.join(process.args)}"
 
     output += f"{constants.NC}]{colour} {msg} "
@@ -102,15 +102,15 @@ def print_command_output(process: Process) -> None:
     print()
 
 
-def run_process(process: Process, debug: bool = False) -> bool:
+def run_process(process: Process, debug: bool = False, verbose: bool = False) -> bool:
     print(f"{constants.CLEAR_LINE}{constants.CR}", end="")
 
     if process.return_code() != 0:
-        print(get_command_status(process, passed=False, debug=debug, timer=debug))
+        print(get_command_status(process, passed=False, verbose=verbose, timer=debug))
         print_command_output(process)
         return False
     else:
-        print(get_command_status(process, passed=True, debug=debug, timer=debug))
+        print(get_command_status(process, passed=True, verbose=verbose, timer=debug))
         print_command_output(process)
         return True
 
@@ -120,6 +120,7 @@ class ProcessGroup:
     processes: list[Process]
     interactive: bool = False
     debug: bool = False
+    verbose: bool = False
     output: dict[UUID, list[str]] = field(default_factory=lambda: defaultdict(list))
     completed_processes: set[UUID] = field(default_factory=set)
     passed: bool = True
@@ -146,7 +147,9 @@ class ProcessGroup:
                     continue
 
                 self.completed_processes.add(process.id)
-                process_passed = run_process(process, debug=self.debug)
+                process_passed = run_process(
+                    process, verbose=self.verbose, debug=self.debug
+                )
                 if not process_passed:
                     self.passed = False
 
@@ -204,7 +207,7 @@ class ProcessGroup:
                     running_process is None
                     and process.id not in self.completed_processes
                 ):
-                    output += get_command_status(process, debug=self.debug)
+                    output += get_command_status(process, verbose=self.verbose)
                     output += "\n"
                     running_process = process
                 elif running_process is not process:
@@ -237,7 +240,7 @@ class ProcessGroup:
                     output += get_command_status(
                         process,
                         passed=process.return_code() == 0,
-                        debug=self.debug,
+                        verbose=self.verbose,
                         timer=self.debug,
                     )
                     output += "\n\n"
@@ -260,6 +263,7 @@ class ProcessGroup:
         *commands: str,
         interactive: bool = False,
         debug: bool = False,
+        verbose: bool = False,
     ) -> ProcessGroup:
         processes: list[Process] = []
         errors: list[InvalidExecutableError] = []
@@ -277,6 +281,7 @@ class ProcessGroup:
             processes=processes,
             interactive=interactive,
             debug=debug,
+            verbose=verbose,
         )
 
     def complete_output(self) -> str:
@@ -289,7 +294,7 @@ class ProcessGroup:
                 output += get_command_status(
                     process,
                     passed=process.return_code() == 0,
-                    debug=self.debug,
+                    verbose=self.verbose,
                     timer=self.debug,
                 )
                 output += "\n"
@@ -297,7 +302,7 @@ class ProcessGroup:
                 output += get_command_status(
                     process,
                     icon=constants.ICONS[self.icon],
-                    debug=self.debug,
+                    verbose=self.verbose,
                     timer=self.debug,
                 )
                 output += "\n"
