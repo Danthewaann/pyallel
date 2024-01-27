@@ -30,7 +30,7 @@ strict = true
 show_error_codes = true
 
 [tool.pytest.ini_options]
-addopts = "-vvv"
+addopts = ""
 
 [build-system]
 requires = ["poetry-core"]
