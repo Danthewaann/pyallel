@@ -340,19 +340,17 @@ class Process:
     start: float = 0.0
     end: float = 0.0
     process: subprocess.Popen[bytes] | None = None
-    output: bytes = b""
     fd_read: BinaryIO | None = None
-    fd: int | None = None
     tail_mode: TailMode = field(default_factory=TailMode)
     dump_mode: DumpMode = field(default_factory=DumpMode)
 
     def run(self) -> None:
         self.start = time.perf_counter()
-        self.fd, fd_name = tempfile.mkstemp()
+        fd, fd_name = tempfile.mkstemp()
         self.fd_read = open(fd_name, "rb")
         self.process = subprocess.Popen(
             [self.name, *self.args],
-            stdout=self.fd,
+            stdout=fd,
             stderr=subprocess.STDOUT,
             env=self.env,
         )
