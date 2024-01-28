@@ -340,20 +340,22 @@ class DumpMode:
 class Process:
     id: UUID = field(repr=False, compare=False)
     name: str
-    args: list[str]
+    args: list[str] = field(default_factory=list)
     env: dict[str, str] = field(default_factory=dict)
     start: float = 0.0
     end: float = 0.0
-    process: subprocess.Popen[bytes] | None = None
-    fd_read: BinaryIO | None = None
     tail_mode: TailMode = field(default_factory=TailMode)
     dump_mode: DumpMode = field(default_factory=DumpMode)
+    _fd: BinaryIO | None = field(init=False, repr=False, compare=False, default=None)
+    _process: subprocess.Popen[bytes] | None = field(
+        init=False, repr=False, compare=False, default=None
+    )
 
     def run(self) -> None:
         self.start = time.perf_counter()
         fd, fd_name = tempfile.mkstemp()
-        self.fd_read = open(fd_name, "rb")
-        self.process = subprocess.Popen(
+        self._fd = open(fd_name, "rb")
+        self._process = subprocess.Popen(
             [self.name, *self.args],
             stdout=fd,
             stderr=subprocess.STDOUT,
@@ -361,30 +363,30 @@ class Process:
         )
 
     def __del__(self) -> None:
-        if self.fd_read:
-            self.fd_read.close()
+        if self._fd:
+            self._fd.close()
 
     def poll(self) -> int | None:
-        if self.process:
-            poll = self.process.poll()
+        if self._process:
+            poll = self._process.poll()
             if poll is not None and not self.end:
                 self.end = time.perf_counter()
             return poll
         return None
 
     def read(self) -> bytes:
-        if self.fd_read:
-            return self.fd_read.read()
+        if self._fd:
+            return self._fd.read()
         return b""
 
     def readline(self) -> bytes:
-        if self.fd_read:
-            return self.fd_read.readline()
+        if self._fd:
+            return self._fd.readline()
         return b""
 
     def return_code(self) -> int | None:
-        if self.process:
-            return self.process.returncode
+        if self._process:
+            return self._process.returncode
         return None
 
     @classmethod
