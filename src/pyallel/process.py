@@ -422,8 +422,8 @@ class Process:
         parsed_args: list[str] = []
         for arg in args:
             if "=" in arg:
-                name, value = arg.split("=")
-                env[name] = value
+                name, env_value = arg.split("=")
+                env[name] = env_value
             else:
                 parsed_args.append(arg)
 
