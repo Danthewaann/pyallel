@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import os
 import time
+from typing import Any
 from uuid import uuid4
 
 import pytest
-from pyallel.process import Process, TailMode, get_num_lines
+from pyallel.errors import InvalidExecutableError
+from pyallel.process import DumpMode, Process, TailMode, get_num_lines
 
 
 def test_from_command() -> None:
@@ -35,16 +37,38 @@ def test_from_command_with_env(env: str) -> None:
     assert process == expected_process
 
 
-def test_from_command_with_tail_mode() -> None:
+@pytest.mark.parametrize(
+    "modes,expected",
+    (
+        (
+            "tail=10",
+            {
+                "tail_mode": TailMode(enabled=True, lines=10),
+            },
+        ),
+        (
+            "tail=10,dump",
+            {
+                "tail_mode": TailMode(enabled=True, lines=10),
+                "dump_mode": DumpMode(enabled=True),
+            },
+        ),
+    ),
+)
+def test_from_command_with_modes(modes: str, expected: dict[str, Any]) -> None:
     expected_process = Process(
-        id=uuid4(),
-        name="sleep",
-        args=["0.1"],
-        env=os.environ.copy(),
-        tail_mode=TailMode(enabled=True, lines=10),
+        id=uuid4(), name="sleep", args=["0.1"], env=os.environ.copy(), **expected
     )
-    process = Process.from_command("tail=10 :: sleep 0.1")
+    process = Process.from_command(f"{modes} :: sleep 0.1")
     assert process == expected_process
+
+
+@pytest.mark.parametrize("mode", ("tail", "tail=hi", "tail=-1", "tail=0"))
+def test_from_command_with_tail_mode_handles_errors(mode: str) -> None:
+    with pytest.raises(
+        InvalidExecutableError, match="tail mode requires a positive number"
+    ):
+        Process.from_command(f"{mode} :: sleep 0.1")
 
 
 def test_from_command_with_modes_and_env() -> None:

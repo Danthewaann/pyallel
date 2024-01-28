@@ -397,11 +397,22 @@ class Process:
         if " :: " in command:
             modes, _args = command.split(" :: ")
             if modes:
-                for mode in modes.split():
-                    name, value = mode.split("=", maxsplit=1)
+                for mode in modes.split(","):
+                    name, *value = mode.split("=", maxsplit=1)
                     if name == "tail":
+                        if not value:
+                            raise InvalidExecutableError(
+                                "tail mode requires a positive number"
+                            )
                         tail_mode.enabled = True
-                        tail_mode.lines = int(value)
+                        try:
+                            tail_mode.lines = int(value[0])
+                            if tail_mode.lines <= 0:
+                                raise ValueError()
+                        except ValueError:
+                            raise InvalidExecutableError(
+                                "tail mode requires a positive number"
+                            )
                     elif name == "dump":
                         dump_mode.enabled = True
             args = _args.split()
