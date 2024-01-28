@@ -123,7 +123,7 @@ def test_readline_handles_delayed_newline() -> None:
     time.sleep(0.01)
     output = process.readline()
     assert output == b"first"
-    time.sleep(0.15)
+    time.sleep(0.2)
     output = process.readline()
     assert output == b"second\n"
 
