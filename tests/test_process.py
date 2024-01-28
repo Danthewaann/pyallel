@@ -64,7 +64,7 @@ def test_read() -> None:
     process.run()
     output = process.read()
     assert output == b""
-    time.sleep(0.5)
+    time.sleep(0.01)
     output = process.read()
     assert output == b"first\nsecond\n"
 
@@ -74,7 +74,7 @@ def test_readline() -> None:
     process.run()
     output = process.readline()
     assert output == b""
-    time.sleep(0.5)
+    time.sleep(0.01)
     output = process.readline()
     assert output == b"first\n"
     output = process.readline()
@@ -86,7 +86,7 @@ def test_readline_with_read() -> None:
     process.run()
     output = process.readline()
     assert output == b""
-    time.sleep(0.5)
+    time.sleep(0.01)
     output = process.readline()
     assert output == b"first\n"
     output = process.read()
@@ -99,7 +99,7 @@ def test_readline_handles_delayed_newline() -> None:
     time.sleep(0.01)
     output = process.readline()
     assert output == b"first"
-    time.sleep(0.1)
+    time.sleep(0.15)
     output = process.readline()
     assert output == b"second\n"
 
