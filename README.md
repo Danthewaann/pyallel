@@ -76,6 +76,8 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
       lines)
 - [ ] Add something like a dump mode to print out all the output for a command after it
       finishes (to combine with the tail mode)
+- [ ] Maybe make tail mode followed by an optional dump of all the command output once it
+      finishes the default behaviour?
 - [ ] Add graceful Ctrl-C interrupt handling
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
       `errorformat`)
