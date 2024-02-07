@@ -77,9 +77,7 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [x] Provide a way to set environment variables for each command to run with
 - [x] Add test suite
 - [x] Improve error handling when parsing provided commands (check they are valid executables)
-- [ ] Add something like a dump mode to print out all the output for a command after it
-      finishes (to combine with the tail mode)
-- [ ] Maybe make tail mode followed by an optional dump of all the command output once it
+- [x] Maybe make tail mode followed by an optional dump of all the command output once it
       finishes the default behaviour?
 - [ ] Add graceful Ctrl-C interrupt handling
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
