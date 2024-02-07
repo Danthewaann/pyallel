@@ -26,7 +26,7 @@ def get_num_lines(output: str, columns: int | None = None) -> int:
 
 def indent(output: str, keepend: bool = True) -> str:
     indented_output = "\n".join("    " + line for line in output.splitlines())
-    if keepend and output[-1] == "\n":
+    if keepend and output and output[-1] == "\n":
         indented_output += "\n"
     return indented_output
 
@@ -319,6 +319,8 @@ class ProcessGroup:
                     )
                     process_output += "\n"
                 output += indent(process_output)
+                if output and output[-1] != "\n":
+                    output += "\n"
                 if i != len(self.processes):
                     output += "\n"
 
