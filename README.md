@@ -74,6 +74,9 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [x] Fix bug in streamed mode where we should use the number of terminal columns when
       determining when to truncate the line to fit within the screen (or properly handle wrapped
       lines)
+- [x] Provide a way to set environment variables for each command to run with
+- [x] Add test suite
+- [x] Improve error handling when parsing provided commands (check they are valid executables)
 - [ ] Add something like a dump mode to print out all the output for a command after it
       finishes (to combine with the tail mode)
 - [ ] Maybe make tail mode followed by an optional dump of all the command output once it
@@ -81,15 +84,6 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [ ] Add graceful Ctrl-C interrupt handling
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
       `errorformat`)
-- [x] Provide a way to set environment variables for each command to run with
 - [ ] Allow list of files to be provided to supply as input arguments to each command
 - [ ] Allow input to be piped into `pyallel` via stdin to supply as standard input to each
       command
-- [ ] Add custom config file for `pyallel` to read from as an alternative to providing
-      arguments via the command line
-- [ ] Add support for providing config via a `[tool.pyallel]` section in a
-      `pyproject.toml` file in the current working directory
-- [ ] Maybe allow command dependencies to be defined in a python file where commands are
-      decorated with info that details it's dependencies?
-- [x] Add test suite
-- [x] Improve error handling when parsing provided commands (check they are valid executables)
