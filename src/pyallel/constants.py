@@ -20,6 +20,9 @@ if IN_TTY:
     def COLUMNS() -> int:
         return os.get_terminal_size().columns
 
+    def LINES() -> int:
+        return os.get_terminal_size().lines
+
 else:
     WHITE_BOLD = ""
     GREEN_BOLD = ""
@@ -34,6 +37,9 @@ else:
     CR = ""
 
     def COLUMNS() -> int:
+        return sys.maxsize
+
+    def LINES() -> int:
         return sys.maxsize
 
 

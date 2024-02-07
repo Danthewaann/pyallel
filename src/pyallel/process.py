@@ -170,7 +170,7 @@ class ProcessGroup:
         print("\033 7", end="")
         while True:
             lines = num_processes
-            output = self.complete_output()
+            output = self.complete_output(tail=constants.LINES() // num_processes - 2)
 
             self.icon += 1
             if self.icon == len(constants.ICONS):
@@ -190,6 +190,7 @@ class ProcessGroup:
 
             time.sleep(0.1)
 
+        output = self.complete_output(all=True)
         print("\033 8", end="")
         print("\033[3J", end="")
         print(output)
@@ -284,7 +285,7 @@ class ProcessGroup:
             verbose=verbose,
         )
 
-    def complete_output(self) -> str:
+    def complete_output(self, tail: int = 20, all: bool = False) -> str:
         output = ""
         for i, process in enumerate(self.processes, start=1):
             if process.poll() is not None:
@@ -313,10 +314,8 @@ class ProcessGroup:
             self.output[process.id][0] += process_output
             process_output = self.output[process.id][0]
             if process_output:
-                if process.tail_mode.enabled:
-                    process_output = "\n".join(
-                        process_output.splitlines()[-process.tail_mode.lines :]
-                    )
+                if not all:
+                    process_output = "\n".join(process_output.splitlines()[-tail:])
                     process_output += "\n"
                 output += indent(process_output)
                 if output and output[-1] != "\n":
@@ -325,12 +324,6 @@ class ProcessGroup:
                     output += "\n"
 
         return output
-
-
-@dataclass
-class TailMode:
-    enabled: bool = False
-    lines: int = 0
 
 
 @dataclass
@@ -346,7 +339,6 @@ class Process:
     env: dict[str, str] = field(default_factory=dict)
     start: float = 0.0
     end: float = 0.0
-    tail_mode: TailMode = field(default_factory=TailMode)
     dump_mode: DumpMode = field(default_factory=DumpMode)
     _fd: BinaryIO | None = field(init=False, repr=False, compare=False, default=None)
     _process: subprocess.Popen[bytes] | None = field(
@@ -393,29 +385,14 @@ class Process:
 
     @classmethod
     def from_command(cls, command: str) -> Process:
-        tail_mode = TailMode()
         dump_mode = DumpMode()
         env = os.environ.copy()
         if " :: " in command:
             modes, _args = command.split(" :: ")
             if modes:
                 for mode in modes.split(","):
-                    name, *value = mode.split("=", maxsplit=1)
-                    if name == "tail":
-                        if not value:
-                            raise InvalidExecutableError(
-                                "tail mode requires a positive number"
-                            )
-                        tail_mode.enabled = True
-                        try:
-                            tail_mode.lines = int(value[0])
-                            if tail_mode.lines <= 0:
-                                raise ValueError()
-                        except ValueError:
-                            raise InvalidExecutableError(
-                                "tail mode requires a positive number"
-                            )
-                    elif name == "dump":
+                    name, *_ = mode.split("=", maxsplit=1)
+                    if name == "dump":
                         dump_mode.enabled = True
             args = _args.split()
         else:
@@ -438,6 +415,5 @@ class Process:
             name=parsed_args[0],
             args=str_args,
             env=env,
-            tail_mode=tail_mode,
             dump_mode=dump_mode,
         )

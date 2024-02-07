@@ -6,8 +6,7 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from pyallel.errors import InvalidExecutableError
-from pyallel.process import DumpMode, Process, TailMode, get_num_lines
+from pyallel.process import DumpMode, Process, get_num_lines
 
 
 def test_from_command() -> None:
@@ -41,15 +40,8 @@ def test_from_command_with_env(env: str) -> None:
     "modes,expected",
     (
         (
-            "tail=10",
+            "dump",
             {
-                "tail_mode": TailMode(enabled=True, lines=10),
-            },
-        ),
-        (
-            "tail=10,dump",
-            {
-                "tail_mode": TailMode(enabled=True, lines=10),
                 "dump_mode": DumpMode(enabled=True),
             },
         ),
@@ -60,26 +52,6 @@ def test_from_command_with_modes(modes: str, expected: dict[str, Any]) -> None:
         id=uuid4(), name="sleep", args=["0.1"], env=os.environ.copy(), **expected
     )
     process = Process.from_command(f"{modes} :: sleep 0.1")
-    assert process == expected_process
-
-
-@pytest.mark.parametrize("mode", ("tail", "tail=hi", "tail=-1", "tail=0"))
-def test_from_command_with_tail_mode_handles_errors(mode: str) -> None:
-    with pytest.raises(
-        InvalidExecutableError, match="tail mode requires a positive number"
-    ):
-        Process.from_command(f"{mode} :: sleep 0.1")
-
-
-def test_from_command_with_modes_and_env() -> None:
-    expected_process = Process(
-        id=uuid4(),
-        name="sleep",
-        args=["0.1"],
-        env={**os.environ.copy(), **{"TEST_VAR": "1"}},
-        tail_mode=TailMode(enabled=True, lines=10),
-    )
-    process = Process.from_command("tail=10 :: TEST_VAR=1 sleep 0.1")
     assert process == expected_process
 
 
