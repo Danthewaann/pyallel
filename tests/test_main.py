@@ -54,23 +54,6 @@ class TestNonStreamedMode:
             ]
         )
 
-    def test_run_single_command_with_tail_mode(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.run("tail=10 :: echo 'hi'", "-s")
-        captured = capsys.readouterr()
-        assert exit_code == 0, prettify_error(captured.out)
-        assert captured.out == "".join(
-            [
-                "Running commands...\n",
-                "\n",
-                "[echo] done ✓\n",
-                "    hi\n",
-                "\n",
-                "Success!\n",
-            ]
-        )
-
     def test_run_multiple_commands(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("sh -c 'sleep 0.1; echo \"first\"'", "echo 'hi'", "-s")
         captured = capsys.readouterr()
@@ -278,23 +261,6 @@ class TestNonStreamedNonInteractiveMode:
             ]
         )
 
-    def test_run_single_command_with_tail_mode(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.run("tail=10 :: echo 'hi'", "-n", "-s")
-        captured = capsys.readouterr()
-        assert exit_code == 0, prettify_error(captured.out)
-        assert captured.out == "".join(
-            [
-                "Running commands...\n",
-                "\n",
-                "[echo] done ✓\n",
-                "    hi\n",
-                "\n",
-                "Success!\n",
-            ]
-        )
-
     def test_run_multiple_commands(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run(
             "sh -c 'sleep 0.1; echo \"first\"'", "echo 'hi'", "-n", "-s"
@@ -487,13 +453,6 @@ class TestStreamedMode:
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_run_single_command_with_tail_mode(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.run("tail=10 :: echo 'hi'")
-        captured = capsys.readouterr()
-        assert exit_code == 0, prettify_error(captured.out)
-
     def test_run_multiple_commands(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("sh -c 'sleep 0.1; echo \"first\"'", "echo 'hi'")
         captured = capsys.readouterr()
@@ -589,24 +548,6 @@ class TestStreamedNonInteractiveMode:
 
     def test_run_single_command_with_env(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("TEST_VAR=1 echo 'hi'", "-n")
-        captured = capsys.readouterr()
-        assert exit_code == 0, prettify_error(captured.out)
-        assert captured.out == "".join(
-            [
-                "Running commands...\n",
-                "\n",
-                "[echo] running... \n",
-                "    hi\n",
-                "[echo] done ✓\n",
-                "\n",
-                "Success!\n",
-            ]
-        )
-
-    def test_run_single_command_with_tail_mode(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.run("tail=10 :: echo 'hi'", "-n")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(

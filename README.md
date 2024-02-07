@@ -30,12 +30,6 @@ positional arguments:
 
                              "MYPY_FORCE_COLOR=1 mypy ."
 
-                        command modes:
-
-                        can also provide modes to commands to do extra things:
-
-                            "tail=10 :: pytest ." <-- only output the last 10 lines, doesn't work in --no-stream mode
-
 options:
   -h, --help            show this help message and exit
   -t, --timer           time how long each command is taking
@@ -54,7 +48,7 @@ Currently you can provide a variable number of `commands` to run to `pyallel`, l
 ```bash
 pyallel "MYPY_FORCE_COLOR=1 mypy ." \
         "black --check --diff ." \
-        "tail=20 :: pytest ."
+        "pytest ."
 ```
 
 ## TODOs

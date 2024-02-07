@@ -24,12 +24,6 @@ COMMANDS_HELP = """list of quoted commands to run e.g "mypy ." "black ."
 can provide environment variables to each command like so:
 
      "MYPY_FORCE_COLOR=1 mypy ."
-
-command modes:
-
-can also provide modes to commands to do extra things:
-
-    "tail=10 :: pytest ." <-- only output the last 10 lines, doesn't work in --no-stream mode
 """
 
 
