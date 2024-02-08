@@ -176,7 +176,7 @@ class ProcessGroup:
             if self.icon == len(constants.ICONS):
                 self.icon = 0
 
-            print(output)
+            print(f"\033[H\033[0J{output}")
 
             lines += get_num_lines(output)
             for _ in range(lines - (len(self.processes) - 1)):
@@ -191,9 +191,7 @@ class ProcessGroup:
             time.sleep(0.1)
 
         output = self.complete_output(all=True)
-        print("\033 8", end="")
-        print("\033[3J", end="")
-        print(output)
+        print(f"\033[2J{output}")
         return self.passed
 
     def stream_non_interactive(self) -> bool:
