@@ -167,23 +167,18 @@ class ProcessGroup:
 
         num_processes = len(self.processes)
 
-        print("\033 7", end="")
         while True:
-            lines = num_processes
             output = self.complete_output(tail=constants.LINES() // num_processes - 2)
 
             self.icon += 1
             if self.icon == len(constants.ICONS):
                 self.icon = 0
 
+            # Clear the screen and print the output
             print(f"\033[H\033[0J{output}")
-
-            lines += get_num_lines(output)
-            for _ in range(lines - (len(self.processes) - 1)):
-                print(
-                    f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}",
-                    end="",
-                )
+            
+            # Clear the screen again
+            print("\033[H\033[0J", end="")
 
             if len(self.completed_processes) == len(self.processes):
                 break
@@ -191,7 +186,8 @@ class ProcessGroup:
             time.sleep(0.1)
 
         output = self.complete_output(all=True)
-        print(f"\033[2J{output}")
+        # Clear the screen one final time before printing the output
+        print(f"\033[3J{output}")
         return self.passed
 
     def stream_non_interactive(self) -> bool:
