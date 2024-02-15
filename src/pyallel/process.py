@@ -122,6 +122,7 @@ class ProcessGroup:
     timer: bool = False
     verbose: bool = False
     output: dict[UUID, list[str]] = field(default_factory=lambda: defaultdict(list))
+    process_lines: list[int] = field(default_factory=list)
     completed_processes: set[UUID] = field(default_factory=set)
     passed: bool = True
     icon: int = 0
@@ -165,10 +166,8 @@ class ProcessGroup:
         if not self.interactive:
             return self.stream_non_interactive()
 
-        num_processes = len(self.processes)
-
         while True:
-            output = self.complete_output(tail=constants.LINES() // num_processes - 2)
+            output = self.complete_output()
 
             self.icon += 1
             if self.icon == len(constants.ICONS):
@@ -176,7 +175,7 @@ class ProcessGroup:
 
             # Clear the screen and print the output
             print(f"\033[H\033[0J{output}")
-            
+
             # Clear the screen again
             print("\033[H\033[0J", end="")
 
@@ -280,6 +279,22 @@ class ProcessGroup:
         )
 
     def complete_output(self, tail: int = 20, all: bool = False) -> str:
+        num_processes = len(self.processes)
+        lines = constants.LINES() - (2 * num_processes)
+        remainder = lines % num_processes
+        tail = lines // num_processes
+
+        if self.process_lines:
+            self.process_lines = []
+
+        for process in self.processes:
+            self.process_lines.append(tail)
+
+        if remainder:
+            self.process_lines[-1] += remainder - 2
+        else:
+            self.process_lines[-1] -= 2
+
         output = ""
         for i, process in enumerate(self.processes, start=1):
             if process.poll() is not None:
@@ -309,7 +324,9 @@ class ProcessGroup:
             process_output = self.output[process.id][0]
             if process_output:
                 if not all:
-                    process_output = "\n".join(process_output.splitlines()[-tail:])
+                    process_output = "\n".join(
+                        process_output.splitlines()[-self.process_lines[i - 1] :]
+                    )
                     process_output += "\n"
                 output += indent(process_output)
                 if output and output[-1] != "\n":
