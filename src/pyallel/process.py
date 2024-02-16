@@ -174,7 +174,7 @@ class ProcessGroup:
                 self.icon = 0
 
             # Clear the screen and print the output
-            print(f"\033[H\033[0J{output}")
+            print(f"\033[H\033[0J{output}", end="")
 
             # Clear the screen again
             print("\033[H\033[0J", end="")
@@ -331,7 +331,7 @@ class ProcessGroup:
                 output += indent(process_output)
                 if output and output[-1] != "\n":
                     output += "\n"
-                if i != len(self.processes):
+                if i != num_processes:
                     output += "\n"
 
         return output
