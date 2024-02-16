@@ -14,8 +14,10 @@ if IN_TTY:
     SAVE_CURSOR = "\033[s"
     RESTORE_CURSOR = "\033[u"
     UP_LINE = "\033[1F"
-    NC = "\033[0m"
-    CR = "\r"
+    RESET_COLOUR = "\033[0m"
+    CARRIAGE_RETURN = "\r"
+    DIM_ON = "\033[2m"
+    DIM_OFF = "\033[22m"
 
     def COLUMNS() -> int:
         return os.get_terminal_size().columns
@@ -33,8 +35,10 @@ else:
     SAVE_CURSOR = ""
     RESTORE_CURSOR = ""
     UP_LINE = ""
-    NC = ""
-    CR = ""
+    RESET_COLOUR = ""
+    CARRIAGE_RETURN = ""
+    DIM_ON = ""
+    DIM_OFF = ""
 
     def COLUMNS() -> int:
         return sys.maxsize

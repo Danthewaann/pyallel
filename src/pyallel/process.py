@@ -24,11 +24,14 @@ def get_num_lines(output: str, columns: int | None = None) -> int:
     return lines
 
 
-def indent(output: str, keepend: bool = True) -> str:
-    indented_output = "\n".join("    " + line for line in output.splitlines())
+def prefix(output: str, keepend: bool = True) -> str:
+    prefixed_output = "\n".join(
+        f"{constants.DIM_ON}=>{constants.DIM_OFF} " + line
+        for line in output.splitlines()
+    )
     if keepend and output and output[-1] == "\n":
-        indented_output += "\n"
-    return indented_output
+        prefixed_output += "\n"
+    return prefixed_output
 
 
 def format_time_taken(time_taken: float) -> str:
@@ -82,7 +85,7 @@ def get_command_status(
     if verbose:
         output += f" {' '.join(process.args)}"
 
-    output += f"{constants.NC}]{colour} {msg} "
+    output += f"{constants.RESET_COLOUR}]{colour} {msg} "
 
     if timer:
         end = process.end
@@ -91,19 +94,19 @@ def get_command_status(
         elapsed = end - process.start
         output += f"in {format_time_taken(elapsed)} "
 
-    output += f"{icon}{constants.NC}"
+    output += f"{icon}{constants.RESET_COLOUR}"
     return output
 
 
 def print_command_output(process: Process) -> None:
     output = process.read()
     if output:
-        print(indent(output.decode(), keepend=False))
+        print(prefix(output.decode(), keepend=False))
     print()
 
 
 def run_process(process: Process, timer: bool = False, verbose: bool = False) -> bool:
-    print(f"{constants.CLEAR_LINE}{constants.CR}", end="")
+    print(f"{constants.CLEAR_LINE}{constants.CARRIAGE_RETURN}", end="")
 
     if process.return_code() != 0:
         print(get_command_status(process, passed=False, verbose=verbose, timer=timer))
@@ -132,13 +135,15 @@ class ProcessGroup:
             process.run()
 
         if not self.interactive or not constants.IN_TTY:
-            print(f"{constants.WHITE_BOLD}Running commands...{constants.NC}\n")
+            print(
+                f"{constants.WHITE_BOLD}Running commands...{constants.RESET_COLOUR}\n"
+            )
 
         while True:
             if self.interactive and constants.IN_TTY:
                 for icon in constants.ICONS:
                     print(
-                        f"{constants.CLEAR_LINE}{constants.CR}{constants.WHITE_BOLD}Running commands{constants.NC} {icon}",
+                        f"{constants.CLEAR_LINE}{constants.CARRIAGE_RETURN}{constants.WHITE_BOLD}Running commands{constants.RESET_COLOUR} {icon}",
                         end="",
                     )
                     time.sleep(0.1)
@@ -192,7 +197,7 @@ class ProcessGroup:
     def stream_non_interactive(self) -> bool:
         running_process = None
 
-        print(f"{constants.WHITE_BOLD}Running commands...{constants.NC}\n")
+        print(f"{constants.WHITE_BOLD}Running commands...{constants.RESET_COLOUR}\n")
 
         while True:
             output = ""
@@ -213,14 +218,14 @@ class ProcessGroup:
                 process_output = process.readline().decode()
 
                 if not self.output[process.id] and process_output:
-                    process_output = indent(process_output)
+                    process_output = prefix(process_output)
                     self.output[process.id].append(process_output)
                     output += process_output
                 elif process_output:
                     if self.output[process.id][-1][-1] != "\n":
                         self.output[process.id][-1] += process_output
                     else:
-                        process_output = indent(process_output)
+                        process_output = prefix(process_output)
                         self.output[process.id].append(process_output)
                     output += process_output
 
@@ -229,7 +234,7 @@ class ProcessGroup:
                         self.passed = False
                     process_output = process.read().decode()
                     if process_output:
-                        output += indent(process_output)
+                        output += prefix(process_output)
 
                     output += get_command_status(
                         process,
@@ -328,7 +333,7 @@ class ProcessGroup:
                         process_output.splitlines()[-self.process_lines[i - 1] :]
                     )
                     process_output += "\n"
-                output += indent(process_output)
+                output += prefix(process_output)
                 if output and output[-1] != "\n":
                     output += "\n"
                 if i != num_processes:

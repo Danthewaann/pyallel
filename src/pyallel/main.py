@@ -61,12 +61,12 @@ def run(*args: str) -> int:
 
     if not status:
         if not message:
-            print(f"{constants.RED_BOLD}A command failed!{constants.NC}")
+            print(f"{constants.RED_BOLD}A command failed!{constants.RESET_COLOUR}")
         else:
-            print(f"{constants.RED_BOLD}Error: {message}{constants.NC}")
+            print(f"{constants.RED_BOLD}Error: {message}{constants.RESET_COLOUR}")
         exit_code = 1
     else:
-        print(f"{constants.GREEN_BOLD}Success!{constants.NC}")
+        print(f"{constants.GREEN_BOLD}Success!{constants.RESET_COLOUR}")
 
     if parsed_args.timer:
         elapsed = time.perf_counter() - start
