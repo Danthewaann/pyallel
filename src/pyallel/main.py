@@ -68,10 +68,6 @@ def run(*args: str) -> int:
     else:
         print(f"{constants.GREEN_BOLD}Success!{constants.RESET_COLOUR}")
 
-    if parsed_args.timer:
-        elapsed = time.perf_counter() - start
-        print(f"\nTime taken : {format_time_taken(elapsed)}")
-
     return exit_code
 
 

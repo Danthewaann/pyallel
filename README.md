@@ -32,7 +32,7 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -t, --timer           time how long each command is taking
+  -t, --no-timer        don't time how long each command is taking
   -n, --non-interactive
                         run in non-interactive mode
   -s, --no-stream       don't stream output of each command

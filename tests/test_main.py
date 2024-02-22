@@ -21,7 +21,7 @@ class TestNonStreamedMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 f"{PREFIX}hi\n",
                 "\n",
                 "Success!\n",
@@ -36,7 +36,7 @@ class TestNonStreamedMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
                 "A command failed!\n",
             ]
@@ -50,7 +50,7 @@ class TestNonStreamedMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 f"{PREFIX}hi\n",
                 "\n",
                 "Success!\n",
@@ -65,10 +65,10 @@ class TestNonStreamedMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 f"{PREFIX}hi\n",
                 "\n",
-                "[sh] done ✓\n",
+                "[sh] done ✓ (0.1s)\n",
                 f"{PREFIX}first\n",
                 "\n",
                 "Success!\n",
@@ -85,9 +85,9 @@ class TestNonStreamedMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 f"{PREFIX}hi\n",
                 "\n",
                 "A command failed!\n",
@@ -105,9 +105,9 @@ class TestNonStreamedMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
                 "A command failed!\n",
             ]
@@ -121,14 +121,14 @@ class TestNonStreamedMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo hi] done ✓\n",
+                "[echo hi] done ✓ (0.0s)\n",
                 f"{PREFIX}hi\n",
                 "\n",
                 "Success!\n",
             ]
         )
 
-    def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_no_timer_mode(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("echo 'hi'", "-t", "-s")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
@@ -136,12 +136,10 @@ class TestNonStreamedMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo] done in 0s ✓\n",
+                "[echo] done ✓\n",
                 f"{PREFIX}hi\n",
                 "\n",
                 "Success!\n",
-                "\n",
-                "Time taken : 0s\n",
             ]
         )
 
@@ -156,7 +154,7 @@ class TestNonStreamedMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[sh] done ✓\n",
+                f"[sh] done ✓ ({wait}s)\n",
                 f"{PREFIX}hibye\n",
                 "\n",
                 "Success!\n",
@@ -178,10 +176,10 @@ class TestNonStreamedMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[sh] done ✓\n",
+                f"[sh] done ✓ ({wait}s)\n",
                 f"{PREFIX}hibye\n",
                 "\n",
-                "[sh] done ✓\n",
+                f"[sh] done ✓ ({wait}s)\n",
                 f"{PREFIX}hibye\n",
                 "\n",
                 "Success!\n",
@@ -228,7 +226,7 @@ class TestNonStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 f"{PREFIX}hi\n",
                 "\n",
                 "Success!\n",
@@ -243,7 +241,7 @@ class TestNonStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
                 "A command failed!\n",
             ]
@@ -257,7 +255,7 @@ class TestNonStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 f"{PREFIX}hi\n",
                 "\n",
                 "Success!\n",
@@ -274,10 +272,10 @@ class TestNonStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 f"{PREFIX}hi\n",
                 "\n",
-                "[sh] done ✓\n",
+                "[sh] done ✓ (0.1s)\n",
                 f"{PREFIX}first\n",
                 "\n",
                 "Success!\n",
@@ -294,9 +292,9 @@ class TestNonStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 f"{PREFIX}hi\n",
                 "\n",
                 "A command failed!\n",
@@ -314,9 +312,9 @@ class TestNonStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
                 "A command failed!\n",
             ]
@@ -330,14 +328,14 @@ class TestNonStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo hi] done ✓\n",
+                "[echo hi] done ✓ (0.0s)\n",
                 f"{PREFIX}hi\n",
                 "\n",
                 "Success!\n",
             ]
         )
 
-    def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_no_timer_mode(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("echo 'hi'", "-t", "-n", "-s")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
@@ -345,12 +343,10 @@ class TestNonStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[echo] done in 0s ✓\n",
+                "[echo] done ✓\n",
                 f"{PREFIX}hi\n",
                 "\n",
                 "Success!\n",
-                "\n",
-                "Time taken : 0s\n",
             ]
         )
 
@@ -365,7 +361,7 @@ class TestNonStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[sh] done ✓\n",
+                f"[sh] done ✓ ({wait}s)\n",
                 f"{PREFIX}hibye\n",
                 "\n",
                 "Success!\n",
@@ -388,10 +384,10 @@ class TestNonStreamedNonInteractiveMode:
             [
                 "Running commands...\n",
                 "\n",
-                "[sh] done ✓\n",
+                f"[sh] done ✓ ({wait}s)\n",
                 f"{PREFIX}hibye\n",
                 "\n",
-                "[sh] done ✓\n",
+                f"[sh] done ✓ ({wait}s)\n",
                 f"{PREFIX}hibye\n",
                 "\n",
                 "Success!\n",
@@ -481,7 +477,7 @@ class TestStreamedMode:
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_no_timer_mode(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("echo 'hi'", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
@@ -528,7 +524,7 @@ class TestStreamedNonInteractiveMode:
                 "\n",
                 "[echo] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 "\n",
                 "Success!\n",
             ]
@@ -543,7 +539,7 @@ class TestStreamedNonInteractiveMode:
                 "Running commands...\n",
                 "\n",
                 "[sh] running... \n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
                 "A command failed!\n",
             ]
@@ -559,7 +555,7 @@ class TestStreamedNonInteractiveMode:
                 "\n",
                 "[echo] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 "\n",
                 "Success!\n",
             ]
@@ -575,11 +571,11 @@ class TestStreamedNonInteractiveMode:
                 "\n",
                 "[sh] running... \n",
                 f"{PREFIX}first\n",
-                "[sh] done ✓\n",
+                "[sh] done ✓ (0.1s)\n",
                 "\n",
                 "[echo] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 "\n",
                 "Success!\n",
             ]
@@ -596,11 +592,11 @@ class TestStreamedNonInteractiveMode:
                 "Running commands...\n",
                 "\n",
                 "[sh] running... \n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
                 "[echo] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo] done ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 "\n",
                 "A command failed!\n",
             ]
@@ -618,10 +614,10 @@ class TestStreamedNonInteractiveMode:
                 "Running commands...\n",
                 "\n",
                 "[sh] running... \n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
                 "[sh] running... \n",
-                "[sh] failed ✗\n",
+                "[sh] failed ✗ (0.0s)\n",
                 "\n",
                 "A command failed!\n",
             ]
@@ -637,13 +633,13 @@ class TestStreamedNonInteractiveMode:
                 "\n",
                 "[echo hi] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo hi] done ✓\n",
+                "[echo hi] done ✓ (0.0s)\n",
                 "\n",
                 "Success!\n",
             ]
         )
 
-    def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_no_timer_mode(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("echo 'hi'", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
@@ -653,18 +649,16 @@ class TestStreamedNonInteractiveMode:
                 "\n",
                 "[echo] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo] done in 0s ✓\n",
+                "[echo] done ✓\n",
                 "\n",
                 "Success!\n",
-                "\n",
-                "Time taken : 0s\n",
             ]
         )
 
-    def test_run_timer_mode_with_longer_first_command(
+    def test_run_with_longer_first_command(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("sleep 1", "echo 'hi'", "-n", "-t")
+        exit_code = main.run("sleep 1", "echo 'hi'", "-n")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
@@ -672,15 +666,13 @@ class TestStreamedNonInteractiveMode:
                 "Running commands...\n",
                 "\n",
                 "[sleep] running... \n",
-                "[sleep] done in 1s ✓\n",
+                "[sleep] done ✓ (1.0s)\n",
                 "\n",
                 "[echo] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo] done in 0s ✓\n",
+                "[echo] done ✓ (0.0s)\n",
                 "\n",
                 "Success!\n",
-                "\n",
-                "Time taken : 1s\n",
             ]
         )
 
@@ -697,7 +689,7 @@ class TestStreamedNonInteractiveMode:
                 "\n",
                 "[sh] running... \n",
                 f"{PREFIX}hibye\n",
-                "[sh] done ✓\n",
+                f"[sh] done ✓ ({wait}s)\n",
                 "\n",
                 "Success!\n",
             ]
@@ -720,11 +712,11 @@ class TestStreamedNonInteractiveMode:
                 "\n",
                 "[sh] running... \n",
                 f"{PREFIX}hibye\n",
-                "[sh] done ✓\n",
+                f"[sh] done ✓ ({wait}s)\n",
                 "\n",
                 "[sh] running... \n",
                 f"{PREFIX}hibye\n",
-                "[sh] done ✓\n",
+                f"[sh] done ✓ ({wait}s)\n",
                 "\n",
                 "Success!\n",
             ]

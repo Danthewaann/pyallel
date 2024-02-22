@@ -40,10 +40,11 @@ def create_parser() -> ArgumentParser:
     )
     parser.add_argument(
         "-t",
-        "--timer",
-        help="time how long each command is taking",
-        action="store_true",
-        default=False,
+        "--no-timer",
+        dest="timer",
+        help="don't time how long each command is taking",
+        action="store_false",
+        default=True,
     )
     parser.add_argument(
         "-n",

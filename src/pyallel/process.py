@@ -35,27 +35,10 @@ def prefix(output: str, keepend: bool = True) -> str:
 
 
 def format_time_taken(time_taken: float) -> str:
-    seconds = int(time_taken) % (24 * 3600)
-    hour = seconds // 3600
-    seconds %= 3600
-    minutes = seconds // 60
-    seconds %= 60
+    time_taken = round(time_taken, 1)
+    seconds = time_taken % (24 * 3600)
 
-    msg = ""
-    if time_taken < 60:
-        msg = f"{seconds}s"
-    elif 60 <= time_taken < 3600:
-        msg = f"{minutes}m"
-        if seconds:
-            msg += f" {seconds}s"
-    elif time_taken >= 3600:
-        msg = f"{hour}h"
-        if minutes:
-            msg += f" {minutes}m"
-        if seconds:
-            msg += f" {seconds}s"
-
-    return msg
+    return f"{seconds}s"
 
 
 def get_command_status(
@@ -85,16 +68,17 @@ def get_command_status(
     if verbose:
         output += f" {' '.join(process.args)}"
 
-    output += f"{constants.RESET_COLOUR}]{colour} {msg} "
+    output += f"{constants.RESET_COLOUR}]{colour} {msg} {icon}{constants.RESET_COLOUR}"
 
     if timer:
         end = process.end
         if not process.end:
             end = time.perf_counter()
         elapsed = end - process.start
-        output += f"in {format_time_taken(elapsed)} "
+        output += (
+            f" ({constants.DIM_ON}{format_time_taken(elapsed)}{constants.DIM_OFF})"
+        )
 
-    output += f"{icon}{constants.RESET_COLOUR}"
     return output
 
 
