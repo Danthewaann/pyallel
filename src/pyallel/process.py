@@ -16,15 +16,6 @@ from dataclasses import dataclass, field
 from pyallel.errors import InvalidExecutableErrors, InvalidExecutableError
 
 
-def get_num_lines(output: str, columns: int | None = None) -> int:
-    lines = 0
-    columns = columns or constants.COLUMNS()
-    for line in output.splitlines():
-        length = len(line)
-        lines += 1 * (length % columns + 1 if length > columns else 1)
-    return lines
-
-
 def prefix(output: str, keepend: bool = True) -> str:
     prefixed_output = "\n".join(
         f"{constants.DIM_ON}=>{constants.DIM_OFF} {line}{constants.RESET_COLOUR}"
