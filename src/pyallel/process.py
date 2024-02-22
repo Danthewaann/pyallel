@@ -358,10 +358,10 @@ class Process:
         self._fd = open(fd_name, "rb")
         self._process = subprocess.Popen(
             [self.name, *self.args],
+            stdin=subprocess.DEVNULL,
             stdout=fd,
             stderr=subprocess.STDOUT,
             env=self.env,
-            # shell=True,
         )
 
     def __del__(self) -> None:
