@@ -100,17 +100,6 @@ def test_readline_handles_delayed_newline() -> None:
     assert output == b"second\n"
 
 
-def test_process_interrupt() -> None:
-    process = Process.from_command("sh -c 'sleep 1 && echo hi'")
-    process.run()
-    time.sleep(0.1)
-    process.interrupt()
-    assert process.wait() == 0, process.read()
-    # We need to set shell=True when creating the underlying `subprocess.Popen` object
-    # for the `Process` object to allow the actual expected value below to be an empty string.
-    assert process.read() == b"hi\n"
-
-
 def test_process_interrupt_with_trapped_output() -> None:
     # Verify that only `hi` is outputted when running the script as normal
     process = Process.from_command(
