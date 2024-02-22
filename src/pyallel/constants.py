@@ -1,7 +1,7 @@
 import os
 import sys
 
-IN_TTY = sys.__stdin__.isatty()
+IN_TTY = sys.stdout.isatty()
 
 
 if IN_TTY:
