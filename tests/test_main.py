@@ -655,9 +655,7 @@ class TestStreamedNonInteractiveMode:
             ]
         )
 
-    def test_run_with_longer_first_command(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
+    def test_run_with_longer_first_command(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("sleep 1", "echo 'hi'", "-n")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
