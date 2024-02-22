@@ -73,7 +73,7 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [x] Improve error handling when parsing provided commands (check they are valid executables)
 - [x] Maybe make tail mode followed by an optional dump of all the command output once it
       finishes the default behaviour?
-- [ ] Add graceful Ctrl-C interrupt handling
+- [x] Add graceful Ctrl-C interrupt handling to streamed modes
 - [ ] Setup build system to convert `pyallel` into a single file executable for ease of
       use and distribution
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
