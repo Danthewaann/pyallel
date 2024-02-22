@@ -1,4 +1,7 @@
+import os
+import signal
 import subprocess
+import time
 from pyallel import main
 from pytest import CaptureFixture
 
@@ -512,6 +515,17 @@ class TestStreamedMode:
         status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
         assert status.returncode == 1, "sleep shouldn't be running!"
 
+    def test_handles_interrupt_signal(self) -> None:
+        process = subprocess.Popen(
+            ["pyallel", "./tests/assets/test_process_interrupt_with_trapped_output.sh"],
+            env=os.environ.copy(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        time.sleep(0.5)
+        process.send_signal(signal.SIGINT)
+        assert process.wait() == 2
+
 
 class TestStreamedNonInteractiveMode:
     def test_run_single_command(self, capsys: CaptureFixture[str]) -> None:
@@ -749,3 +763,32 @@ class TestStreamedNonInteractiveMode:
         )
         status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
         assert status.returncode == 1, "sleep shouldn't be running!"
+
+    def test_handles_interrupt_signal(self) -> None:
+        process = subprocess.Popen(
+            [
+                "pyallel",
+                "./tests/assets/test_process_interrupt_with_trapped_output.sh",
+                "-n",
+            ],
+            env=os.environ.copy(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        time.sleep(0.5)
+        process.send_signal(signal.SIGINT)
+        assert process.stdout is not None
+        out = process.stdout.read()
+        assert process.wait() == 2, prettify_error(out.decode())
+        assert out.decode() == "".join(
+            [
+                "Running commands...\n",
+                "\n",
+                "[./tests/assets/test_process_interrupt_with_trapped_output.sh] running... \n",
+                f"{PREFIX}hi\n",
+                f"{PREFIX}error\n",
+                "[./tests/assets/test_process_interrupt_with_trapped_output.sh] failed ✗ (1.0s)\n",
+                "\n",
+                "Interrupt!\n",
+            ]
+        )

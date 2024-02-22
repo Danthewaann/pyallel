@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import sys
 import traceback
-import time
 import importlib.metadata
 from pyallel.errors import InvalidExecutableErrors
 
 from pyallel.parser import Arguments, create_parser
-from pyallel.process import ProcessGroup, format_time_taken
+from pyallel.process import ProcessGroup
 from pyallel import constants
 
 
@@ -17,7 +16,7 @@ def main_loop(
     timer: bool = False,
     verbose: bool = False,
     stream: bool = False,
-) -> bool:
+) -> int:
     process_group = ProcessGroup.from_commands(
         *commands, interactive=interactive, timer=timer, verbose=verbose
     )
@@ -40,12 +39,9 @@ def run(*args: str) -> int:
         parser.print_help()
         return 2
 
-    start = time.perf_counter()
-
-    exit_code = 0
     message = None
     try:
-        status = main_loop(
+        exit_code = main_loop(
             *parsed_args.commands,
             interactive=parsed_args.interactive,
             timer=parsed_args.timer,
@@ -53,18 +49,19 @@ def run(*args: str) -> int:
             stream=parsed_args.stream,
         )
     except InvalidExecutableErrors as e:
-        status = False
+        exit_code = 1
         message = str(e)
     except Exception:
-        status = False
+        exit_code = 1
         message = traceback.format_exc()
 
-    if not status:
+    if exit_code == 2:
+        print(f"{constants.YELLOW_BOLD}Interrupt!{constants.RESET_COLOUR}")
+    elif exit_code == 1:
         if not message:
             print(f"{constants.RED_BOLD}A command failed!{constants.RESET_COLOUR}")
         else:
             print(f"{constants.RED_BOLD}Error: {message}{constants.RESET_COLOUR}")
-        exit_code = 1
     else:
         print(f"{constants.GREEN_BOLD}Success!{constants.RESET_COLOUR}")
 

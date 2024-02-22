@@ -1,5 +1,6 @@
 from __future__ import annotations
 from collections import defaultdict
+import signal
 
 import time
 import subprocess
@@ -26,7 +27,7 @@ def get_num_lines(output: str, columns: int | None = None) -> int:
 
 def prefix(output: str, keepend: bool = True) -> str:
     prefixed_output = "\n".join(
-        f"{constants.DIM_ON}=>{constants.DIM_OFF} " + line
+        f"{constants.DIM_ON}=>{constants.DIM_OFF} {line}{constants.RESET_COLOUR}"
         for line in output.splitlines()
     )
     if keepend and output and output[-1] == "\n":
@@ -114,7 +115,7 @@ class ProcessGroup:
     passed: bool = True
     icon: int = 0
 
-    def run(self) -> bool:
+    def run(self) -> int:
         for process in self.processes:
             process.run()
 
@@ -146,99 +147,114 @@ class ProcessGroup:
             if len(self.completed_processes) == len(self.processes):
                 break
 
-        return self.passed
+        return 1 if not self.passed else 0
 
-    def stream(self) -> bool:
+    def stream(self) -> int:
         for process in self.processes:
             process.run()
 
         if not self.interactive:
             return self.stream_non_interactive()
 
+        interrupted = False
+
         while True:
-            output = self.complete_output()
+            try:
+                output = self.complete_output()
+                self.icon += 1
+                if self.icon == len(constants.ICONS):
+                    self.icon = 0
 
-            self.icon += 1
-            if self.icon == len(constants.ICONS):
-                self.icon = 0
+                # Clear the screen and print the output
+                print(f"\033[H\033[0J{output}", end="")
 
-            # Clear the screen and print the output
-            print(f"\033[H\033[0J{output}", end="")
+                # Clear the screen again
+                print("\033[H\033[0J", end="")
 
-            # Clear the screen again
-            print("\033[H\033[0J", end="")
+                if len(self.completed_processes) == len(self.processes):
+                    break
 
-            if len(self.completed_processes) == len(self.processes):
-                break
-
-            time.sleep(0.1)
+                time.sleep(0.1)
+            except KeyboardInterrupt:
+                interrupted = True
+                for process in self.processes:
+                    process.interrupt()
+                    process.wait()
 
         output = self.complete_output(all=True)
         # Clear the screen one final time before printing the output
         print(f"\033[3J{output}")
-        return self.passed
 
-    def stream_non_interactive(self) -> bool:
+        return 2 if interrupted else (1 if not self.passed else 0)
+
+    def stream_non_interactive(self) -> int:
         running_process = None
+        interrupted = False
 
         print(f"{constants.WHITE_BOLD}Running commands...{constants.RESET_COLOUR}\n")
 
         while True:
-            output = ""
-            for process in self.processes:
-                if (
-                    running_process is None
-                    and process.id not in self.completed_processes
-                ):
-                    output += get_command_status(process, verbose=self.verbose)
-                    output += "\n"
-                    running_process = process
-                elif running_process is not process:
-                    # Need to do this to properly keep track of how long all the other
-                    # commands are taking
-                    process.poll()
-                    continue
+            try:
+                output = ""
+                for process in self.processes:
+                    if (
+                        running_process is None
+                        and process.id not in self.completed_processes
+                    ):
+                        output += get_command_status(process, verbose=self.verbose)
+                        output += "\n"
+                        running_process = process
+                    elif running_process is not process:
+                        # Need to do this to properly keep track of how long all the other
+                        # commands are taking
+                        process.poll()
+                        continue
 
-                process_output = process.readline().decode()
+                    process_output = process.readline().decode()
 
-                if not self.output[process.id] and process_output:
-                    process_output = prefix(process_output)
-                    self.output[process.id].append(process_output)
-                    output += process_output
-                elif process_output:
-                    if self.output[process.id][-1][-1] != "\n":
-                        self.output[process.id][-1] += process_output
-                    else:
+                    if not self.output[process.id] and process_output:
                         process_output = prefix(process_output)
                         self.output[process.id].append(process_output)
-                    output += process_output
+                        output += process_output
+                    elif process_output:
+                        if self.output[process.id][-1][-1] != "\n":
+                            self.output[process.id][-1] += process_output
+                        else:
+                            process_output = prefix(process_output)
+                            self.output[process.id].append(process_output)
+                        output += process_output
 
-                if process.poll() is not None:
-                    if process.return_code() != 0:
-                        self.passed = False
-                    process_output = process.read().decode()
-                    if process_output:
-                        output += prefix(process_output)
+                    if process.poll() is not None:
+                        if process.return_code() != 0:
+                            self.passed = False
+                        process_output = process.read().decode()
+                        if process_output:
+                            output += prefix(process_output)
 
-                    output += get_command_status(
-                        process,
-                        passed=process.return_code() == 0,
-                        verbose=self.verbose,
-                        timer=self.timer,
-                    )
-                    output += "\n\n"
-                    self.completed_processes.add(process.id)
-                    running_process = None
+                        output += get_command_status(
+                            process,
+                            passed=process.return_code() == 0,
+                            verbose=self.verbose,
+                            timer=self.timer,
+                        )
+                        output += "\n\n"
+                        self.completed_processes.add(process.id)
+                        running_process = None
 
-            if output:
-                print(output, end="")
+                if output:
+                    print(output, end="")
 
-            if len(self.completed_processes) == len(self.processes):
-                break
+                if len(self.completed_processes) == len(self.processes):
+                    break
 
-            time.sleep(0.01)
+                time.sleep(0.01)
+            except KeyboardInterrupt:
+                interrupted = True
+                for process in self.processes:
+                    process.interrupt()
+                    process.wait()
 
-        return self.passed
+        return 2 if interrupted else (1 if not self.passed else 0)
 
     @classmethod
     def from_commands(
@@ -354,6 +370,7 @@ class Process:
             stdout=fd,
             stderr=subprocess.STDOUT,
             env=self.env,
+            # shell=True,
         )
 
     def __del__(self) -> None:
@@ -382,6 +399,15 @@ class Process:
         if self._process:
             return self._process.returncode
         return None
+
+    def interrupt(self) -> None:
+        if self._process:
+            self._process.send_signal(signal.SIGINT)
+
+    def wait(self) -> int:
+        if self._process:
+            return self._process.wait()
+        return -1
 
     @classmethod
     def from_command(cls, command: str) -> Process:

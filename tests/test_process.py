@@ -124,3 +124,35 @@ def test_get_num_lines(output: str, expected: int) -> None:
 @pytest.mark.parametrize("columns,lines", ((8, 2), (5, 3)))
 def test_get_num_lines_with_columns(columns: int, lines: int) -> None:
     assert get_num_lines("Hello Mr Anderson", columns=columns) == lines
+
+
+def test_process_interrupt() -> None:
+    process = Process.from_command("sh -c 'sleep 1 && echo hi'")
+    process.run()
+    time.sleep(0.1)
+    process.interrupt()
+    assert process.wait() == 0, process.read()
+    # We need to set shell=True when creating the underlying `subprocess.Popen` object
+    # for the `Process` object to allow the actual expected value below to be an empty string.
+    assert process.read() == b"hi\n"
+
+
+def test_process_interrupt_with_trapped_output() -> None:
+    # Verify that only `hi` is outputted when running the script as normal
+    process = Process.from_command(
+        "./tests/assets/test_process_interrupt_with_trapped_output.sh"
+    )
+    process.run()
+    assert process.wait() == 0, process.read()
+    assert process.read() == b"hi\n"
+
+    # Verify that `hi` and `error` is outputted when terminating the script
+    # while it is running
+    process = Process.from_command(
+        "./tests/assets/test_process_interrupt_with_trapped_output.sh"
+    )
+    process.run()
+    time.sleep(0.1)
+    process.interrupt()
+    assert process.wait() == 2, process.read()
+    assert process.read() == b"hi\nerror\n"
