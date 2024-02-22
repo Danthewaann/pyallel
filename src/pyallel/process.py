@@ -74,26 +74,6 @@ def get_command_status(
     return output
 
 
-def print_command_output(process: Process) -> None:
-    output = process.read()
-    if output:
-        print(prefix(output.decode(), keepend=False))
-    print()
-
-
-def run_process(process: Process, timer: bool = False, verbose: bool = False) -> bool:
-    print(f"{constants.CLEAR_LINE}{constants.CARRIAGE_RETURN}", end="")
-
-    if process.return_code() != 0:
-        print(get_command_status(process, passed=False, verbose=verbose, timer=timer))
-        print_command_output(process)
-        return False
-    else:
-        print(get_command_status(process, passed=True, verbose=verbose, timer=timer))
-        print_command_output(process)
-        return True
-
-
 @dataclass
 class ProcessGroup:
     processes: list[Process]
@@ -105,40 +85,6 @@ class ProcessGroup:
     completed_processes: set[UUID] = field(default_factory=set)
     passed: bool = True
     icon: int = 0
-
-    def run(self) -> int:
-        for process in self.processes:
-            process.run()
-
-        if not self.interactive or not constants.IN_TTY:
-            print(
-                f"{constants.WHITE_BOLD}Running commands...{constants.RESET_COLOUR}\n"
-            )
-
-        while True:
-            if self.interactive and constants.IN_TTY:
-                for icon in constants.ICONS:
-                    print(
-                        f"{constants.CLEAR_LINE}{constants.CARRIAGE_RETURN}{constants.WHITE_BOLD}Running commands{constants.RESET_COLOUR} {icon}",
-                        end="",
-                    )
-                    time.sleep(0.1)
-
-            for process in self.processes:
-                if process.id in self.completed_processes or process.poll() is None:
-                    continue
-
-                self.completed_processes.add(process.id)
-                process_passed = run_process(
-                    process, verbose=self.verbose, timer=self.timer
-                )
-                if not process_passed:
-                    self.passed = False
-
-            if len(self.completed_processes) == len(self.processes):
-                break
-
-        return 1 if not self.passed else 0
 
     def stream(self) -> int:
         for process in self.processes:

@@ -15,13 +15,10 @@ def main_loop(
     interactive: bool = False,
     timer: bool = False,
     verbose: bool = False,
-    stream: bool = False,
 ) -> int:
     process_group = ProcessGroup.from_commands(
         *commands, interactive=interactive, timer=timer, verbose=verbose
     )
-    if not stream:
-        return process_group.run()
 
     return process_group.stream()
 
@@ -46,7 +43,6 @@ def run(*args: str) -> int:
             interactive=parsed_args.interactive,
             timer=parsed_args.timer,
             verbose=parsed_args.verbose,
-            stream=parsed_args.stream,
         )
     except InvalidExecutableErrors as e:
         exit_code = 1

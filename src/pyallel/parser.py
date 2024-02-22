@@ -9,7 +9,6 @@ class Arguments:
     timer: bool
     verbose: bool
     version: bool
-    stream: bool
 
     def __repr__(self) -> str:
         msg = "Arguments:\n"
@@ -53,14 +52,6 @@ def create_parser() -> ArgumentParser:
         action="store_false",
         dest="interactive",
         default=True,
-    )
-    parser.add_argument(
-        "-s",
-        "--no-stream",
-        help="don't stream output of each command",
-        action="store_false",
-        default=True,
-        dest="stream",
     )
     parser.add_argument(
         "-V",
