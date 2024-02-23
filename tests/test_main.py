@@ -113,7 +113,7 @@ class TestStreamedMode:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        time.sleep(0.1)
+        time.sleep(0.3)
         process.send_signal(signal)
         assert process.wait() == exit_code
 
@@ -130,7 +130,7 @@ class TestStreamedMode:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        time.sleep(0.1)
+        time.sleep(0.3)
         process.send_signal(signal)
         time.sleep(0.1)
         process.send_signal(signal)
@@ -404,7 +404,7 @@ class TestStreamedNonInteractiveMode:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        time.sleep(0.1)
+        time.sleep(0.3)
         process.send_signal(signal)
         assert process.stdout is not None
         out = process.stdout.read()
@@ -439,7 +439,7 @@ class TestStreamedNonInteractiveMode:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        time.sleep(0.1)
+        time.sleep(0.3)
         process.send_signal(signal)
         time.sleep(0.1)
         process.send_signal(signal)
