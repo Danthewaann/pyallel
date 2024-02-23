@@ -122,7 +122,7 @@ def test_get_num_lines(output: str, expected: int) -> None:
     assert get_num_lines(output) == expected
 
 
-@pytest.mark.parametrize("columns,lines", ((8, 2), (5, 3)))
+@pytest.mark.parametrize("columns,lines", ((8, 3), (5, 4)))
 def test_get_num_lines_with_columns(columns: int, lines: int) -> None:
     assert get_num_lines("Hello Mr Anderson", columns=columns) == lines
 
