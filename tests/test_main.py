@@ -3,10 +3,10 @@ import re
 import signal
 import subprocess
 import time
-from pyallel import main
-from pytest import CaptureFixture
 
 import pytest
+from pyallel import main
+from pytest import CaptureFixture, MonkeyPatch
 
 
 def prettify_error(out: str) -> str:
@@ -22,6 +22,12 @@ class TestStreamedMode:
     NOTE: These tests can only verify the exit code consistently
     as terminal output is re-written which isn't easy to consistently assert against
     """
+
+    @pytest.fixture(autouse=True)
+    def in_tty(self, monkeypatch: MonkeyPatch) -> None:
+        ## Trick pyallel into thinking we are in an interactive terminal
+        ## so we can test the interactive mode
+        monkeypatch.setattr(main.constants, "IN_TTY", True)  # type: ignore[attr-defined]
 
     def test_run_single_command(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("echo 'hi'", "-t")
@@ -73,8 +79,17 @@ class TestStreamedMode:
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
+    def test_handles_running_pyallel_within_pyallel(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run(
+            "pyallel ./tests/assets/test_handle_multiple_signals.sh -t", "-t"
+        )
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+
     def test_handles_invalid_executable(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("invalid_exe", "-t")
+        exit_code = main.run("invalid_exe", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert (
@@ -84,7 +99,7 @@ class TestStreamedMode:
     def test_handles_many_invalid_executables(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("invalid_exe", "other_invalid_exe", "-t")
+        exit_code = main.run("invalid_exe", "other_invalid_exe", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert (
@@ -95,7 +110,7 @@ class TestStreamedMode:
     def test_does_not_run_executables_on_parsing_error(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10", "-t")
+        exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert (
@@ -313,6 +328,33 @@ class TestStreamedNonInteractiveMode:
             )
             is not None
         ), prettify_error(captured.out)
+
+    def test_handles_running_pyallel_within_pyallel(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run(
+            "pyallel ./tests/assets/test_handle_multiple_signals.sh -t", "-n", "-t"
+        )
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        assert captured.out.splitlines(keepends=True) == (
+            [
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[pyallel] running... \n",
+                f"{PREFIX}{PREFIX}Running commands...\n",
+                f"{PREFIX}{PREFIX}\n",
+                f"{PREFIX}{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] running... \n",
+                f"{PREFIX}{PREFIX}hi\n",
+                f"{PREFIX}{PREFIX}bye\n",
+                f"{PREFIX}{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] done ✓\n",
+                f"{PREFIX}{PREFIX}\n",
+                f"{PREFIX}{PREFIX}Success!\n",
+                f"{PREFIX}[pyallel] done ✓\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Success!\n",
+            ]
+        )
 
     @pytest.mark.parametrize("wait", ["0.1", "0.5"])
     def test_handles_single_command_output_with_delayed_newlines(
