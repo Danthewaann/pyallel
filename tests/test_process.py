@@ -6,7 +6,7 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from pyallel.process import DumpMode, Process
+from pyallel.process import DumpMode, Process, get_num_lines
 
 
 def test_from_command() -> None:
@@ -119,3 +119,29 @@ def test_process_interrupt_with_trapped_output() -> None:
     process.interrupt()
     assert process.wait() == 2, process.read()
     assert process.read() == b"hi\nerror\n"
+
+
+@pytest.mark.parametrize(
+    "output,expected",
+    (
+        (
+            "Hello Mr Anderson",
+            1,
+        ),
+        (
+            "Hello Mr Anderson\nIt is inevitable",
+            2,
+        ),
+        (
+            "Hello Mr Anderson\nIt is inevitable\nHAHAHAHAH",
+            3,
+        ),
+    ),
+)
+def test_get_num_lines(output: str, expected: int) -> None:
+    assert get_num_lines(output) == expected
+
+
+@pytest.mark.parametrize("columns,lines", ((8, 2), (5, 3)))
+def test_get_num_lines_with_columns(columns: int, lines: int) -> None:
+    assert get_num_lines("Hello Mr Anderson", columns=columns) == lines

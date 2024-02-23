@@ -110,7 +110,9 @@ class TestStreamedMode:
     def test_does_not_run_executables_on_parsing_error(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10", "-t", "--colour", "no")
+        exit_code = main.run(
+            "invalid_exe", "other_invalid_exe", "sleep 10", "-t", "--colour", "no"
+        )
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert (

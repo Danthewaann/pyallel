@@ -17,6 +17,15 @@ from pyallel.colours import Colours
 from pyallel.errors import InvalidExecutableError, InvalidExecutableErrors
 
 
+def get_num_lines(output: str, columns: int | None = None) -> int:
+    lines = 0
+    columns = columns or constants.COLUMNS()
+    for line in output.splitlines():
+        length = len(line)
+        lines += 1 * (length % columns + 1 if length > columns else 1)
+    return lines
+
+
 def format_time_taken(time_taken: float) -> str:
     time_taken = round(time_taken, 1)
     seconds = time_taken % (24 * 3600)
@@ -52,20 +61,21 @@ class ProcessGroup:
             if self.icon == len(constants.ICONS):
                 self.icon = 0
 
-            # Clear the screen and print the output
-            print(f"\033[H\033[0J{output}", end="")
+            print(output, end="")
 
-            # Clear the screen again
-            print("\033[H\033[0J", end="")
+            # Clear all the lines that were just printed
+            for _ in range(get_num_lines(output)):
+                print(
+                    f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}",
+                    end="",
+                )
 
             if len(self.completed_processes) == len(self.processes):
                 break
 
             time.sleep(0.1)
 
-        output = self.complete_output(all=True)
-        # Clear the screen one final time before printing the output
-        print(f"\033[3J{output}")
+        print(self.complete_output(all=True))
 
         if not self.exit_code and not self.passed:
             self.exit_code = 1
