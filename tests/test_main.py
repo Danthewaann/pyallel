@@ -160,7 +160,7 @@ class TestStreamedNonInteractiveMode:
         exit_code = main.run('sh -c "exit 1"', "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
-        assert captured.out == "".join(
+        assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
@@ -169,13 +169,13 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}\n",
                 f"{PREFIX}A command failed!\n",
             ]
-        ), prettify_error(captured.out)
+        )
 
     def test_run_single_command_with_env(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("TEST_VAR=1 echo 'hi'", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
-        assert captured.out == "".join(
+        assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
@@ -193,7 +193,7 @@ class TestStreamedNonInteractiveMode:
         )
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
-        assert captured.out == "".join(
+        assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
@@ -215,7 +215,7 @@ class TestStreamedNonInteractiveMode:
         exit_code = main.run('sh -c "exit 1"', 'echo "hi"', "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
-        assert captured.out == "".join(
+        assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
@@ -237,7 +237,7 @@ class TestStreamedNonInteractiveMode:
         exit_code = main.run('sh -c "exit 1"', 'sh -c "exit 1"', "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
-        assert captured.out == "".join(
+        assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
@@ -255,7 +255,7 @@ class TestStreamedNonInteractiveMode:
         exit_code = main.run("echo 'hi'", "-n", "-V", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
-        assert captured.out == "".join(
+        assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
@@ -321,7 +321,7 @@ class TestStreamedNonInteractiveMode:
         exit_code = main.run(f"sh -c 'printf hi; sleep {wait}; echo bye'", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
-        assert captured.out == "".join(
+        assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
@@ -345,7 +345,7 @@ class TestStreamedNonInteractiveMode:
         )
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
-        assert captured.out == "".join(
+        assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
@@ -365,7 +365,9 @@ class TestStreamedNonInteractiveMode:
         exit_code = main.run("invalid_exe", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
-        assert captured.out == f"{PREFIX}Error: executables [invalid_exe] were not found\n"
+        assert (
+            captured.out == f"{PREFIX}Error: executables [invalid_exe] were not found\n"
+        )
 
     def test_handles_many_invalid_executables(
         self, capsys: CaptureFixture[str]
@@ -411,7 +413,7 @@ class TestStreamedNonInteractiveMode:
         assert process.stdout is not None
         out = process.stdout.read()
         assert process.wait() == exit_code, prettify_error(out.decode())
-        assert out.decode() == "".join(
+        assert out.decode().splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
@@ -424,7 +426,7 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}[./tests/assets/test_process_interrupt_with_trapped_output.sh] failed ✗\n",
                 f"{PREFIX}\n",
             ]
-        ), prettify_error(out.decode())
+        )
 
     @pytest.mark.parametrize(
         "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
@@ -448,7 +450,7 @@ class TestStreamedNonInteractiveMode:
         assert process.stdout is not None
         out = process.stdout.read()
         assert process.wait() == exit_code, prettify_error(out.decode())
-        assert out.decode() == "".join(
+        assert out.decode().splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
@@ -461,4 +463,4 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}\n",
                 f"{PREFIX}Abort!\n",
             ]
-        ), prettify_error(out.decode())
+        )
