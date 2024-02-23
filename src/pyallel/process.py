@@ -64,7 +64,7 @@ class ProcessGroup:
             print(output, end="")
 
             # Clear all the lines that were just printed
-            for _ in range(get_num_lines(output)):
+            for _ in range(get_num_lines(output) - (1 if self.exit_code > 1 else 0)):
                 print(
                     f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}",
                     end="",
