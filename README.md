@@ -73,6 +73,8 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [x] Maybe make tail mode followed by an optional dump of all the command output once it
       finishes the default behaviour?
 - [x] Add graceful Ctrl-C interrupt handling to streamed modes
+- [ ] Add a `--colour` flag to configure pyallel print colours
+- [ ] Allow pyallel to run pyallel as a command
 - [ ] Setup build system to convert `pyallel` into a single file executable for ease of
       use and distribution
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
