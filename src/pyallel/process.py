@@ -22,7 +22,7 @@ def get_num_lines(output: str, columns: int | None = None) -> int:
     columns = columns or constants.COLUMNS()
     for line in output.splitlines():
         length = len(line)
-        lines += 1 * (length % columns + 1 if length > columns else 1)
+        lines += 1 * (length // columns + 1 if length > columns else 1)
     return lines
 
 
