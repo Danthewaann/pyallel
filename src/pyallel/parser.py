@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from argparse import ArgumentParser, RawTextHelpFormatter
+from typing import Literal
 
 
 class Arguments:
+    colour: Literal["yes", "no", "auto"]
     commands: list[str]
     interactive: bool
     timer: bool
@@ -66,6 +68,12 @@ def create_parser() -> ArgumentParser:
         help="print version and exit",
         action="store_true",
         default=False,
+    )
+    parser.add_argument(
+        "--colour",
+        help="colour terminal output, defaults to \"%(default)s\"",
+        choices=("yes", "no", "auto"),
+        default="auto",
     )
 
     return parser

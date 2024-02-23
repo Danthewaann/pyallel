@@ -19,7 +19,7 @@ pip install pyallel
 Once installed, you can run `pyallel` to see usage information, like so:
 
 ```
-usage: pyallel [-h] [-t] [-n] [-V] [-v] [commands ...]
+usage: pyallel [-h] [-t] [-n] [-V] [-v] [--colour {yes,no,auto}] [commands ...]
 
 Run and handle the output of multiple executables in pyallel (as in parallel)
 
@@ -37,6 +37,8 @@ options:
                         run in non-interactive mode
   -V, --verbose         run in verbose mode
   -v, --version         print version and exit
+  --colour {yes,no,auto}
+                        colour terminal output, defaults to "auto"
 ```
 
 Currently you can provide a variable number of `commands` to run to `pyallel`, like so:
@@ -73,8 +75,7 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 - [x] Maybe make tail mode followed by an optional dump of all the command output once it
       finishes the default behaviour?
 - [x] Add graceful Ctrl-C interrupt handling to streamed modes
-- [ ] Add a `--colour` flag to configure pyallel print colours
-- [ ] Allow pyallel to run pyallel as a command
+- [x] Add a `--colour` flag to configure pyallel print colours
 - [ ] Setup build system to convert `pyallel` into a single file executable for ease of
       use and distribution
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's

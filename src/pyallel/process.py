@@ -13,17 +13,8 @@ from typing import Any, BinaryIO
 from pyallel import constants
 
 from dataclasses import dataclass, field
+from pyallel.colours import Colours
 from pyallel.errors import InvalidExecutableErrors, InvalidExecutableError
-
-
-def prefix(output: str, keepend: bool = True) -> str:
-    prefixed_output = "\n".join(
-        f"{constants.DIM_ON}=>{constants.DIM_OFF} {line}{constants.RESET_COLOUR}"
-        for line in output.splitlines()
-    )
-    if keepend and output and output[-1] == "\n":
-        prefixed_output += "\n"
-    return prefixed_output
 
 
 def format_time_taken(time_taken: float) -> str:
@@ -31,47 +22,6 @@ def format_time_taken(time_taken: float) -> str:
     seconds = time_taken % (24 * 3600)
 
     return f"{seconds}s"
-
-
-def get_command_status(
-    process: Process,
-    icon: str | None = None,
-    passed: bool | None = None,
-    verbose: bool = False,
-    timer: bool = False,
-) -> str:
-    if passed is True:
-        colour = constants.GREEN_BOLD
-        msg = "done"
-        icon = icon or constants.TICK
-    elif passed is False:
-        colour = constants.RED_BOLD
-        msg = "failed"
-        icon = icon or constants.X
-    else:
-        colour = constants.WHITE_BOLD
-        msg = "running"
-        icon = icon or ""
-        if not icon:
-            msg += "..."
-
-    output = f"[{constants.BLUE_BOLD}{process.name}"
-
-    if verbose:
-        output += f" {' '.join(process.args)}"
-
-    output += f"{constants.RESET_COLOUR}]{colour} {msg} {icon}{constants.RESET_COLOUR}"
-
-    if timer:
-        end = process.end
-        if not process.end:
-            end = time.perf_counter()
-        elapsed = end - process.start
-        output += (
-            f" ({constants.DIM_ON}{format_time_taken(elapsed)}{constants.DIM_OFF})"
-        )
-
-    return output
 
 
 @dataclass
@@ -87,6 +37,7 @@ class ProcessGroup:
     interrupt_count: int = 0
     passed: bool = True
     icon: int = 0
+    colours: Colours = field(default_factory=Colours)
 
     def stream(self) -> int:
         for process in self.processes:
@@ -125,7 +76,9 @@ class ProcessGroup:
         running_process = None
         interrupted = False
 
-        print(f"{constants.WHITE_BOLD}Running commands...{constants.RESET_COLOUR}\n")
+        print(
+            f"{self.colours.white_bold}Running commands...{self.colours.reset_colour}\n"
+        )
 
         while True:
             output = ""
@@ -134,7 +87,7 @@ class ProcessGroup:
                     running_process is None
                     and process.id not in self.completed_processes
                 ):
-                    output += get_command_status(process, verbose=self.verbose)
+                    output += self._get_command_status(process, verbose=self.verbose)
                     output += "\n"
                     running_process = process
                 elif running_process is not process:
@@ -146,14 +99,14 @@ class ProcessGroup:
                 process_output = process.readline().decode()
 
                 if not self.output[process.id] and process_output:
-                    process_output = prefix(process_output)
+                    process_output = self._prefix(process_output)
                     self.output[process.id].append(process_output)
                     output += process_output
                 elif process_output:
                     if self.output[process.id][-1][-1] != "\n":
                         self.output[process.id][-1] += process_output
                     else:
-                        process_output = prefix(process_output)
+                        process_output = self._prefix(process_output)
                         self.output[process.id].append(process_output)
                     output += process_output
 
@@ -162,9 +115,9 @@ class ProcessGroup:
                         self.passed = False
                     process_output = process.read().decode()
                     if process_output:
-                        output += prefix(process_output)
+                        output += self._prefix(process_output)
 
-                    output += get_command_status(
+                    output += self._get_command_status(
                         process,
                         passed=process.return_code() == 0,
                         verbose=self.verbose,
@@ -182,7 +135,7 @@ class ProcessGroup:
                         and self.output[process.id][-1][-1] != "\n"
                     ):
                         output += "\n"
-                    output += f"\n{constants.YELLOW_BOLD}Interrupt!{constants.RESET_COLOUR}\n\n"
+                    output += f"\n{self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}\n\n"
                     interrupted = True
 
             if output:
@@ -194,12 +147,60 @@ class ProcessGroup:
             time.sleep(0.01)
 
         if self.interrupt_count == 2:
-            print(f"{constants.RED_BOLD}Abort!{constants.RESET_COLOUR}")
+            print(f"{self.colours.red_bold}Abort!{self.colours.reset_colour}")
 
         if not self.exit_code and not self.passed:
             self.exit_code = 1
 
         return self.exit_code
+
+    def _prefix(self, output: str, keepend: bool = True) -> str:
+        prefixed_output = "\n".join(
+            f"{self.colours.dim_on}=>{self.colours.dim_off} {line}{self.colours.reset_colour}"
+            for line in output.splitlines()
+        )
+        if keepend and output and output[-1] == "\n":
+            prefixed_output += "\n"
+        return prefixed_output
+
+    def _get_command_status(
+        self,
+        process: Process,
+        icon: str | None = None,
+        passed: bool | None = None,
+        verbose: bool = False,
+        timer: bool = False,
+    ) -> str:
+        if passed is True:
+            colour = self.colours.green_bold
+            msg = "done"
+            icon = icon or constants.TICK
+        elif passed is False:
+            colour = self.colours.red_bold
+            msg = "failed"
+            icon = icon or constants.X
+        else:
+            colour = self.colours.white_bold
+            msg = "running"
+            icon = icon or ""
+            if not icon:
+                msg += "..."
+
+        output = f"[{self.colours.blue_bold}{process.name}"
+
+        if verbose:
+            output += f" {' '.join(process.args)}"
+
+        output += f"{self.colours.reset_colour}]{colour} {msg} {icon}{self.colours.reset_colour}"
+
+        if timer:
+            end = process.end
+            if not process.end:
+                end = time.perf_counter()
+            elapsed = end - process.start
+            output += f" ({self.colours.dim_on}{format_time_taken(elapsed)}{self.colours.dim_off})"
+
+        return output
 
     def _handle_signal(self, signum: int, _frame: Any) -> None:
         for process in self.processes:
@@ -215,6 +216,7 @@ class ProcessGroup:
     def from_commands(
         cls,
         *commands: str,
+        colours: Colours,
         interactive: bool = False,
         timer: bool = False,
         verbose: bool = False,
@@ -236,6 +238,7 @@ class ProcessGroup:
             interactive=interactive,
             timer=timer,
             verbose=verbose,
+            colours=colours,
         )
 
         signal.signal(signal.SIGINT, process_group._handle_signal)
@@ -266,7 +269,7 @@ class ProcessGroup:
                 self.completed_processes.add(process.id)
                 if process.return_code() != 0:
                     self.passed = False
-                output += get_command_status(
+                output += self._get_command_status(
                     process,
                     passed=process.return_code() == 0,
                     verbose=self.verbose,
@@ -274,7 +277,7 @@ class ProcessGroup:
                 )
                 output += "\n"
             else:
-                output += get_command_status(
+                output += self._get_command_status(
                     process,
                     icon=constants.ICONS[self.icon],
                     verbose=self.verbose,
@@ -293,7 +296,7 @@ class ProcessGroup:
                         process_output.splitlines()[-self.process_lines[i - 1] :]
                     )
                     process_output += "\n"
-                output += prefix(process_output)
+                output += self._prefix(process_output)
                 if output and output[-1] != "\n":
                     output += "\n"
                 if i != num_processes:
@@ -303,9 +306,11 @@ class ProcessGroup:
             return output
 
         if self.interrupt_count == 1:
-            output += f"\n{constants.YELLOW_BOLD}Interrupt!{constants.RESET_COLOUR}"
+            output += (
+                f"\n{self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}"
+            )
         elif self.interrupt_count == 2:
-            output += f"\n{constants.RED_BOLD}Abort!{constants.RESET_COLOUR}"
+            output += f"\n{self.colours.red_bold}Abort!{self.colours.reset_colour}"
 
         return output
 

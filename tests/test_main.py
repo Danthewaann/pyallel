@@ -77,7 +77,9 @@ class TestStreamedMode:
         exit_code = main.run("invalid_exe", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
-        assert captured.out == "Error: executables [invalid_exe] were not found\n"
+        assert (
+            captured.out == "Error: executables [invalid_exe] were not found\n"
+        ), prettify_error(captured.out)
 
     def test_handles_many_invalid_executables(
         self, capsys: CaptureFixture[str]
