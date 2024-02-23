@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import traceback
 import importlib.metadata
+from pyallel import constants
 from pyallel.colours import Colours
 from pyallel.errors import InvalidExecutableErrors
 
@@ -43,12 +44,18 @@ def run(*args: str) -> int:
 
     colours = Colours.from_colour(parsed_args.colour)
 
+    interactive = True
+    if not parsed_args.interactive:
+        interactive = False
+    elif not constants.IN_TTY:
+        interactive = False
+
     message = None
     try:
         exit_code = main_loop(
             *parsed_args.commands,
             colours=colours,
-            interactive=parsed_args.interactive,
+            interactive=interactive,
             timer=parsed_args.timer,
             verbose=parsed_args.verbose,
         )
