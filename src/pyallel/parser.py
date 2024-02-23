@@ -71,7 +71,7 @@ def create_parser() -> ArgumentParser:
     )
     parser.add_argument(
         "--colour",
-        help="colour terminal output, defaults to \"%(default)s\"",
+        help='colour terminal output, defaults to "%(default)s"',
         choices=("yes", "no", "auto"),
         default="auto",
     )
