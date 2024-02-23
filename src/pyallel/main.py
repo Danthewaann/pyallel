@@ -51,14 +51,12 @@ def run(*args: str) -> int:
         exit_code = 1
         message = traceback.format_exc()
 
-    if exit_code == 2:
-        print(f"{constants.YELLOW_BOLD}Interrupt!{constants.RESET_COLOUR}")
-    elif exit_code == 1:
+    if exit_code == 1:
         if not message:
             print(f"{constants.RED_BOLD}A command failed!{constants.RESET_COLOUR}")
         else:
             print(f"{constants.RED_BOLD}Error: {message}{constants.RESET_COLOUR}")
-    else:
+    elif exit_code == 0:
         print(f"{constants.GREEN_BOLD}Success!{constants.RESET_COLOUR}")
 
     return exit_code

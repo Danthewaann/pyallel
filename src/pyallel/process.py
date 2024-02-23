@@ -9,7 +9,7 @@ import shlex
 import shutil
 import os
 from uuid import UUID, uuid4
-from typing import BinaryIO
+from typing import Any, BinaryIO
 from pyallel import constants
 
 from dataclasses import dataclass, field
@@ -83,6 +83,8 @@ class ProcessGroup:
     output: dict[UUID, list[str]] = field(default_factory=lambda: defaultdict(list))
     process_lines: list[int] = field(default_factory=list)
     completed_processes: set[UUID] = field(default_factory=set)
+    exit_code: int = 0
+    interrupt_count: int = 0
     passed: bool = True
     icon: int = 0
 
@@ -93,36 +95,31 @@ class ProcessGroup:
         if not self.interactive:
             return self.stream_non_interactive()
 
-        interrupted = False
-
         while True:
-            try:
-                output = self.complete_output()
-                self.icon += 1
-                if self.icon == len(constants.ICONS):
-                    self.icon = 0
+            output = self.complete_output()
+            self.icon += 1
+            if self.icon == len(constants.ICONS):
+                self.icon = 0
 
-                # Clear the screen and print the output
-                print(f"\033[H\033[0J{output}", end="")
+            # Clear the screen and print the output
+            print(f"\033[H\033[0J{output}", end="")
 
-                # Clear the screen again
-                print("\033[H\033[0J", end="")
+            # Clear the screen again
+            print("\033[H\033[0J", end="")
 
-                if len(self.completed_processes) == len(self.processes):
-                    break
+            if len(self.completed_processes) == len(self.processes):
+                break
 
-                time.sleep(0.1)
-            except KeyboardInterrupt:
-                interrupted = True
-                for process in self.processes:
-                    process.interrupt()
-                    process.wait()
+            time.sleep(0.1)
 
         output = self.complete_output(all=True)
         # Clear the screen one final time before printing the output
         print(f"\033[3J{output}")
 
-        return 2 if interrupted else (1 if not self.passed else 0)
+        if not self.exit_code and not self.passed:
+            self.exit_code = 1
+
+        return self.exit_code
 
     def stream_non_interactive(self) -> int:
         running_process = None
@@ -131,67 +128,88 @@ class ProcessGroup:
         print(f"{constants.WHITE_BOLD}Running commands...{constants.RESET_COLOUR}\n")
 
         while True:
-            try:
-                output = ""
-                for process in self.processes:
-                    if (
-                        running_process is None
-                        and process.id not in self.completed_processes
-                    ):
-                        output += get_command_status(process, verbose=self.verbose)
-                        output += "\n"
-                        running_process = process
-                    elif running_process is not process:
-                        # Need to do this to properly keep track of how long all the other
-                        # commands are taking
-                        process.poll()
-                        continue
+            output = ""
+            for process in self.processes:
+                if (
+                    running_process is None
+                    and process.id not in self.completed_processes
+                ):
+                    output += get_command_status(process, verbose=self.verbose)
+                    output += "\n"
+                    running_process = process
+                elif running_process is not process:
+                    # Need to do this to properly keep track of how long all the other
+                    # commands are taking
+                    process.poll()
+                    continue
 
-                    process_output = process.readline().decode()
+                process_output = process.readline().decode()
 
-                    if not self.output[process.id] and process_output:
+                if not self.output[process.id] and process_output:
+                    process_output = prefix(process_output)
+                    self.output[process.id].append(process_output)
+                    output += process_output
+                elif process_output:
+                    if self.output[process.id][-1][-1] != "\n":
+                        self.output[process.id][-1] += process_output
+                    else:
                         process_output = prefix(process_output)
                         self.output[process.id].append(process_output)
-                        output += process_output
-                    elif process_output:
-                        if self.output[process.id][-1][-1] != "\n":
-                            self.output[process.id][-1] += process_output
-                        else:
-                            process_output = prefix(process_output)
-                            self.output[process.id].append(process_output)
-                        output += process_output
+                    output += process_output
 
-                    if process.poll() is not None:
-                        if process.return_code() != 0:
-                            self.passed = False
-                        process_output = process.read().decode()
-                        if process_output:
-                            output += prefix(process_output)
+                if process.poll() is not None:
+                    if process.return_code() != 0:
+                        self.passed = False
+                    process_output = process.read().decode()
+                    if process_output:
+                        output += prefix(process_output)
 
-                        output += get_command_status(
-                            process,
-                            passed=process.return_code() == 0,
-                            verbose=self.verbose,
-                            timer=self.timer,
-                        )
-                        output += "\n\n"
-                        self.completed_processes.add(process.id)
-                        running_process = None
+                    output += get_command_status(
+                        process,
+                        passed=process.return_code() == 0,
+                        verbose=self.verbose,
+                        timer=self.timer,
+                    )
+                    output += "\n\n"
+                    self.completed_processes.add(process.id)
+                    running_process = None
 
-                if output:
-                    print(output, end="")
+                if self.interrupt_count == 0:
+                    pass
+                elif not interrupted and self.interrupt_count == 1:
+                    if (output and output[-1] != "\n") or (
+                        self.output[process.id]
+                        and self.output[process.id][-1][-1] != "\n"
+                    ):
+                        output += "\n"
+                    output += f"\n{constants.YELLOW_BOLD}Interrupt!{constants.RESET_COLOUR}\n\n"
+                    interrupted = True
 
-                if len(self.completed_processes) == len(self.processes):
-                    break
+            if output:
+                print(output, end="")
 
-                time.sleep(0.01)
-            except KeyboardInterrupt:
-                interrupted = True
-                for process in self.processes:
-                    process.interrupt()
-                    process.wait()
+            if len(self.completed_processes) == len(self.processes):
+                break
 
-        return 2 if interrupted else (1 if not self.passed else 0)
+            time.sleep(0.01)
+
+        if self.interrupt_count == 2:
+            print(f"{constants.RED_BOLD}Abort!{constants.RESET_COLOUR}")
+
+        if not self.exit_code and not self.passed:
+            self.exit_code = 1
+
+        return self.exit_code
+
+    def _handle_signal(self, signum: int, _frame: Any) -> None:
+        for process in self.processes:
+            if self.interrupt_count == 0:
+                process.interrupt()
+            else:
+                process.kill()
+
+        self.exit_code = 128 + signum
+        self.interrupt_count += 1
 
     @classmethod
     def from_commands(
@@ -213,12 +231,17 @@ class ProcessGroup:
         if errors:
             raise InvalidExecutableErrors(*errors)
 
-        return cls(
+        process_group = cls(
             processes=processes,
             interactive=interactive,
             timer=timer,
             verbose=verbose,
         )
+
+        signal.signal(signal.SIGINT, process_group._handle_signal)
+        signal.signal(signal.SIGTERM, process_group._handle_signal)
+
+        return process_group
 
     def complete_output(self, tail: int = 20, all: bool = False) -> str:
         num_processes = len(self.processes)
@@ -275,6 +298,14 @@ class ProcessGroup:
                     output += "\n"
                 if i != num_processes:
                     output += "\n"
+
+        if self.interrupt_count == 0:
+            return output
+
+        if self.interrupt_count == 1:
+            output += f"\n{constants.YELLOW_BOLD}Interrupt!{constants.RESET_COLOUR}"
+        elif self.interrupt_count == 2:
+            output += f"\n{constants.RED_BOLD}Abort!{constants.RESET_COLOUR}"
 
         return output
 
@@ -340,6 +371,10 @@ class Process:
     def interrupt(self) -> None:
         if self._process:
             self._process.send_signal(signal.SIGINT)
+
+    def kill(self) -> None:
+        if self._process:
+            self._process.send_signal(signal.SIGKILL)
 
     def wait(self) -> int:
         if self._process:

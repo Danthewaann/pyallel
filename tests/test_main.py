@@ -103,16 +103,38 @@ class TestStreamedMode:
         status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
         assert status.returncode == 1, "sleep shouldn't be running!"
 
-    def test_handles_interrupt_signal(self) -> None:
+    @pytest.mark.parametrize(
+        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
+    )
+    def test_handles_signals(self, signal: int, exit_code: int) -> None:
         process = subprocess.Popen(
             ["pyallel", "./tests/assets/test_process_interrupt_with_trapped_output.sh"],
             env=os.environ.copy(),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        time.sleep(0.5)
-        process.send_signal(signal.SIGINT)
-        assert process.wait() == 2
+        time.sleep(0.1)
+        process.send_signal(signal)
+        assert process.wait() == exit_code
+
+    @pytest.mark.parametrize(
+        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
+    )
+    def test_handles_multiple_signals(self, signal: int, exit_code: int) -> None:
+        process = subprocess.Popen(
+            [
+                "pyallel",
+                "./tests/assets/test_handle_multiple_signals.sh",
+            ],
+            env=os.environ.copy(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        time.sleep(0.1)
+        process.send_signal(signal)
+        time.sleep(0.1)
+        process.send_signal(signal)
+        assert process.wait() == exit_code
 
 
 class TestStreamedNonInteractiveMode:
@@ -367,7 +389,10 @@ class TestStreamedNonInteractiveMode:
         status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
         assert status.returncode == 1, "sleep shouldn't be running!"
 
-    def test_handles_interrupt_signal(self) -> None:
+    @pytest.mark.parametrize(
+        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
+    )
+    def test_handles_signal(self, signal: int, exit_code: int) -> None:
         process = subprocess.Popen(
             [
                 "pyallel",
@@ -379,20 +404,59 @@ class TestStreamedNonInteractiveMode:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        time.sleep(0.5)
-        process.send_signal(signal.SIGINT)
+        time.sleep(0.1)
+        process.send_signal(signal)
         assert process.stdout is not None
         out = process.stdout.read()
-        assert process.wait() == 2, prettify_error(out.decode())
+        assert process.wait() == exit_code, prettify_error(out.decode())
         assert out.decode() == "".join(
             [
                 "Running commands...\n",
                 "\n",
                 "[./tests/assets/test_process_interrupt_with_trapped_output.sh] running... \n",
                 f"{PREFIX}hi\n",
+                "\n",
+                "Interrupt!\n",
+                "\n",
                 f"{PREFIX}error\n",
                 "[./tests/assets/test_process_interrupt_with_trapped_output.sh] failed ✗\n",
                 "\n",
-                "Interrupt!\n",
             ]
+        ), prettify_error(out.decode())
+
+    @pytest.mark.parametrize(
+        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
+    )
+    def test_handles_multiple_signals(self, signal: int, exit_code: int) -> None:
+        process = subprocess.Popen(
+            [
+                "pyallel",
+                "./tests/assets/test_handle_multiple_signals.sh",
+                "-n",
+                "-t",
+            ],
+            env=os.environ.copy(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
         )
+        time.sleep(0.1)
+        process.send_signal(signal)
+        time.sleep(0.1)
+        process.send_signal(signal)
+        assert process.stdout is not None
+        out = process.stdout.read()
+        assert process.wait() == exit_code, prettify_error(out.decode())
+        assert out.decode() == "".join(
+            [
+                "Running commands...\n",
+                "\n",
+                "[./tests/assets/test_handle_multiple_signals.sh] running... \n",
+                f"{PREFIX}hi\n",
+                "\n",
+                "Interrupt!\n",
+                "\n",
+                "[./tests/assets/test_handle_multiple_signals.sh] failed ✗\n",
+                "\n",
+                "Abort!\n",
+            ]
+        ), prettify_error(out.decode())
