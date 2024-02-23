@@ -117,6 +117,12 @@ class ProcessGroup:
                     if process_output:
                         output += self._prefix(process_output)
 
+                    if (output and output[-1] != "\n") or (
+                        self.output[process.id]
+                        and self.output[process.id][-1][-1] != "\n"
+                    ):
+                        output += "\n"
+
                     output += self._get_command_status(
                         process,
                         passed=process.return_code() == 0,
