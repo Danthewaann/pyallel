@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import importlib.metadata
 import sys
 import traceback
-import importlib.metadata
+
 from pyallel import constants
 from pyallel.colours import Colours
 from pyallel.errors import InvalidExecutableErrors
-
 from pyallel.parser import Arguments, create_parser
 from pyallel.process import ProcessGroup
 

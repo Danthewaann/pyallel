@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields
 from typing import Literal
+
 from pyallel import constants
 
 

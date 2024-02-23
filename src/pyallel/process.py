@@ -1,20 +1,20 @@
 from __future__ import annotations
-from collections import defaultdict
-import signal
 
-import time
-import subprocess
-import tempfile
+import os
 import shlex
 import shutil
-import os
-from uuid import UUID, uuid4
-from typing import Any, BinaryIO
-from pyallel import constants
-
+import signal
+import subprocess
+import tempfile
+import time
+from collections import defaultdict
 from dataclasses import dataclass, field
+from typing import Any, BinaryIO
+from uuid import UUID, uuid4
+
+from pyallel import constants
 from pyallel.colours import Colours
-from pyallel.errors import InvalidExecutableErrors, InvalidExecutableError
+from pyallel.errors import InvalidExecutableError, InvalidExecutableErrors
 
 
 def format_time_taken(time_taken: float) -> str:
