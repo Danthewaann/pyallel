@@ -2,8 +2,6 @@ import os
 import sys
 
 IN_TTY = sys.stdout.isatty()
-
-
 CLEAR_LINE = "\033[2K"
 UP_LINE = "\033[1F"
 

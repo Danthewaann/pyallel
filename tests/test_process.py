@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Any
 from uuid import uuid4
 
 import pytest
-from pyallel.process import DumpMode, Process, get_num_lines
+from pyallel.process import Process, get_num_lines
 
 
 def test_from_command() -> None:
@@ -33,25 +32,6 @@ def test_from_command_with_env(env: str) -> None:
         id=uuid4(), name="sleep", args=["0.1"], env={**os.environ.copy(), **env_dict}
     )
     process = Process.from_command(f"{env} sleep 0.1")
-    assert process == expected_process
-
-
-@pytest.mark.parametrize(
-    "modes,expected",
-    (
-        (
-            "dump",
-            {
-                "dump_mode": DumpMode(enabled=True),
-            },
-        ),
-    ),
-)
-def test_from_command_with_modes(modes: str, expected: dict[str, Any]) -> None:
-    expected_process = Process(
-        id=uuid4(), name="sleep", args=["0.1"], env=os.environ.copy(), **expected
-    )
-    process = Process.from_command(f"{modes} :: sleep 0.1")
     assert process == expected_process
 
 

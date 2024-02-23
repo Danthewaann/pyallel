@@ -334,11 +334,6 @@ class ProcessGroup:
 
 
 @dataclass
-class DumpMode:
-    enabled: bool = False
-
-
-@dataclass
 class Process:
     id: UUID = field(repr=False, compare=False)
     name: str
@@ -346,7 +341,6 @@ class Process:
     env: dict[str, str] = field(default_factory=dict)
     start: float = 0.0
     end: float = 0.0
-    dump_mode: DumpMode = field(default_factory=DumpMode)
     _fd: BinaryIO | None = field(init=False, repr=False, compare=False, default=None)
     _process: subprocess.Popen[bytes] | None = field(
         init=False, repr=False, compare=False, default=None
@@ -406,18 +400,8 @@ class Process:
 
     @classmethod
     def from_command(cls, command: str) -> Process:
-        dump_mode = DumpMode()
         env = os.environ.copy()
-        if " :: " in command:
-            modes, _args = command.split(" :: ")
-            if modes:
-                for mode in modes.split(","):
-                    name, *_ = mode.split("=", maxsplit=1)
-                    if name == "dump":
-                        dump_mode.enabled = True
-            args = _args.split()
-        else:
-            args = command.split()
+        args = command.split()
 
         parsed_args: list[str] = []
         for arg in args:
@@ -436,5 +420,4 @@ class Process:
             name=parsed_args[0],
             args=str_args,
             env=env,
-            dump_mode=dump_mode,
         )
