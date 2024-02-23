@@ -78,7 +78,7 @@ class TestStreamedMode:
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert (
-            captured.out == "Error: executables [invalid_exe] were not found\n"
+            captured.out == f"{PREFIX}Error: executables [invalid_exe] were not found\n"
         ), prettify_error(captured.out)
 
     def test_handles_many_invalid_executables(
@@ -89,7 +89,7 @@ class TestStreamedMode:
         assert exit_code == 1, prettify_error(captured.out)
         assert (
             captured.out
-            == "Error: executables [invalid_exe, other_invalid_exe] were not found\n"
+            == f"{PREFIX}Error: executables [invalid_exe, other_invalid_exe] were not found\n"
         )
 
     def test_does_not_run_executables_on_parsing_error(
@@ -100,7 +100,7 @@ class TestStreamedMode:
         assert exit_code == 1, prettify_error(captured.out)
         assert (
             captured.out
-            == "Error: executables [invalid_exe, other_invalid_exe] were not found\n"
+            == f"{PREFIX}Error: executables [invalid_exe, other_invalid_exe] were not found\n"
         )
         status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
         assert status.returncode == 1, "sleep shouldn't be running!"
@@ -144,15 +144,15 @@ class TestStreamedNonInteractiveMode:
         exit_code = main.run("echo 'hi'", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
-        assert captured.out == "".join(
+        assert captured.out.splitlines(keepends=True) == (
             [
-                "Running commands...\n",
-                "\n",
-                "[echo] running... \n",
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[echo] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo] done ✓\n",
-                "\n",
-                "Success!\n",
+                f"{PREFIX}[echo] done ✓\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Success!\n",
             ]
         )
 
@@ -162,14 +162,14 @@ class TestStreamedNonInteractiveMode:
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out == "".join(
             [
-                "Running commands...\n",
-                "\n",
-                "[sh] running... \n",
-                "[sh] failed ✗\n",
-                "\n",
-                "A command failed!\n",
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[sh] running... \n",
+                f"{PREFIX}[sh] failed ✗\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}A command failed!\n",
             ]
-        )
+        ), prettify_error(captured.out)
 
     def test_run_single_command_with_env(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("TEST_VAR=1 echo 'hi'", "-n", "-t")
@@ -177,13 +177,13 @@ class TestStreamedNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
             [
-                "Running commands...\n",
-                "\n",
-                "[echo] running... \n",
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[echo] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo] done ✓\n",
-                "\n",
-                "Success!\n",
+                f"{PREFIX}[echo] done ✓\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Success!\n",
             ]
         )
 
@@ -195,17 +195,17 @@ class TestStreamedNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
             [
-                "Running commands...\n",
-                "\n",
-                "[sh] running... \n",
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[sh] running... \n",
                 f"{PREFIX}first\n",
-                "[sh] done ✓\n",
-                "\n",
-                "[echo] running... \n",
+                f"{PREFIX}[sh] done ✓\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[echo] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo] done ✓\n",
-                "\n",
-                "Success!\n",
+                f"{PREFIX}[echo] done ✓\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Success!\n",
             ]
         )
 
@@ -217,16 +217,16 @@ class TestStreamedNonInteractiveMode:
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out == "".join(
             [
-                "Running commands...\n",
-                "\n",
-                "[sh] running... \n",
-                "[sh] failed ✗\n",
-                "\n",
-                "[echo] running... \n",
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[sh] running... \n",
+                f"{PREFIX}[sh] failed ✗\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[echo] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo] done ✓\n",
-                "\n",
-                "A command failed!\n",
+                f"{PREFIX}[echo] done ✓\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}A command failed!\n",
             ]
         )
 
@@ -239,15 +239,15 @@ class TestStreamedNonInteractiveMode:
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out == "".join(
             [
-                "Running commands...\n",
-                "\n",
-                "[sh] running... \n",
-                "[sh] failed ✗\n",
-                "\n",
-                "[sh] running... \n",
-                "[sh] failed ✗\n",
-                "\n",
-                "A command failed!\n",
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[sh] running... \n",
+                f"{PREFIX}[sh] failed ✗\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[sh] running... \n",
+                f"{PREFIX}[sh] failed ✗\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}A command failed!\n",
             ]
         )
 
@@ -257,13 +257,13 @@ class TestStreamedNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
             [
-                "Running commands...\n",
-                "\n",
-                "[echo hi] running... \n",
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[echo hi] running... \n",
                 f"{PREFIX}hi\n",
-                "[echo hi] done ✓\n",
-                "\n",
-                "Success!\n",
+                f"{PREFIX}[echo hi] done ✓\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Success!\n",
             ]
         )
 
@@ -275,13 +275,13 @@ class TestStreamedNonInteractiveMode:
             re.search(
                 "".join(
                     [
-                        "Running commands...\n",
-                        "\n",
-                        r"\[echo\] running... \n",
+                        f"{PREFIX}Running commands...\n",
+                        f"{PREFIX}\n",
+                        rf"{PREFIX}\[echo\] running... \n",
                         f"{PREFIX}hi\n",
-                        r"\[echo\] done ✓ \(0\..*\)\n",
-                        "\n",
-                        "Success!\n",
+                        rf"{PREFIX}\[echo\] done ✓ \(0\..*\)\n",
+                        f"{PREFIX}\n",
+                        f"{PREFIX}Success!\n",
                     ]
                 ),
                 captured.out,
@@ -297,16 +297,16 @@ class TestStreamedNonInteractiveMode:
             re.search(
                 "".join(
                     [
-                        "Running commands...\n",
-                        "\n",
-                        r"\[sleep\] running... \n",
-                        r"\[sleep\] done ✓ \(1\..*s\)\n",
-                        "\n",
-                        r"\[echo\] running... \n",
+                        f"{PREFIX}Running commands...\n",
+                        f"{PREFIX}\n",
+                        rf"{PREFIX}\[sleep\] running... \n",
+                        rf"{PREFIX}\[sleep\] done ✓ \(1\..*s\)\n",
+                        f"{PREFIX}\n",
+                        rf"{PREFIX}\[echo\] running... \n",
                         f"{PREFIX}hi\n",
-                        r"\[echo\] done ✓ \(0\..*s\)\n",
-                        "\n",
-                        "Success!\n",
+                        rf"{PREFIX}\[echo\] done ✓ \(0\..*s\)\n",
+                        f"{PREFIX}\n",
+                        f"{PREFIX}Success!\n",
                     ]
                 ),
                 captured.out,
@@ -323,13 +323,13 @@ class TestStreamedNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
             [
-                "Running commands...\n",
-                "\n",
-                "[sh] running... \n",
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[sh] running... \n",
                 f"{PREFIX}hibye\n",
-                "[sh] done ✓\n",
-                "\n",
-                "Success!\n",
+                f"{PREFIX}[sh] done ✓\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Success!\n",
             ]
         )
 
@@ -347,17 +347,17 @@ class TestStreamedNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out == "".join(
             [
-                "Running commands...\n",
-                "\n",
-                "[sh] running... \n",
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[sh] running... \n",
                 f"{PREFIX}hibye\n",
-                "[sh] done ✓\n",
-                "\n",
-                "[sh] running... \n",
+                f"{PREFIX}[sh] done ✓\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[sh] running... \n",
                 f"{PREFIX}hibye\n",
-                "[sh] done ✓\n",
-                "\n",
-                "Success!\n",
+                f"{PREFIX}[sh] done ✓\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Success!\n",
             ]
         )
 
@@ -365,7 +365,7 @@ class TestStreamedNonInteractiveMode:
         exit_code = main.run("invalid_exe", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
-        assert captured.out == "Error: executables [invalid_exe] were not found\n"
+        assert captured.out == f"{PREFIX}Error: executables [invalid_exe] were not found\n"
 
     def test_handles_many_invalid_executables(
         self, capsys: CaptureFixture[str]
@@ -375,7 +375,7 @@ class TestStreamedNonInteractiveMode:
         assert exit_code == 1, prettify_error(captured.out)
         assert (
             captured.out
-            == "Error: executables [invalid_exe, other_invalid_exe] were not found\n"
+            == f"{PREFIX}Error: executables [invalid_exe, other_invalid_exe] were not found\n"
         )
 
     def test_does_not_run_executables_on_parsing_error(
@@ -386,7 +386,7 @@ class TestStreamedNonInteractiveMode:
         assert exit_code == 1, prettify_error(captured.out)
         assert (
             captured.out
-            == "Error: executables [invalid_exe, other_invalid_exe] were not found\n"
+            == f"{PREFIX}Error: executables [invalid_exe, other_invalid_exe] were not found\n"
         )
         status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
         assert status.returncode == 1, "sleep shouldn't be running!"
@@ -394,7 +394,7 @@ class TestStreamedNonInteractiveMode:
     @pytest.mark.parametrize(
         "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
     )
-    def test_handles_signal(self, signal: int, exit_code: int) -> None:
+    def test_handles_signals(self, signal: int, exit_code: int) -> None:
         process = subprocess.Popen(
             [
                 "pyallel",
@@ -413,16 +413,16 @@ class TestStreamedNonInteractiveMode:
         assert process.wait() == exit_code, prettify_error(out.decode())
         assert out.decode() == "".join(
             [
-                "Running commands...\n",
-                "\n",
-                "[./tests/assets/test_process_interrupt_with_trapped_output.sh] running... \n",
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[./tests/assets/test_process_interrupt_with_trapped_output.sh] running... \n",
                 f"{PREFIX}hi\n",
-                "\n",
-                "Interrupt!\n",
-                "\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Interrupt!\n",
+                f"{PREFIX}\n",
                 f"{PREFIX}error\n",
-                "[./tests/assets/test_process_interrupt_with_trapped_output.sh] failed ✗\n",
-                "\n",
+                f"{PREFIX}[./tests/assets/test_process_interrupt_with_trapped_output.sh] failed ✗\n",
+                f"{PREFIX}\n",
             ]
         ), prettify_error(out.decode())
 
@@ -450,15 +450,15 @@ class TestStreamedNonInteractiveMode:
         assert process.wait() == exit_code, prettify_error(out.decode())
         assert out.decode() == "".join(
             [
-                "Running commands...\n",
-                "\n",
-                "[./tests/assets/test_handle_multiple_signals.sh] running... \n",
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] running... \n",
                 f"{PREFIX}hi\n",
-                "\n",
-                "Interrupt!\n",
-                "\n",
-                "[./tests/assets/test_handle_multiple_signals.sh] failed ✗\n",
-                "\n",
-                "Abort!\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Interrupt!\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] failed ✗\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Abort!\n",
             ]
         ), prettify_error(out.decode())

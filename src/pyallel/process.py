@@ -77,7 +77,7 @@ class ProcessGroup:
         interrupted = False
 
         print(
-            f"{self.colours.white_bold}Running commands...{self.colours.reset_colour}\n"
+            f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.white_bold}Running commands...{self.colours.reset_colour}\n{self.colours.dim_on}=>{self.colours.dim_off} "
         )
 
         while True:
@@ -123,7 +123,7 @@ class ProcessGroup:
                         verbose=self.verbose,
                         timer=self.timer,
                     )
-                    output += "\n\n"
+                    output += f"\n{self.colours.dim_on}=>{self.colours.dim_off} \n"
                     self.completed_processes.add(process.id)
                     running_process = None
 
@@ -135,7 +135,7 @@ class ProcessGroup:
                         and self.output[process.id][-1][-1] != "\n"
                     ):
                         output += "\n"
-                    output += f"\n{self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}\n\n"
+                    output += f"{self.colours.dim_on}=>{self.colours.dim_off} \n{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}\n{self.colours.dim_on}=>{self.colours.dim_off} \n"
                     interrupted = True
 
             if output:
@@ -147,7 +147,9 @@ class ProcessGroup:
             time.sleep(0.01)
 
         if self.interrupt_count == 2:
-            print(f"{self.colours.red_bold}Abort!{self.colours.reset_colour}")
+            print(
+                f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.red_bold}Abort!{self.colours.reset_colour}"
+            )
 
         if not self.exit_code and not self.passed:
             self.exit_code = 1
@@ -186,7 +188,7 @@ class ProcessGroup:
             if not icon:
                 msg += "..."
 
-        output = f"[{self.colours.blue_bold}{process.name}"
+        output = f"{self.colours.dim_on}=>{self.colours.dim_off} [{self.colours.blue_bold}{process.name}"
 
         if verbose:
             output += f" {' '.join(process.args)}"
