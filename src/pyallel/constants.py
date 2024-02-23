@@ -5,15 +5,11 @@ IN_TTY = sys.stdout.isatty()
 
 
 if IN_TTY:
-    def COLUMNS() -> int:
-        return os.get_terminal_size().columns
 
     def LINES() -> int:
         return os.get_terminal_size().lines
 
 else:
-    def COLUMNS() -> int:
-        return sys.maxsize
 
     def LINES() -> int:
         return sys.maxsize
