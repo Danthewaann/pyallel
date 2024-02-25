@@ -62,7 +62,7 @@ class ProcessGroup:
             if self.icon == len(constants.ICONS):
                 self.icon = 0
 
-            print(output, end="")
+            print(output, end="", flush=True)
 
             # Clear all the lines that were just printed
             for _ in range(get_num_lines(output) - (1 if self.exit_code > 1 else 0)):
@@ -76,7 +76,7 @@ class ProcessGroup:
 
             time.sleep(0.1)
 
-        print(self.complete_output(all=True))
+        print(self.complete_output(all=True), flush=True)
 
         if not self.exit_code and not self.passed:
             self.exit_code = 1
@@ -88,7 +88,8 @@ class ProcessGroup:
         interrupted = False
 
         print(
-            f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.white_bold}Running commands...{self.colours.reset_colour}\n{self.colours.dim_on}=>{self.colours.dim_off} "
+            f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.white_bold}Running commands...{self.colours.reset_colour}\n{self.colours.dim_on}=>{self.colours.dim_off} ",
+            flush=True,
         )
 
         while True:
@@ -156,7 +157,7 @@ class ProcessGroup:
                     interrupted = True
 
             if output:
-                print(output, end="")
+                print(output, end="", flush=True)
 
             if len(self.completed_processes) == len(self.processes):
                 break
@@ -165,7 +166,8 @@ class ProcessGroup:
 
         if self.interrupt_count == 2:
             print(
-                f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.red_bold}Abort!{self.colours.reset_colour}"
+                f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.red_bold}Abort!{self.colours.reset_colour}",
+                flush=True,
             )
 
         if not self.exit_code and not self.passed:
