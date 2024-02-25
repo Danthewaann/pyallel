@@ -1,9 +1,11 @@
 import os
+import re
 import sys
 
 IN_TTY = sys.stdout.isatty()
 CLEAR_LINE = "\033[2K"
 UP_LINE = "\033[1F"
+ANSI_ESCAPE = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
 
 if IN_TTY:
 
@@ -23,6 +25,8 @@ else:
 
 
 ICONS = ("/", "-", "\\", "|")
+# ICONS = ("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏")
+
 # Unicode character bytes to render different symbols in the terminal
 TICK = "\u2713"
 X = "\u2717"

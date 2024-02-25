@@ -129,3 +129,7 @@ def test_get_num_lines_with_columns(columns: int, lines: int) -> None:
 
 def test_get_num_lines_with_long_line() -> None:
     assert get_num_lines(" " * 250, columns=200) == 2
+
+
+def test_get_num_lines_ignores_ansi_chars() -> None:
+    assert get_num_lines("\x1B[0m" * 100, columns=10) == 1
