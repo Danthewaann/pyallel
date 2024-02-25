@@ -25,7 +25,6 @@ else:
 
 
 ICONS = ("/", "-", "\\", "|")
-# ICONS = ("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏")
 
 # Unicode character bytes to render different symbols in the terminal
 TICK = "\u2713"
