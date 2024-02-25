@@ -169,7 +169,7 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}hi\n",
                 f"{PREFIX}[echo] done ✓\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}Success!\n",
+                f"{PREFIX}Done!\n",
             ]
         )
 
@@ -184,7 +184,7 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}[sh] running... \n",
                 f"{PREFIX}[sh] failed ✗\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}A command failed!\n",
+                f"{PREFIX}Failed!\n",
             ]
         )
 
@@ -200,7 +200,7 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}hi\n",
                 f"{PREFIX}[echo] done ✓\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}Success!\n",
+                f"{PREFIX}Done!\n",
             ]
         )
 
@@ -222,7 +222,7 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}hi\n",
                 f"{PREFIX}[echo] done ✓\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}Success!\n",
+                f"{PREFIX}Done!\n",
             ]
         )
 
@@ -243,7 +243,7 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}hi\n",
                 f"{PREFIX}[echo] done ✓\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}A command failed!\n",
+                f"{PREFIX}Failed!\n",
             ]
         )
 
@@ -264,7 +264,7 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}[sh] running... \n",
                 f"{PREFIX}[sh] failed ✗\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}A command failed!\n",
+                f"{PREFIX}Failed!\n",
             ]
         )
 
@@ -280,7 +280,7 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}hi\n",
                 f"{PREFIX}[echo hi] done ✓\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}Success!\n",
+                f"{PREFIX}Done!\n",
             ]
         )
 
@@ -298,7 +298,7 @@ class TestStreamedNonInteractiveMode:
                         f"{PREFIX}hi\n",
                         rf"{PREFIX}\[echo\] done ✓ \(0\..*\)\n",
                         f"{PREFIX}\n",
-                        f"{PREFIX}Success!\n",
+                        f"{PREFIX}Done!\n",
                     ]
                 ),
                 captured.out,
@@ -323,7 +323,7 @@ class TestStreamedNonInteractiveMode:
                         f"{PREFIX}hi\n",
                         rf"{PREFIX}\[echo\] done ✓ \(0\..*s\)\n",
                         f"{PREFIX}\n",
-                        f"{PREFIX}Success!\n",
+                        f"{PREFIX}Done!\n",
                     ]
                 ),
                 captured.out,
@@ -351,10 +351,10 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}{PREFIX}bye\n",
                 f"{PREFIX}{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] done ✓\n",
                 f"{PREFIX}{PREFIX}\n",
-                f"{PREFIX}{PREFIX}Success!\n",
+                f"{PREFIX}{PREFIX}Done!\n",
                 f"{PREFIX}[pyallel] done ✓\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}Success!\n",
+                f"{PREFIX}Done!\n",
             ]
         )
 
@@ -373,7 +373,7 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}hibye\n",
                 f"{PREFIX}[sh] done ✓\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}Success!\n",
+                f"{PREFIX}Done!\n",
             ]
         )
 
@@ -401,7 +401,7 @@ class TestStreamedNonInteractiveMode:
                 f"{PREFIX}hibye\n",
                 f"{PREFIX}[sh] done ✓\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}Success!\n",
+                f"{PREFIX}Done!\n",
             ]
         )
 

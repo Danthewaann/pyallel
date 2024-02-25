@@ -69,7 +69,7 @@ def run(*args: str) -> int:
     if exit_code == 1:
         if not message:
             print(
-                f"{colours.dim_on}=>{colours.dim_off} {colours.red_bold}A command failed!{colours.reset_colour}"
+                f"{colours.dim_on}=>{colours.dim_off} {colours.red_bold}Failed!{colours.reset_colour}"
             )
         else:
             print(
@@ -77,7 +77,7 @@ def run(*args: str) -> int:
             )
     elif exit_code == 0:
         print(
-            f"{colours.dim_on}=>{colours.dim_off} {colours.green_bold}Success!{colours.reset_colour}"
+            f"{colours.dim_on}=>{colours.dim_off} {colours.green_bold}Done!{colours.reset_colour}"
         )
 
     return exit_code
