@@ -54,30 +54,6 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 
 ## TODOs
 
-- [x] Allow output for all provided commands to be streamed to stdout (this will require a
-      re-work of how we print command output as we currently just print output once the command
-      finishes)
-- [x] Add CI checks to run the tests and linters against Python versions > 3.8
-- [x] Add command mode arguments to support things like only tailing the last 10 lines
-      of a command whilst it is running e.g. `"tail=10 :: pytest ."`
-- [x] Add visual examples of `pyallel` in action
-- [x] Fix bug in non-interactive streamed mode where all commands share the same amount of
-      time taken as the longest running command
-- [x] Fix bug in non-interactive streamed mode where calling `readline` doesn't
-      account for `EOF` (if we are at `EOF` we shouldn't append a newline as more output could
-      be appended to the current line)
-- [x] Fix bug in streamed mode where we should use the number of terminal columns when
-      determining when to truncate the line to fit within the screen (or properly handle wrapped
-      lines)
-- [x] Provide a way to set environment variables for each command to run with
-- [x] Add test suite
-- [x] Improve error handling when parsing provided commands (check they are valid executables)
-- [x] Maybe make tail mode followed by an optional dump of all the command output once it
-      finishes the default behaviour?
-- [x] Add graceful Ctrl-C interrupt handling to streamed modes
-- [x] Add a `--colour` flag to configure pyallel print colours
-- [ ] Setup build system to convert `pyallel` into a single file executable for ease of
-      use and distribution
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
       `errorformat`)
 - [ ] Allow list of files to be provided to supply as input arguments to each command
