@@ -27,5 +27,5 @@ else:
 ICONS = ("/", "-", "\\", "|")
 
 # Unicode character bytes to render different symbols in the terminal
-TICK = "\u2713"
-X = "\u2717"
+TICK = "\u2714"
+X = "\u2718"

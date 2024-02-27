@@ -207,19 +207,19 @@ class ProcessGroup:
             if not icon:
                 msg += "..."
 
-        output = f"{self.colours.dim_on}=>{self.colours.dim_off} [{self.colours.blue_bold}{process.name}"
+        output = f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.white_bold}[{self.colours.reset_colour}{self.colours.blue_bold}{process.name}"
 
         if verbose:
             output += f" {' '.join(process.args)}"
 
-        output += f"{self.colours.reset_colour}]{colour} {msg} {icon}{self.colours.reset_colour}"
+        output += f"{self.colours.reset_colour}{self.colours.white_bold}]{self.colours.reset_colour}{colour} {msg} {icon}{self.colours.reset_colour}"
 
         if timer:
             end = process.end
             if not process.end:
                 end = time.perf_counter()
             elapsed = end - process.start
-            output += f" ({self.colours.dim_on}{format_time_taken(elapsed)}{self.colours.dim_off})"
+            output += f" {self.colours.dim_on}({format_time_taken(elapsed)}){self.colours.dim_off}"
 
         return output
 
