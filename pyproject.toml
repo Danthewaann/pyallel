@@ -19,7 +19,7 @@ classifiers = [
 pyallel = "pyallel.main:entry_point"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+python = ">=3.8,<3.13"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
