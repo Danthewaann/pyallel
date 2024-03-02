@@ -16,6 +16,13 @@ Tested on Linux and MacOS only
 pip install pyallel
 ```
 
+You can also use `docker` to build an executable with the following (The executable will be written to `./dist`):
+
+```bash
+docker build -t pyallel .
+docker run --volume "$(pwd)/dist:/dist" pyallel
+```
+
 Once installed, you can run `pyallel` to see usage information, like so:
 
 ```
