@@ -1,0 +1,48 @@
+name: Build V3
+
+on:
+  - workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    name: Build on ${{ matrix.distro }} ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: 
+          # - arch: aarch64
+          #   distro: bullseye
+          - arch: none
+            distro: none
+            base_image: python:3.12.1-bullseye
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: uraimo/run-on-arch-action@v2
+        name: Build artifacts
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
+          base_image: ${{ matrix.base_image }}
+          shell: /bin/sh
+          setup: |
+            mkdir -p "${PWD}/artifacts"
+          dockerRunArgs: |
+            --volume "${PWD}/artifacts:/artifacts"
+          env: |
+            artifact_name: pyallel-${{ matrix.distro }}_${{ matrix.arch }}
+          install: |
+            pip install pyinstaller
+          run: |
+            pyinstaller --onefile ./src/pyallel/main.py --name ${artifact_name} --distpath /artifacts
+            echo "Produced artifact at /artifacts/${artifact_name}"
+
+      - name: Show the artifact
+        run: |
+          ls -al "${PWD}/artifacts"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: artifacts/*
