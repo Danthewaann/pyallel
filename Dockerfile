@@ -10,5 +10,5 @@ COPY README.md README.md
 # Also install pyallel so we can copy it's metadata when running pyinstaller
 RUN pip install pyinstaller==6.4.0 .
 
-CMD [ "pyinstaller", "--onefile", "--exclude-module", "PyInstaller", "--copy-metadata", "pyallel", "--name", "pyallel-0.18.5-linux-x86_64", "./src/pyallel/main.py" ]
+CMD [ "./build.sh" ]
 

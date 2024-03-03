@@ -26,6 +26,8 @@ COPY src .
 COPY pyproject.toml .
 COPY README.md .
 
+RUN pip install .
+
 ADD ./bin /pyinstaller
 RUN chmod a+x /pyinstaller/*
 
