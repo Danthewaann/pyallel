@@ -16,6 +16,7 @@ pyinstaller \
     --exclude-module PyInstaller \
     --copy-metadata pyallel \
     --bootloader-ignore-signals \
+    --specpath ./specs \
     --name pyallel-"$(pyallel -v)"-"$distro"-x86_64 \
     ./src/pyallel/main.py
 
