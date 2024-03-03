@@ -1,21 +1,17 @@
-name: Build
+name: Build 
 
 on:
   - workflow_dispatch
 
 jobs:
   build:
-    name: ${{ matrix.os.name }}
-    runs-on: ${{ matrix.os.runs-on }}
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os:
-          - name: Linux
-            matrix: linux
-            runs-on: [ubuntu-latest]
-          - name: macOS
-            matrix: macos
-            runs-on: [macos-latest]
+        os: 
+          - ubuntu-latest
+          - macos-latest
 
     steps:
       - name: Checkout
@@ -24,19 +20,16 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: 3.12
 
-      - name: Build executable with nuitka
-        uses: nuitka/nuitka-action@main
-        with:
-          nuitka-version: main
-          script-name: ./src/pyallel/main.py
-          onefile: true
+      - name: Install pyinstaller
+        run: pip install pyinstaller .
+
+      - name: Run pyinstaller
+        run: pyinstaller --onefile --copy-metadata pyallel ./src/pyallel/main.py
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ runner.os }} Build
-          path: |
-            build/*.bin
-            build/*.app/**/*
+          path: dist/*
