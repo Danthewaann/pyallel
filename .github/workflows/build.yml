@@ -1,4 +1,4 @@
-name: Build 
+name: Build
 
 on:
   - workflow_dispatch
@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: 
+        os:
           - ubuntu-latest
           - macos-latest
 
@@ -23,10 +23,10 @@ jobs:
           python-version: 3.12
 
       - name: Install pyinstaller
-        run: pip install pyinstaller .
+        run: pip install . -r requirements_build.txt
 
       - name: Run pyinstaller
-        run: pyinstaller --onefile --copy-metadata pyallel ./src/pyallel/main.py
+        run: ./build.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
