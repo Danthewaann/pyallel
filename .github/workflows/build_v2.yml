@@ -20,13 +20,13 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Install pyinstaller
-        run: pip install pyinstaller
+        run: pip install pyinstaller .
 
       - name: Run pyinstaller
-        run: pyinstaller --onefile ./src/pyallel/main.py
+        run: pyinstaller --onefile --copy-metadata pyallel ./src/pyallel/main.py
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
