@@ -16,16 +16,23 @@ Tested on Linux and MacOS only
 pip install pyallel
 ```
 
-You can also use build an executable with the following (executables will be written to `./dist`):
+You can also build an executable with the following (executables will be written to `./dist`):
+
+#### Build for generic linux
 
 ```bash
-# Build for generic linux
 docker build -t pyallel . && docker run --rm --volume "$(pwd):/src" pyallel
+```
 
-# Or for alpine linux
+#### Build for alpine linux
+
+```bash
 docker build -t pyallel-alpine -f Dockerfile.alpine . && docker run --rm --volume "$(pwd):/src" pyallel-alpine
+```
 
-# Or build locally
+#### Build locally
+
+```bash
 python -m venv .venv && source .venv/bin/activate && pip install . -r requirements_build.txt && ./build.sh
 ```
 
