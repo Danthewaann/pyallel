@@ -74,6 +74,8 @@ pyallel "MYPY_FORCE_COLOR=1 mypy ." \
 
 ## TODOs
 
+- [ ] Maybe add support for allowing commands to contain shell idiom's (such as piping
+      e.g. `echo hi | tee test.log`)
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
       `errorformat`)
 - [ ] Allow list of files to be provided to supply as input arguments to each command
