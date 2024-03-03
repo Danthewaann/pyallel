@@ -19,8 +19,13 @@ pip install pyallel
 You can also use `docker` to build an executable with the following (The executable will be written to `./dist`):
 
 ```bash
+# Build for generic linux
 docker build -t pyallel .
-docker run --volume "$(pwd)/dist:/dist" pyallel
+docker run --rm --volume "$(pwd):/src" pyallel
+
+# Or for alpine linux
+docker build -t pyallel-alpine -f Dockerfile.alpine .
+docker run --rm --volume "$(pwd):/src" pyallel-alpine
 ```
 
 Once installed, you can run `pyallel` to see usage information, like so:

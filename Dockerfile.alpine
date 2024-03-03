@@ -1,0 +1,33 @@
+FROM python:3.12.2-alpine
+
+# Official Python base image is needed or some applications will segfault.
+# PyInstaller needs zlib-dev, gcc, libc-dev, and musl-dev
+RUN apk --update --no-cache add \
+    zlib-dev \
+    musl-dev \
+    libc-dev \
+    libffi-dev \
+    gcc \
+    g++ \
+    git \
+    && pip install --upgrade pip
+
+# Build bootloader for alpine
+RUN git clone --depth 1 --single-branch --branch v6.4.0 https://github.com/pyinstaller/pyinstaller.git /tmp/pyinstaller \
+    && cd /tmp/pyinstaller/bootloader \
+    && CFLAGS="-Wno-stringop-overflow -Wno-stringop-truncation" python ./waf configure all \
+    && pip install .. \
+    && rm -Rf /tmp/pyinstaller
+
+VOLUME /src
+WORKDIR /src
+
+COPY src .
+COPY pyproject.toml .
+COPY README.md .
+
+ADD ./bin /pyinstaller
+RUN chmod a+x /pyinstaller/*
+
+ENTRYPOINT ["/pyinstaller/pyinstaller.sh"]
+
