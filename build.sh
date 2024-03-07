@@ -3,7 +3,13 @@
 set -e
 
 distro="${1:-linux}"
-name=pyallel-"$(pyallel -v)"-"$distro"-x86_64
+arch="${2:-$arch}"
+
+if [ -z "$arch" ]; then
+    arch=unknown
+fi
+
+name=pyallel-"$(pyallel -v)"-"$distro"-"$arch"
 
 # --bootloader-ignore-signals is needed as two interrupt signals where getting sent
 # to pyallel as it is apart of the same process group as the bootloader
@@ -17,7 +23,7 @@ pyinstaller \
     --copy-metadata pyallel \
     --bootloader-ignore-signals \
     --specpath ./specs \
-    --name pyallel-"$(pyallel -v)"-"$distro"-x86_64 \
+    --name "$name" \
     ./src/pyallel/main.py
 
 printf "\nExecutable written to './dist/%s'\n" "$name"

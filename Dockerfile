@@ -1,4 +1,5 @@
-FROM python:3.12.2-bullseye
+ARG arch
+FROM --platform=linux/${arch} python:3.12.2-bullseye
 
 VOLUME /src
 WORKDIR /src
@@ -11,5 +12,6 @@ COPY requirements_build.txt requirements_build.txt
 # Also install pyallel so we can copy it's metadata when running pyinstaller
 RUN pip install . -r requirements_build.txt
 
-CMD [ "./build.sh" ]
+ENV arch ${arch}
+CMD [ "./build.sh", "linux" ]
 

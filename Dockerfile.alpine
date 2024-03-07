@@ -1,4 +1,5 @@
-FROM python:3.12.2-alpine
+ARG arch
+FROM --platform=linux/${arch} python:3.12.2-alpine
 
 # Official Python base image is needed or some applications will segfault.
 # PyInstaller needs zlib-dev, gcc, libc-dev, and musl-dev
@@ -31,5 +32,6 @@ RUN pip install .
 ADD ./bin /pyinstaller
 RUN chmod a+x /pyinstaller/*
 
-ENTRYPOINT ["/pyinstaller/pyinstaller.sh"]
+# ENV arch ${arch}
+CMD [ "/pyinstaller/pyinstaller.sh" ]
 

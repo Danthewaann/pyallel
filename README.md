@@ -18,16 +18,20 @@ pip install pyallel
 
 You can also build an executable with the following (executables will be written to `./dist`):
 
+> [!NOTE]
+> The `arch=x86_64` values in the following code blocks can be replaced with `arch=aarch64` and
+> any other architecture that is supported by docker to build an executable for that given architecture
+
 #### Build for generic linux
 
 ```bash
-docker build -t pyallel . && docker run --rm --volume "$(pwd):/src" pyallel
+docker build --tag pyallel --build-arg 'arch=x86_64' . && docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel
 ```
 
 #### Build for alpine linux
 
 ```bash
-docker build -t pyallel-alpine -f Dockerfile.alpine . && docker run --rm --volume "$(pwd):/src" pyallel-alpine
+docker build --tag pyallel-alpine --build-arg 'arch=x86_64' --file Dockerfile.alpine . && docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel-alpine
 ```
 
 #### Build locally
