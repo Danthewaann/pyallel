@@ -9,10 +9,11 @@ homepage = "https://github.com/Danthewaann/pyallel"
 repository = "https://github.com/Danthewaann/pyallel"
 keywords = ["parallel", "command", "runner", "executable", "shell", "terminal"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux"
 ]
 
 [tool.poetry.scripts]
