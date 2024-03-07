@@ -2,8 +2,12 @@
 
 set -e
 
-distro="${1:-linux}"
+distro="${1:-$distro}"
 arch="${2:-$arch}"
+
+if [ -z "$distro" ]; then
+    distro=linux
+fi
 
 if [ -z "$arch" ]; then
     arch=unknown
