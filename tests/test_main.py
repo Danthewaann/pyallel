@@ -40,7 +40,7 @@ class TestInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
 
     def test_run_single_command_failure(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run('sh -c "exit 1"', "-t")
+        exit_code = main.run("exit 1", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
 
@@ -50,14 +50,14 @@ class TestInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
 
     def test_run_multiple_commands(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sh -c 'sleep 0.1; echo first'", "echo hi", "-t")
+        exit_code = main.run("sleep 0.1; echo first", "echo hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
     def test_run_multiple_commands_single_failure(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run('sh -c "exit 1"', "echo hi", "-t")
+        exit_code = main.run("exit 1", "echo hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
 
@@ -65,14 +65,9 @@ class TestInteractiveMode:
         self,
         capsys: CaptureFixture[str],
     ) -> None:
-        exit_code = main.run('sh -c "exit 1"', 'sh -c "exit 1"', "-t")
+        exit_code = main.run("exit 1", "exit 1", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
-
-    def test_run_verbose_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("echo hi", "-V", "-t")
-        captured = capsys.readouterr()
-        assert exit_code == 0, prettify_error(captured.out)
 
     def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("echo hi")
@@ -87,54 +82,6 @@ class TestInteractiveMode:
         )
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
-
-    def test_handles_invalid_executable(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("invalid_exe", "-t", "--colour", "no")
-        captured = capsys.readouterr()
-        assert exit_code == 1, prettify_error(captured.out)
-        assert (
-            captured.out == f"{PREFIX}Error: executables [invalid_exe] were not found\n"
-        ), prettify_error(captured.out)
-
-    def test_handles_many_invalid_executables(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.run("invalid_exe", "other_invalid_exe", "-t", "--colour", "no")
-        captured = capsys.readouterr()
-        assert exit_code == 1, prettify_error(captured.out)
-        assert (
-            captured.out
-            == f"{PREFIX}Error: executables [invalid_exe, other_invalid_exe] were not found\n"
-        )
-
-    def test_does_not_run_executables_on_parsing_error(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.run(
-            "invalid_exe", "other_invalid_exe", "sleep 10", "-t", "--colour", "no"
-        )
-        captured = capsys.readouterr()
-        assert exit_code == 1, prettify_error(captured.out)
-        assert (
-            captured.out
-            == f"{PREFIX}Error: executables [invalid_exe, other_invalid_exe] were not found\n"
-        )
-        status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
-        assert status.returncode == 1, "sleep shouldn't be running!"
-
-    @pytest.mark.parametrize(
-        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
-    )
-    def test_handles_signals(self, signal: int, exit_code: int) -> None:
-        process = subprocess.Popen(
-            ["pyallel", "./tests/assets/test_process_interrupt_with_trapped_output.sh"],
-            env=os.environ.copy(),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        time.sleep(0.3)
-        process.send_signal(signal)
-        assert process.wait() == exit_code
 
     @pytest.mark.parametrize(
         "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
@@ -165,24 +112,24 @@ class TestNonInteractiveMode:
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[echo] running... \n",
+                f"{PREFIX}[echo hi] running... \n",
                 f"{PREFIX}hi\n",
-                f"{PREFIX}[echo] done ✔\n",
+                f"{PREFIX}[echo hi] done ✔\n",
                 f"{PREFIX}\n",
                 f"{PREFIX}Done!\n",
             ]
         )
 
     def test_run_single_command_failure(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run('sh -c "exit 1"', "-n", "-t")
+        exit_code = main.run("exit 1", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[sh] running... \n",
-                f"{PREFIX}[sh] failed ✘\n",
+                f"{PREFIX}[exit 1] running... \n",
+                f"{PREFIX}[exit 1] failed ✘\n",
                 f"{PREFIX}\n",
                 f"{PREFIX}Failed!\n",
             ]
@@ -196,29 +143,29 @@ class TestNonInteractiveMode:
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[echo] running... \n",
+                f"{PREFIX}[TEST_VAR=1 echo hi] running... \n",
                 f"{PREFIX}hi\n",
-                f"{PREFIX}[echo] done ✔\n",
+                f"{PREFIX}[TEST_VAR=1 echo hi] done ✔\n",
                 f"{PREFIX}\n",
                 f"{PREFIX}Done!\n",
             ]
         )
 
     def test_run_multiple_commands(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sh -c 'sleep 0.1; echo first'", "echo hi", "-n", "-t")
+        exit_code = main.run("sleep 0.1; echo first", "echo hi", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[sh] running... \n",
+                f"{PREFIX}[sleep 0.1; echo first] running... \n",
                 f"{PREFIX}first\n",
-                f"{PREFIX}[sh] done ✔\n",
+                f"{PREFIX}[sleep 0.1; echo first] done ✔\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[echo] running... \n",
+                f"{PREFIX}[echo hi] running... \n",
                 f"{PREFIX}hi\n",
-                f"{PREFIX}[echo] done ✔\n",
+                f"{PREFIX}[echo hi] done ✔\n",
                 f"{PREFIX}\n",
                 f"{PREFIX}Done!\n",
             ]
@@ -227,19 +174,19 @@ class TestNonInteractiveMode:
     def test_run_multiple_commands_single_failure(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run('sh -c "exit 1"', "echo hi", "-n", "-t")
+        exit_code = main.run("exit 1", "echo hi", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[sh] running... \n",
-                f"{PREFIX}[sh] failed ✘\n",
+                f"{PREFIX}[exit 1] running... \n",
+                f"{PREFIX}[exit 1] failed ✘\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[echo] running... \n",
+                f"{PREFIX}[echo hi] running... \n",
                 f"{PREFIX}hi\n",
-                f"{PREFIX}[echo] done ✔\n",
+                f"{PREFIX}[echo hi] done ✔\n",
                 f"{PREFIX}\n",
                 f"{PREFIX}Failed!\n",
             ]
@@ -249,36 +196,20 @@ class TestNonInteractiveMode:
         self,
         capsys: CaptureFixture[str],
     ) -> None:
-        exit_code = main.run('sh -c "exit 1"', 'sh -c "exit 1"', "-n", "-t")
+        exit_code = main.run("exit 1", "exit 1", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[sh] running... \n",
-                f"{PREFIX}[sh] failed ✘\n",
+                f"{PREFIX}[exit 1] running... \n",
+                f"{PREFIX}[exit 1] failed ✘\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[sh] running... \n",
-                f"{PREFIX}[sh] failed ✘\n",
+                f"{PREFIX}[exit 1] running... \n",
+                f"{PREFIX}[exit 1] failed ✘\n",
                 f"{PREFIX}\n",
                 f"{PREFIX}Failed!\n",
-            ]
-        )
-
-    def test_run_verbose_mode(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("echo hi", "-n", "-V", "-t")
-        captured = capsys.readouterr()
-        assert exit_code == 0, prettify_error(captured.out)
-        assert captured.out.splitlines(keepends=True) == (
-            [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[echo hi] running... \n",
-                f"{PREFIX}hi\n",
-                f"{PREFIX}[echo hi] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Done!\n",
             ]
         )
 
@@ -292,9 +223,9 @@ class TestNonInteractiveMode:
                     [
                         f"{PREFIX}Running commands...\n",
                         f"{PREFIX}\n",
-                        rf"{PREFIX}\[echo\] running... \n",
+                        rf"{PREFIX}\[echo hi\] running... \n",
                         f"{PREFIX}hi\n",
-                        rf"{PREFIX}\[echo\] done ✔ \(0\..*\)\n",
+                        rf"{PREFIX}\[echo hi\] done ✔ \(0\..*\)\n",
                         f"{PREFIX}\n",
                         f"{PREFIX}Done!\n",
                     ]
@@ -314,12 +245,12 @@ class TestNonInteractiveMode:
                     [
                         f"{PREFIX}Running commands...\n",
                         f"{PREFIX}\n",
-                        rf"{PREFIX}\[sleep\] running... \n",
-                        rf"{PREFIX}\[sleep\] done ✔ \(1\..*s\)\n",
+                        rf"{PREFIX}\[sleep 1\] running... \n",
+                        rf"{PREFIX}\[sleep 1\] done ✔ \(1\..*s\)\n",
                         f"{PREFIX}\n",
-                        rf"{PREFIX}\[echo\] running... \n",
+                        rf"{PREFIX}\[echo hi\] running... \n",
                         f"{PREFIX}hi\n",
-                        rf"{PREFIX}\[echo\] done ✔ \(0\..*s\)\n",
+                        rf"{PREFIX}\[echo hi\] done ✔ \(0\..*s\)\n",
                         f"{PREFIX}\n",
                         f"{PREFIX}Done!\n",
                     ]
@@ -341,7 +272,7 @@ class TestNonInteractiveMode:
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[pyallel] running... \n",
+                f"{PREFIX}[pyallel ./tests/assets/test_handle_multiple_signals.sh -t] running... \n",
                 f"{PREFIX}{PREFIX}Running commands...\n",
                 f"{PREFIX}{PREFIX}\n",
                 f"{PREFIX}{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] running... \n",
@@ -350,7 +281,7 @@ class TestNonInteractiveMode:
                 f"{PREFIX}{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] done ✔\n",
                 f"{PREFIX}{PREFIX}\n",
                 f"{PREFIX}{PREFIX}Done!\n",
-                f"{PREFIX}[pyallel] done ✔\n",
+                f"{PREFIX}[pyallel ./tests/assets/test_handle_multiple_signals.sh -t] done ✔\n",
                 f"{PREFIX}\n",
                 f"{PREFIX}Done!\n",
             ]
@@ -360,16 +291,16 @@ class TestNonInteractiveMode:
     def test_handles_single_command_output_with_delayed_newlines(
         self, capsys: CaptureFixture[str], wait: str
     ) -> None:
-        exit_code = main.run(f"sh -c 'printf hi; sleep {wait}; echo bye'", "-n", "-t")
+        exit_code = main.run(f"printf hi; sleep {wait}; echo bye", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[sh] running... \n",
+                f"{PREFIX}[printf hi; sleep {wait}; echo bye] running... \n",
                 f"{PREFIX}hibye\n",
-                f"{PREFIX}[sh] done ✔\n",
+                f"{PREFIX}[printf hi; sleep {wait}; echo bye] done ✔\n",
                 f"{PREFIX}\n",
                 f"{PREFIX}Done!\n",
             ]
@@ -380,8 +311,8 @@ class TestNonInteractiveMode:
         self, capsys: CaptureFixture[str], wait: str
     ) -> None:
         exit_code = main.run(
-            f"sh -c 'printf hi; sleep {wait}; echo bye'",
-            f"sh -c 'printf hi; sleep {wait}; echo bye'",
+            f"printf hi; sleep {wait}; echo bye",
+            f"printf hi; sleep {wait}; echo bye",
             "-n",
             "-t",
         )
@@ -391,82 +322,15 @@ class TestNonInteractiveMode:
             [
                 f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[sh] running... \n",
+                f"{PREFIX}[printf hi; sleep {wait}; echo bye] running... \n",
                 f"{PREFIX}hibye\n",
-                f"{PREFIX}[sh] done ✔\n",
+                f"{PREFIX}[printf hi; sleep {wait}; echo bye] done ✔\n",
                 f"{PREFIX}\n",
-                f"{PREFIX}[sh] running... \n",
+                f"{PREFIX}[printf hi; sleep {wait}; echo bye] running... \n",
                 f"{PREFIX}hibye\n",
-                f"{PREFIX}[sh] done ✔\n",
+                f"{PREFIX}[printf hi; sleep {wait}; echo bye] done ✔\n",
                 f"{PREFIX}\n",
                 f"{PREFIX}Done!\n",
-            ]
-        )
-
-    def test_handles_invalid_executable(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("invalid_exe", "-n", "-t")
-        captured = capsys.readouterr()
-        assert exit_code == 1, prettify_error(captured.out)
-        assert (
-            captured.out == f"{PREFIX}Error: executables [invalid_exe] were not found\n"
-        )
-
-    def test_handles_many_invalid_executables(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.run("invalid_exe", "other_invalid_exe", "-n", "-t")
-        captured = capsys.readouterr()
-        assert exit_code == 1, prettify_error(captured.out)
-        assert (
-            captured.out
-            == f"{PREFIX}Error: executables [invalid_exe, other_invalid_exe] were not found\n"
-        )
-
-    def test_does_not_run_executables_on_parsing_error(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.run("invalid_exe", "other_invalid_exe", "sleep 10", "-n", "-t")
-        captured = capsys.readouterr()
-        assert exit_code == 1, prettify_error(captured.out)
-        assert (
-            captured.out
-            == f"{PREFIX}Error: executables [invalid_exe, other_invalid_exe] were not found\n"
-        )
-        status = subprocess.run(["pgrep", "-f", "^sleep 10$"])
-        assert status.returncode == 1, "sleep shouldn't be running!"
-
-    @pytest.mark.parametrize(
-        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
-    )
-    def test_handles_signals(self, signal: int, exit_code: int) -> None:
-        process = subprocess.Popen(
-            [
-                "pyallel",
-                "./tests/assets/test_process_interrupt_with_trapped_output.sh",
-                "-n",
-                "-t",
-            ],
-            env=os.environ.copy(),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        time.sleep(0.3)
-        process.send_signal(signal)
-        assert process.stdout is not None
-        out = process.stdout.read()
-        assert process.wait() == exit_code, prettify_error(out.decode())
-        assert out.decode().splitlines(keepends=True) == (
-            [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[./tests/assets/test_process_interrupt_with_trapped_output.sh] running... \n",
-                f"{PREFIX}hi\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Interrupt!\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}error\n",
-                f"{PREFIX}[./tests/assets/test_process_interrupt_with_trapped_output.sh] failed ✘\n",
-                f"{PREFIX}\n",
             ]
         )
 

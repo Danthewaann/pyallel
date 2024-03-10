@@ -9,7 +9,6 @@ class Arguments:
     commands: list[str]
     interactive: bool
     timer: bool
-    verbose: bool
     version: bool
 
     def __repr__(self) -> str:
@@ -20,11 +19,18 @@ class Arguments:
         return msg
 
 
-COMMANDS_HELP = """list of quoted commands to run e.g "mypy ." "black ."
+COMMANDS_HELP = r"""list of quoted commands to run e.g "mypy ." "black ."
 
-can provide environment variables to each command like so:
+each command is executed inside a shell, so shell syntax is supported as
+if you were running the command directly in a shell, some examples are below:
 
-     "MYPY_FORCE_COLOR=1 mypy ."
+     "MYPY_FORCE_COLOR=1 mypy ."          <- provide environment variables
+     "mypy | tee -a mypy.log"             <- use pipes to redirect output
+     "cat > test.log < other.log"         <- use input and output redirection
+     "mypy .; pytest ."                   <- run commands one at a time in sequence
+     "echo \$SHELL" or "\$(echo mypy .)"  <- expand variables and commands to evaluate (must be escaped)
+     "pytest . && mypy . || echo failed!" <- use AND (&&) and OR (||) to run commands conditionally
+
 """
 
 
@@ -57,13 +63,6 @@ def create_parser() -> ArgumentParser:
     )
     parser.add_argument(
         "-V",
-        "--verbose",
-        help="run in verbose mode",
-        action="store_true",
-        default=False,
-    )
-    parser.add_argument(
-        "-v",
         "--version",
         help="print version and exit",
         action="store_true",

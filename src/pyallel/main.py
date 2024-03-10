@@ -16,14 +16,12 @@ def main_loop(
     colours: Colours,
     interactive: bool = False,
     timer: bool = False,
-    verbose: bool = False,
 ) -> int:
     process_group = ProcessGroup.from_commands(
         *commands,
         colours=colours,
         interactive=interactive,
         timer=timer,
-        verbose=verbose,
     )
 
     return process_group.stream()
@@ -57,7 +55,6 @@ def run(*args: str) -> int:
             colours=colours,
             interactive=interactive,
             timer=parsed_args.timer,
-            verbose=parsed_args.verbose,
         )
     except InvalidExecutableErrors as e:
         exit_code = 1

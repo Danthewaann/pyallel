@@ -21,24 +21,30 @@ pip install pyallel
 Once installed, you can run `pyallel` to see usage information, like so:
 
 ```
-usage: pyallel [-h] [-t] [-n] [-V] [-v] [--colour {yes,no,auto}] [commands ...]
+usage: pyallel [-h] [-t] [-n] [-V] [--colour {yes,no,auto}] [commands ...]
 
 Run and handle the output of multiple executables in pyallel (as in parallel)
 
 positional arguments:
   commands              list of quoted commands to run e.g "mypy ." "black ."
 
-                        can provide environment variables to each command like so:
+                        each command is executed inside a shell, so shell syntax is supported as
+                        if you were running the command directly in a shell, some examples are below:
 
-                             "MYPY_FORCE_COLOR=1 mypy ."
+                             "MYPY_FORCE_COLOR=1 mypy ."          <- provide environment variables
+                             "mypy | tee -a mypy.log"             <- use pipes to redirect output
+                             "cat > test.log < other.log"         <- use input and output redirection
+                             "mypy .; pytest ."                   <- run commands one at a time in sequence
+                             "echo \$SHELL" or "\$(echo mypy .)"  <- expand variables and commands to evaluate (must be escaped)
+                             "pytest . && mypy . || echo failed!" <- use AND (&&) and OR (||) to run commands conditionally
+
 
 options:
   -h, --help            show this help message and exit
   -t, --no-timer        don't time how long each command is taking
   -n, --non-interactive
                         run in non-interactive mode
-  -V, --verbose         run in verbose mode
-  -v, --version         print version and exit
+  -V, --version         print version and exit
   --colour {yes,no,auto}
                         colour terminal output, defaults to "auto"
 ```
@@ -82,8 +88,8 @@ python -m venv .venv && source .venv/bin/activate && pip install . -r requiremen
 
 ## TODOs
 
-- [ ] Maybe add support for allowing commands to contain shell idiom's (such as piping
-      e.g. `echo hi | tee test.log`)
+- [ ] Maybe add support to allow the user to provide stdin for commands that request it
+      (such as a REPL)
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
       `errorformat`)
 - [ ] Allow list of files to be provided to supply as input arguments to each command

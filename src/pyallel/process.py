@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import os
-import shlex
-import shutil
 import signal
 import subprocess
 import tempfile
@@ -39,7 +36,6 @@ class ProcessGroup:
     processes: list[Process]
     interactive: bool = False
     timer: bool = False
-    verbose: bool = False
     output: dict[UUID, list[str]] = field(default_factory=lambda: defaultdict(list))
     process_lines: list[int] = field(default_factory=list)
     completed_processes: set[UUID] = field(default_factory=set)
@@ -99,7 +95,7 @@ class ProcessGroup:
                     running_process is None
                     and process.id not in self.completed_processes
                 ):
-                    output += self._get_command_status(process, verbose=self.verbose)
+                    output += self._get_command_status(process)
                     output += "\n"
                     running_process = process
                 elif running_process is not process:
@@ -138,7 +134,6 @@ class ProcessGroup:
                     output += self._get_command_status(
                         process,
                         passed=process.return_code() == 0,
-                        verbose=self.verbose,
                         timer=self.timer,
                     )
                     output += f"\n{self.colours.dim_on}=>{self.colours.dim_off} \n"
@@ -189,7 +184,6 @@ class ProcessGroup:
         process: Process,
         icon: str | None = None,
         passed: bool | None = None,
-        verbose: bool = False,
         timer: bool = False,
     ) -> str:
         if passed is True:
@@ -207,12 +201,7 @@ class ProcessGroup:
             if not icon:
                 msg += "..."
 
-        output = f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.white_bold}[{self.colours.reset_colour}{self.colours.blue_bold}{process.name}"
-
-        if verbose:
-            output += f" {' '.join(process.args)}"
-
-        output += f"{self.colours.reset_colour}{self.colours.white_bold}]{self.colours.reset_colour}{colour} {msg} {icon}{self.colours.reset_colour}"
+        output = f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.white_bold}[{self.colours.reset_colour}{self.colours.blue_bold}{process.command}{self.colours.reset_colour}{self.colours.white_bold}]{self.colours.reset_colour}{colour} {msg} {icon}{self.colours.reset_colour}"
 
         if timer:
             end = process.end
@@ -240,7 +229,6 @@ class ProcessGroup:
         colours: Colours,
         interactive: bool = False,
         timer: bool = False,
-        verbose: bool = False,
     ) -> ProcessGroup:
         processes: list[Process] = []
         errors: list[InvalidExecutableError] = []
@@ -258,7 +246,6 @@ class ProcessGroup:
             processes=processes,
             interactive=interactive,
             timer=timer,
-            verbose=verbose,
             colours=colours,
         )
 
@@ -293,7 +280,6 @@ class ProcessGroup:
                 output += self._get_command_status(
                     process,
                     passed=process.return_code() == 0,
-                    verbose=self.verbose,
                     timer=self.timer,
                 )
                 output += "\n"
@@ -301,7 +287,6 @@ class ProcessGroup:
                 output += self._get_command_status(
                     process,
                     icon=constants.ICONS[self.icon],
-                    verbose=self.verbose,
                     timer=self.timer,
                 )
                 output += "\n"
@@ -339,9 +324,7 @@ class ProcessGroup:
 @dataclass
 class Process:
     id: UUID = field(repr=False, compare=False)
-    name: str
-    args: list[str] = field(default_factory=list)
-    env: dict[str, str] = field(default_factory=dict)
+    command: str
     start: float = 0.0
     end: float = 0.0
     _fd: BinaryIO | None = field(init=False, repr=False, compare=False, default=None)
@@ -354,11 +337,11 @@ class Process:
         fd, fd_name = tempfile.mkstemp()
         self._fd = open(fd_name, "rb")
         self._process = subprocess.Popen(
-            [self.name, *self.args],
+            self.command,
             stdin=subprocess.DEVNULL,
             stdout=fd,
             stderr=subprocess.STDOUT,
-            env=self.env,
+            shell=True,
         )
 
     def __del__(self) -> None:
@@ -403,24 +386,4 @@ class Process:
 
     @classmethod
     def from_command(cls, command: str) -> Process:
-        env = os.environ.copy()
-        args = command.split()
-
-        parsed_args: list[str] = []
-        for arg in args:
-            if "=" in arg:
-                name, env_value = arg.split("=")
-                env[name] = env_value
-            else:
-                parsed_args.append(arg)
-
-        if not shutil.which(parsed_args[0]):
-            raise InvalidExecutableError(parsed_args[0])
-
-        str_args = shlex.split(" ".join(parsed_args[1:]))
-        return cls(
-            id=uuid4(),
-            name=parsed_args[0],
-            args=str_args,
-            env=env,
-        )
+        return cls(id=uuid4(), command=command)
