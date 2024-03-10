@@ -16,8 +16,8 @@ def prettify_error(out: str) -> str:
 PREFIX = "=> "
 
 
-class TestStreamedMode:
-    """Test streamed mode with interactivity
+class TestInteractiveMode:
+    """Test interactive mode that re-writes terminal output
 
     NOTE: These tests can only verify the exit code consistently
     as terminal output is re-written which isn't easy to consistently assert against
@@ -156,7 +156,7 @@ class TestStreamedMode:
         assert process.wait() == exit_code
 
 
-class TestStreamedNonInteractiveMode:
+class TestNonInteractiveMode:
     def test_run_single_command(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("echo hi", "-n", "-t")
         captured = capsys.readouterr()
