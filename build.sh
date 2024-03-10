@@ -13,7 +13,7 @@ if [ -z "$arch" ]; then
     arch=unknown
 fi
 
-name=pyallel-"$(pyallel -v)"-"$distro"-"$arch"
+name=pyallel-"$(pyallel -V)"-"$distro"-"$arch"
 
 # --bootloader-ignore-signals is needed as two interrupt signals where getting sent
 # to pyallel as it is apart of the same process group as the bootloader
