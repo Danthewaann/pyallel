@@ -31,3 +31,6 @@ pyinstaller \
     ./src/pyallel/main.py
 
 printf "\nExecutable written to './dist/%s'\n" "$name"
+
+cd dist
+md5sum "$name" > "$name".md5
