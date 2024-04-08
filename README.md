@@ -88,6 +88,8 @@ python -m venv .venv && source .venv/bin/activate && pip install . -r requiremen
 
 ## TODOs
 
+- [ ] Add support to have commands depend on other commands (some commands must complete
+      before a given command can start)
 - [ ] Maybe add support to allow the user to provide stdin for commands that request it
       (such as a REPL)
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's
