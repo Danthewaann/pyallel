@@ -69,6 +69,20 @@ class TestInteractiveMode:
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
 
+    def test_run_mulitiple_dependant_commands(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("echo first", "::", "echo hi", "-t")
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+
+    def test_run_mulitiple_dependant_commands_single_failure(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("exit 1", "::", "echo hi", "-t")
+        captured = capsys.readouterr()
+        assert exit_code == 1, prettify_error(captured.out)
+
     def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("echo hi")
         captured = capsys.readouterr()
@@ -90,6 +104,29 @@ class TestInteractiveMode:
         process = subprocess.Popen(
             [
                 "pyallel",
+                "./tests/assets/test_handle_multiple_signals.sh",
+            ],
+            env=os.environ.copy(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        time.sleep(0.3)
+        process.send_signal(signal)
+        time.sleep(0.1)
+        process.send_signal(signal)
+        assert process.wait() == exit_code
+
+    @pytest.mark.parametrize(
+        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
+    )
+    def test_handles_multiple_signals_with_dependant_commands(
+        self, signal: int, exit_code: int
+    ) -> None:
+        process = subprocess.Popen(
+            [
+                "pyallel",
+                "./tests/assets/test_handle_multiple_signals.sh",
+                "::",
                 "./tests/assets/test_handle_multiple_signals.sh",
             ],
             env=os.environ.copy(),
@@ -205,6 +242,45 @@ class TestNonInteractiveMode:
                 f"{PREFIX}\n",
                 f"{PREFIX}[exit 1] running... \n",
                 f"{PREFIX}[exit 1] failed ✘\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[exit 1] running... \n",
+                f"{PREFIX}[exit 1] failed ✘\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Failed!\n",
+            ]
+        )
+
+    def test_run_mulitiple_dependant_commands(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("echo first", "::", "echo hi", "-n", "-t")
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        assert captured.out.splitlines(keepends=True) == (
+            [
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[echo first] running... \n",
+                f"{PREFIX}first\n",
+                f"{PREFIX}[echo first] done ✔\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[echo hi] running... \n",
+                f"{PREFIX}hi\n",
+                f"{PREFIX}[echo hi] done ✔\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Done!\n",
+            ]
+        )
+
+    def test_run_mulitiple_dependant_commands_single_failure(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        exit_code = main.run("exit 1", "::", "echo hi", "-n", "-t")
+        captured = capsys.readouterr()
+        assert exit_code == 1, prettify_error(captured.out)
+        assert captured.out.splitlines(keepends=True) == (
+            [
+                f"{PREFIX}Running commands...\n",
                 f"{PREFIX}\n",
                 f"{PREFIX}[exit 1] running... \n",
                 f"{PREFIX}[exit 1] failed ✘\n",
@@ -341,6 +417,47 @@ class TestNonInteractiveMode:
         process = subprocess.Popen(
             [
                 "pyallel",
+                "./tests/assets/test_handle_multiple_signals.sh",
+                "-n",
+                "-t",
+            ],
+            env=os.environ.copy(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        time.sleep(0.3)
+        process.send_signal(signal)
+        time.sleep(0.1)
+        process.send_signal(signal)
+        assert process.stdout is not None
+        out = process.stdout.read()
+        assert process.wait() == exit_code, prettify_error(out.decode())
+        assert out.decode().splitlines(keepends=True) == (
+            [
+                f"{PREFIX}Running commands...\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] running... \n",
+                f"{PREFIX}hi\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Interrupt!\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] failed ✘\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Abort!\n",
+            ]
+        )
+
+    @pytest.mark.parametrize(
+        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
+    )
+    def test_handles_multiple_signals_with_dependant_commands(
+        self, signal: int, exit_code: int
+    ) -> None:
+        process = subprocess.Popen(
+            [
+                "pyallel",
+                "./tests/assets/test_handle_multiple_signals.sh",
+                "::",
                 "./tests/assets/test_handle_multiple_signals.sh",
                 "-n",
                 "-t",
