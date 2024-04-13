@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 import time
-from uuid import uuid4
 
 import pytest
 from pyallel.process import Process, get_num_lines
 
 
 def test_from_command() -> None:
-    expected_process = Process(id=uuid4(), command="sleep 0.1")
-    process = Process.from_command("sleep 0.1")
+    expected_process = Process(id=1, command="sleep 0.1")
+    process = Process.from_command(1, "sleep 0.1")
     assert process == expected_process
 
 
 def test_read() -> None:
-    process = Process.from_command("echo first; echo second")
+    process = Process.from_command(1, "echo first; echo second")
     process.run()
     output = process.read()
     assert output == b""
@@ -24,7 +23,7 @@ def test_read() -> None:
 
 
 def test_readline() -> None:
-    process = Process.from_command("echo first; echo second")
+    process = Process.from_command(1, "echo first; echo second")
     process.run()
     output = process.readline()
     assert output == b""
@@ -36,7 +35,7 @@ def test_readline() -> None:
 
 
 def test_readline_with_read() -> None:
-    process = Process.from_command("echo first; echo second")
+    process = Process.from_command(1, "echo first; echo second")
     process.run()
     output = process.readline()
     assert output == b""
@@ -48,7 +47,7 @@ def test_readline_with_read() -> None:
 
 
 def test_readline_handles_delayed_newline() -> None:
-    process = Process.from_command("printf first; sleep 0.1; echo second")
+    process = Process.from_command(1, "printf first; sleep 0.1; echo second")
     process.run()
     time.sleep(0.01)
     output = process.readline()

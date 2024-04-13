@@ -7,7 +7,6 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, BinaryIO
-from uuid import UUID, uuid4
 
 from pyallel import constants
 from pyallel.colours import Colours
@@ -36,9 +35,9 @@ class ProcessGroup:
     processes: list[Process]
     interactive: bool = False
     timer: bool = False
-    output: dict[UUID, list[str]] = field(default_factory=lambda: defaultdict(list))
+    output: dict[int, list[str]] = field(default_factory=lambda: defaultdict(list))
     process_lines: list[int] = field(default_factory=list)
-    completed_processes: set[UUID] = field(default_factory=set)
+    completed_processes: set[int] = field(default_factory=set)
     exit_code: int = 0
     interrupt_count: int = 0
     passed: bool = True
@@ -233,9 +232,9 @@ class ProcessGroup:
         processes: list[Process] = []
         errors: list[InvalidExecutableError] = []
 
-        for command in commands:
+        for i, command in enumerate(commands):
             try:
-                processes.append(Process.from_command(command))
+                processes.append(Process.from_command(i + 1, command))
             except InvalidExecutableError as e:
                 errors.append(e)
 
@@ -323,7 +322,7 @@ class ProcessGroup:
 
 @dataclass
 class Process:
-    id: UUID = field(repr=False, compare=False)
+    id: int
     command: str
     start: float = 0.0
     end: float = 0.0
@@ -385,5 +384,5 @@ class Process:
         return -1
 
     @classmethod
-    def from_command(cls, command: str) -> Process:
-        return cls(id=uuid4(), command=command)
+    def from_command(cls, id: int, command: str) -> Process:
+        return cls(id=id, command=command)
