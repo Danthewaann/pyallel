@@ -248,13 +248,7 @@ class ProcessGroup:
         lines = constants.LINES() - (2 * num_processes)
         remainder = lines % num_processes
         tail = lines // num_processes
-
-        if self.process_lines:
-            self.process_lines = []
-
-        for process in self.processes:
-            self.process_lines.append(tail)
-
+        self.process_lines = [tail] * num_processes
         if remainder:
             self.process_lines[-1] += remainder - 2
         else:
