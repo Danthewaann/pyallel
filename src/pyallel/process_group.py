@@ -230,7 +230,7 @@ class ProcessGroup:
 
         for i, command in enumerate(commands):
             try:
-                processes.append(Process.from_command(i + 1, command))
+                processes.append(Process(i + 1, command))
             except InvalidExecutableError as e:
                 errors.append(e)
 

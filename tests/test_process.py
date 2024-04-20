@@ -6,7 +6,7 @@ from pyallel.process import Process
 
 
 def test_read() -> None:
-    process = Process.from_command(1, "echo first; echo second")
+    process = Process(1, "echo first; echo second")
     process.run()
     output = process.read()
     assert output == b""
@@ -16,7 +16,7 @@ def test_read() -> None:
 
 
 def test_readline() -> None:
-    process = Process.from_command(1, "echo first; echo second")
+    process = Process(1, "echo first; echo second")
     process.run()
     output = process.readline()
     assert output == b""
@@ -28,7 +28,7 @@ def test_readline() -> None:
 
 
 def test_readline_with_read() -> None:
-    process = Process.from_command(1, "echo first; echo second")
+    process = Process(1, "echo first; echo second")
     process.run()
     output = process.readline()
     assert output == b""
@@ -40,7 +40,7 @@ def test_readline_with_read() -> None:
 
 
 def test_readline_handles_delayed_newline() -> None:
-    process = Process.from_command(1, "printf first; sleep 0.1; echo second")
+    process = Process(1, "printf first; sleep 0.1; echo second")
     process.run()
     time.sleep(0.01)
     output = process.readline()

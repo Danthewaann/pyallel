@@ -70,7 +70,3 @@ class Process:
         if self._process:
             return self._process.wait()
         return -1
-
-    @classmethod
-    def from_command(cls, id: int, command: str) -> Process:
-        return cls(id=id, command=command)

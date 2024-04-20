@@ -8,7 +8,7 @@ from pyallel.process_group import ProcessGroup, get_num_lines
 
 def test_from_command() -> None:
     expected_process = Process(id=1, command="sleep 0.1")
-    process = Process.from_command(1, "sleep 0.1")
+    process = Process(1, "sleep 0.1")
     assert process == expected_process
 
 
