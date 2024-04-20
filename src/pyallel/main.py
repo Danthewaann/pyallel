@@ -8,7 +8,7 @@ from pyallel import constants
 from pyallel.colours import Colours
 from pyallel.errors import InvalidExecutableErrors
 from pyallel.parser import Arguments, create_parser
-from pyallel.process import ProcessGroupManager
+from pyallel.process_group_manager import ProcessGroupManager
 
 
 def main_loop(
