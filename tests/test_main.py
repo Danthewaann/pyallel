@@ -72,14 +72,14 @@ class TestInteractiveMode:
     def test_run_mulitiple_dependant_commands(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("echo first", "::", "echo hi", "-t")
+        exit_code = main.run("echo first", ":::", "echo hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
     def test_run_mulitiple_dependant_commands_single_failure(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("exit 1", "::", "echo hi", "-t")
+        exit_code = main.run("exit 1", ":::", "echo hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
 
@@ -126,7 +126,7 @@ class TestInteractiveMode:
             [
                 "pyallel",
                 "./tests/assets/test_handle_multiple_signals.sh",
-                "::",
+                ":::",
                 "./tests/assets/test_handle_multiple_signals.sh",
             ],
             env=os.environ.copy(),
@@ -253,7 +253,7 @@ class TestNonInteractiveMode:
     def test_run_mulitiple_dependant_commands(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("echo first", "::", "echo hi", "-n", "-t")
+        exit_code = main.run("echo first", ":::", "echo hi", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
@@ -275,7 +275,7 @@ class TestNonInteractiveMode:
     def test_run_mulitiple_dependant_commands_single_failure(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("exit 1", "::", "echo hi", "-n", "-t")
+        exit_code = main.run("exit 1", ":::", "echo hi", "-n", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
@@ -457,7 +457,7 @@ class TestNonInteractiveMode:
             [
                 "pyallel",
                 "./tests/assets/test_handle_multiple_signals.sh",
-                "::",
+                ":::",
                 "./tests/assets/test_handle_multiple_signals.sh",
                 "-n",
                 "-t",

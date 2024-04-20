@@ -26,10 +26,10 @@ usage: pyallel [-h] [-t] [-n] [-V] [--colour {yes,no,auto}] [commands ...]
 Run and handle the output of multiple executables in pyallel (as in parallel)
 
 positional arguments:
-  commands              list of quoted commands to run e.g "mypy ." "black ."
+  commands              list of quoted commands to run in parallel e.g "mypy ." "black ."
 
                         each command is executed inside a shell, so shell syntax is supported as
-                        if you were running the command directly in a shell, some examples are below:
+                        if you were running the command directly in a shell, some examples are below
 
                              "MYPY_FORCE_COLOR=1 mypy ."          <- provide environment variables
                              "mypy | tee -a mypy.log"             <- use pipes to redirect output
@@ -38,6 +38,14 @@ positional arguments:
                              "echo \$SHELL" or "\$(echo mypy .)"  <- expand variables and commands to evaluate (must be escaped)
                              "pytest . && mypy . || echo failed!" <- use AND (&&) and OR (||) to run commands conditionally
 
+                        commands can be grouped using the group separator symbol (:::)
+
+                             "echo boil kettle" "sleep 1" ::: "echo make coffee"
+
+                        the above will print "boil kettle" and sleep for 1 second first before printing "make coffee"
+
+                        command groups are ran in the sequence you provide them, and if a command group fails
+                        (if a command fails inside the command group) the rest of the command groups in the sequence are not run
 
 options:
   -h, --help            show this help message and exit
@@ -88,7 +96,7 @@ python -m venv .venv && source .venv/bin/activate && pip install . -r requiremen
 
 ## TODOs
 
-- [ ] Add support to have commands depend on other commands (some commands must complete
+- [x] Add support to have commands depend on other commands (some commands must complete
       before a given command can start)
 - [ ] Add support to state how many lines a command can use for it's output in interactive mode
 - [ ] Maybe add support to allow the user to provide stdin for commands that request it

@@ -48,7 +48,7 @@ class ProcessGroupManager:
         process_groups: list[ProcessGroup] = []
 
         for i, arg in enumerate(args):
-            if arg == "::":
+            if arg == ":::":
                 if i - 1 == 0:
                     process_groups.append(
                         ProcessGroup.from_commands(

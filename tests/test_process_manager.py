@@ -26,7 +26,7 @@ def test_from_args() -> None:
     "args, expected_process_group_manager",
     (
         (
-            ["sleep 0.1", "::", "sleep 0.2", "sleep 0.3", "::", "sleep 0.4"],
+            ["sleep 0.1", ":::", "sleep 0.2", "sleep 0.3", ":::", "sleep 0.4"],
             ProcessGroupManager(
                 process_groups=[
                     ProcessGroup(
@@ -52,10 +52,10 @@ def test_from_args() -> None:
             [
                 "sleep 0.1",
                 "sleep 0.2",
-                "::",
+                ":::",
                 "sleep 0.3",
                 "sleep 0.4",
-                "::",
+                ":::",
                 "sleep 0.5",
                 "sleep 0.6",
             ],
