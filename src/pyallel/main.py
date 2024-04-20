@@ -8,23 +8,23 @@ from pyallel import constants
 from pyallel.colours import Colours
 from pyallel.errors import InvalidExecutableErrors
 from pyallel.parser import Arguments, create_parser
-from pyallel.process import ProcessGroup
+from pyallel.process import ProcessGroupManager
 
 
 def main_loop(
-    *commands: str,
+    *args: str,
     colours: Colours,
     interactive: bool = False,
     timer: bool = False,
 ) -> int:
-    process_group = ProcessGroup.from_commands(
-        *commands,
+    process_group_manager = ProcessGroupManager.from_args(
+        *args,
         colours=colours,
         interactive=interactive,
         timer=timer,
     )
 
-    return process_group.stream()
+    return process_group_manager.stream()
 
 
 def run(*args: str) -> int:
