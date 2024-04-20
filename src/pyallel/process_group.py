@@ -41,6 +41,9 @@ class ProcessGroup:
     icon: int = 0
     colours: Colours = field(default_factory=Colours)
 
+    def __post_init__(self) -> None:
+        self.process_lines = [0 for _ in self.processes]
+
     def stream(self) -> int:
         for process in self.processes:
             process.run()
@@ -243,12 +246,13 @@ class ProcessGroup:
 
         return process_group
 
-    def complete_output(self, tail: int = 20, all: bool = False) -> str:
+    def complete_output(self, all: bool = False) -> str:
         num_processes = len(self.processes)
         lines = constants.LINES() - (2 * num_processes)
         remainder = lines % num_processes
         tail = lines // num_processes
-        self.process_lines = [tail] * num_processes
+        for i in range(num_processes):
+            self.process_lines[i] = tail
         if remainder:
             self.process_lines[-1] += remainder - 2
         else:
