@@ -79,19 +79,24 @@ You can also build an executable with the following (executables will be written
 #### Build for generic linux
 
 ```bash
-docker build --tag pyallel --build-arg 'arch=x86_64' . && docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel
+docker build --tag pyallel --build-arg 'arch=x86_64' . && \
+  docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel
 ```
 
 #### Build for alpine linux
 
 ```bash
-docker build --tag pyallel-alpine --build-arg 'arch=x86_64' --file Dockerfile.alpine . && docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel-alpine
+docker build --tag pyallel-alpine --build-arg 'arch=x86_64' --file Dockerfile.alpine . && \
+  docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel-alpine
 ```
 
 #### Build locally
 
 ```bash
-python -m venv .venv && source .venv/bin/activate && pip install . -r requirements_build.txt && ./build.sh
+python -m venv .venv && \
+  source .venv/bin/activate && \
+  pip install . -r requirements_build.txt && \
+  ./build.sh
 ```
 
 ## TODOs
