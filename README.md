@@ -99,6 +99,12 @@ python -m venv .venv && \
   ./build.sh
 ```
 
+#### Build all
+
+```bash
+./build_all.sh
+```
+
 ## TODOs
 
 - [x] Add support to have commands depend on other commands (some commands must complete
