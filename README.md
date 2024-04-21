@@ -76,18 +76,27 @@ You can also build an executable with the following (executables will be written
 > The `arch=x86_64` values in the following code blocks can be replaced with `arch=aarch64` and
 > any other architecture that is supported by docker to build an executable for that given architecture
 
+> [!NOTE]
+> To build aarch64 binaries on an x86_64 host machine, you will need to run the following
+commands to setup qemu to allow this to work
+
+```bash
+sudo apt-get install qemu binfmt-support qemu-user-static && \
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+```
+
 #### Build for generic linux
 
 ```bash
-docker build --tag pyallel --build-arg 'arch=x86_64' . && \
-  docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel
+docker build --tag pyallel --build-arg 'arch=x86_64' --build-arg "uid=$(id -u)" --build-arg "gid=$(id -g)" . && \
+    docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel
 ```
 
 #### Build for alpine linux
 
 ```bash
-docker build --tag pyallel-alpine --build-arg 'arch=x86_64' --file Dockerfile.alpine . && \
-  docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel-alpine
+docker build --tag pyallel-alpine --build-arg 'arch=x86_64' --build-arg "uid=$(id -u)" --build-arg "gid=$(id -g)" --file Dockerfile.alpine . && \
+    docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel-alpine
 ```
 
 #### Build locally
