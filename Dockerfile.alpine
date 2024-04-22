@@ -27,7 +27,7 @@ VOLUME /src
 WORKDIR /src
 
 # Setup a build user
-RUN addgroup -g ${gid} build && adduser -S -u ${uid} build -G build
+RUN addgroup -g 1000 build && adduser -S -u ${uid} build -G build
 
 COPY src .
 COPY pyproject.toml .

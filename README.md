@@ -88,14 +88,14 @@ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 #### Build for generic linux
 
 ```bash
-docker build --tag pyallel --build-arg 'arch=x86_64' --build-arg "uid=$(id -u)" --build-arg "gid=$(id -g)" . && \
+docker build --tag pyallel --build-arg 'arch=x86_64' --build-arg "uid=$(id -u)" . && \
     docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel
 ```
 
 #### Build for alpine linux
 
 ```bash
-docker build --tag pyallel-alpine --build-arg 'arch=x86_64' --build-arg "uid=$(id -u)" --build-arg "gid=$(id -g)" --file Dockerfile.alpine . && \
+docker build --tag pyallel-alpine --build-arg 'arch=x86_64' --build-arg "uid=$(id -u)" --file Dockerfile.alpine . && \
     docker run -e 'arch=x86_64' --rm --volume "$(pwd):/src" pyallel-alpine
 ```
 
