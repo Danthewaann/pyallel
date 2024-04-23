@@ -5,7 +5,7 @@ import sys
 IN_TTY = sys.stdout.isatty()
 CLEAR_LINE = "\033[2K"
 UP_LINE = "\033[1F"
-ANSI_ESCAPE = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
+ANSI_ESCAPE = re.compile(r"(\x9B|\x1B\[|\x1B\()[0-?]*[ -\/]*[@-~]")
 
 if IN_TTY:
 

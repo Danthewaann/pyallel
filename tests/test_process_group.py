@@ -54,5 +54,6 @@ def test_get_num_lines_with_long_line() -> None:
     assert get_num_lines(" " * 250, columns=200) == 2
 
 
-def test_get_num_lines_ignores_ansi_chars() -> None:
-    assert get_num_lines("\x1B[0m" * 100, columns=10) == 1
+@pytest.mark.parametrize("chars", ["\x1B[0m", "\x1B(B"])
+def test_get_num_lines_ignores_ansi_chars(chars: str) -> None:
+    assert get_num_lines(chars * 100, columns=10) == 1
