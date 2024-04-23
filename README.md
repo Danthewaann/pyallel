@@ -118,6 +118,7 @@ python -m venv .venv && \
 
 - [x] Add support to have commands depend on other commands (some commands must complete
       before a given command can start)
+- [ ] Add a debug mode that logs debug information to a log file
 - [ ] Fix wrapping of long commands in the command status line
 - [ ] Fix wrapping of very long lines in command output that pushes other commands off the
       screen
