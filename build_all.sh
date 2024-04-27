@@ -3,6 +3,7 @@
 rm -rf build dist specs
 
 user_id=$(id -u)
+
 group_id=$(id -g)
 cur_dir=$(pwd)
 
