@@ -50,6 +50,12 @@ def test_get_num_lines_with_columns(columns: int, lines: int) -> None:
     assert get_num_lines("Hello Mr Anderson", columns=columns) == lines
 
 
+def test_get_num_lines_with_long_command() -> None:
+    # First line is a 800 length string, which divides evenly into `200`
+    line = "long" * 200
+    assert get_num_lines(f"{line}\nLong output", columns=200) == 5
+
+
 def test_get_num_lines_with_long_line() -> None:
     assert get_num_lines(" " * 250, columns=200) == 2
 

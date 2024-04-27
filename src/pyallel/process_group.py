@@ -16,7 +16,13 @@ def get_num_lines(output: str, columns: int | None = None) -> int:
     for line in output.splitlines():
         line = constants.ANSI_ESCAPE.sub("", line)
         length = len(line)
-        lines += 1 * (length // columns + 1 if length > columns else 1)
+        line_lines = 1
+        if length > columns:
+            line_lines = length // columns
+            remainder = length % columns
+            if remainder:
+                line_lines += 1
+        lines += 1 * line_lines
     return lines
 
 
