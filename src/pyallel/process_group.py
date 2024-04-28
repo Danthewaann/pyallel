@@ -264,42 +264,57 @@ class ProcessGroup:
         else:
             self.process_lines[-1] -= 2
 
-        output = ""
+        output = f"lines = {constants.LINES()}, process_lines = {self.process_lines}\n"
         for i, process in enumerate(self.processes, start=1):
+            process_output = ""
             if process.poll() is not None:
                 self.completed_processes.add(process.id)
                 if process.return_code() != 0:
                     self.passed = False
-                output += self._get_command_status(
+                process_output += self._get_command_status(
                     process,
                     passed=process.return_code() == 0,
                     timer=self.timer,
                 )
-                output += "\n"
+                process_output += "\n"
             else:
-                output += self._get_command_status(
+                process_output += self._get_command_status(
                     process,
                     icon=constants.ICONS[self.icon],
                     timer=self.timer,
                 )
-                output += "\n"
+                process_output += "\n"
 
-            process_output = process.read().decode()
+            command_lines = get_num_lines(process_output)
+            p_output = process.read().decode()
             if not self.output[process.id]:
                 self.output[process.id].append("")
-            self.output[process.id][0] += process_output
-            process_output = self.output[process.id][0]
-            if process_output:
+            self.output[process.id][0] += p_output
+            p_output = self.output[process.id][0]
+            p_output_lines = 0
+            if p_output:
                 if not all:
-                    process_output = "\n".join(
-                        process_output.splitlines()[-self.process_lines[i - 1] :]
-                    )
-                    process_output += "\n"
-                output += self._prefix(process_output)
-                if output and output[-1] != "\n":
-                    output += "\n"
+                    p_output_lines = p_output.splitlines()[-self.process_lines[i - 1] :]
+                    p_output = ""
+                    for line in p_output_lines:
+                        if len(line) + 3 > constants.COLUMNS():
+                            p_output += f"{''.join(line[:constants.COLUMNS()-3])}\n"
+                        else:
+                            p_output += line + "\n"
+                p_output = self._prefix(p_output)
+                if p_output and p_output[-1] != "\n":
+                    p_output += "\n"
                 if i != num_processes:
-                    output += "\n"
+                    p_output += "\n"
+                p_output_lines = get_num_lines(p_output)
+
+            if not all and (command_lines + p_output_lines) > self.process_lines[i - 1]:
+                truncate = (command_lines + p_output_lines) - self.process_lines[i - 1]
+                p_output = "\n".join(p_output.splitlines()[truncate:])
+                p_output += "\n"
+
+            process_output += p_output
+            output += process_output
 
         if self.interrupt_count == 0:
             return output
