@@ -294,9 +294,8 @@ class ProcessGroup:
             p_output_lines = 0
             if p_output:
                 if not all:
-                    p_output_lines = p_output.splitlines()[-self.process_lines[i - 1] :]
                     p_output = ""
-                    for line in p_output_lines:
+                    for line in p_output.splitlines()[-self.process_lines[i - 1] :]:
                         if len(line) + 3 > constants.COLUMNS():
                             p_output += f"{''.join(line[:constants.COLUMNS()-3])}\n"
                         else:
