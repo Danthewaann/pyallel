@@ -264,7 +264,7 @@ class ProcessGroup:
         else:
             self.process_lines[-1] -= 2
 
-        output = f"lines = {constants.LINES()}, process_lines = {self.process_lines}\n"
+        output = ""
         for i, process in enumerate(self.processes, start=1):
             process_output = ""
             if process.poll() is not None:
