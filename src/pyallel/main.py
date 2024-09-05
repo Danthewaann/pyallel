@@ -25,6 +25,11 @@ def main_loop(
         timer=timer,
     )
 
+    if not interactive:
+        printer.info("Running commands...")
+        printer.info("")
+        return process_group_manager.stream_non_interactive()
+
     return process_group_manager.stream()
 
 

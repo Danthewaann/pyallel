@@ -37,7 +37,6 @@ def format_time_taken(time_taken: float) -> str:
 @dataclass
 class ProcessGroup:
     processes: list[Process]
-    interactive: bool = False
     timer: bool = False
     output: dict[int, list[str]] = field(default_factory=lambda: defaultdict(list))
     process_lines: list[int] = field(default_factory=list)
@@ -51,13 +50,11 @@ class ProcessGroup:
     def __post_init__(self) -> None:
         self.process_lines = [0 for _ in self.processes]
 
-    def stream(self) -> int:
+    def run(self) -> None:
         for process in self.processes:
             process.run()
 
-        if not self.interactive:
-            return self.stream_non_interactive()
-
+    def stream(self) -> int:
         while True:
             output = self.complete_output()
             self.icon += 1
@@ -222,7 +219,6 @@ class ProcessGroup:
         cls,
         *commands: str,
         printer: Printer | None = None,
-        interactive: bool = False,
         timer: bool = False,
     ) -> ProcessGroup:
         printer = printer or Printer(Colours())
@@ -240,7 +236,6 @@ class ProcessGroup:
 
         process_group = cls(
             processes=processes,
-            interactive=interactive,
             timer=timer,
             printer=printer,
         )
@@ -282,19 +277,19 @@ class ProcessGroup:
 
             command_lines = get_num_lines(process_output)
             p_output = process.read().decode()
-            if not self.output[process.id]:
-                self.output[process.id].append("")
-            self.output[process.id][0] += p_output
-            p_output = self.output[process.id][0]
+            if p_output:
+                self.output[process.id].append(p_output)
+
+            p_output = "\n".join(self.output[process.id])
             p_output_lines = 0
             if p_output:
-                if not all:
-                    p_output = ""
-                    for line in p_output.splitlines()[-self.process_lines[i - 1] :]:
-                        if len(line) + 3 > constants.COLUMNS():
-                            p_output += f"{''.join(line[:constants.COLUMNS()-3])}\n"
-                        else:
-                            p_output += line + "\n"
+                # if not all:
+                #     p_output = ""
+                    # for line in p_output.splitlines()[-self.process_lines[i - 1] :]:
+                    #     if len(line) + 3 > constants.COLUMNS():
+                    #         p_output += f"{''.join(line[:constants.COLUMNS()-3])}\n"
+                    #     else:
+                    #         p_output += line + "\n"
                 p_output = self._prefix(p_output)
                 if p_output and p_output[-1] != "\n":
                     p_output += "\n"
