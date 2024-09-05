@@ -17,12 +17,20 @@ class ProcessGroupManager:
     def stream(self) -> int:
         exit_code = 0
 
-        if not self.interactive:
-            self.printer.info("Running commands...")
-            self.printer.info("")
+        for process_group in self.process_groups:
+            process_group.run()
+            exit_code = process_group.stream()
+            if exit_code > 0:
+                break
+
+        return exit_code
+
+    def stream_non_interactive(self) -> int:
+        exit_code = 0
 
         for process_group in self.process_groups:
-            exit_code = process_group.stream()
+            process_group.run()
+            exit_code = process_group.stream_non_interactive()
             if exit_code > 0:
                 break
 
@@ -52,7 +60,6 @@ class ProcessGroupManager:
                         ProcessGroup.from_commands(
                             args[0],
                             printer=printer,
-                            interactive=interactive,
                             timer=timer,
                         )
                     )
@@ -61,7 +68,6 @@ class ProcessGroupManager:
                         ProcessGroup.from_commands(
                             *commands[last_separator_index:],
                             printer=printer,
-                            interactive=interactive,
                             timer=timer,
                         )
                     )
@@ -78,7 +84,6 @@ class ProcessGroupManager:
             ProcessGroup.from_commands(
                 *commands[last_separator_index:],
                 printer=printer,
-                interactive=interactive,
                 timer=timer,
             )
         )
