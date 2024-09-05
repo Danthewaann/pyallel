@@ -4,7 +4,7 @@ import signal
 from dataclasses import dataclass, field
 from typing import Any
 
-from pyallel.colours import Colours
+from pyallel.printer import Printer
 from pyallel.process_group import ProcessGroup
 
 
@@ -12,16 +12,14 @@ from pyallel.process_group import ProcessGroup
 class ProcessGroupManager:
     process_groups: list[ProcessGroup]
     interactive: bool = False
-    colours: Colours = field(default_factory=Colours)
+    printer: Printer = field(default_factory=Printer)
 
     def stream(self) -> int:
         exit_code = 0
 
         if not self.interactive:
-            print(
-                f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.white_bold}Running commands...{self.colours.reset_colour}\n{self.colours.dim_on}=>{self.colours.dim_off} ",
-                flush=True,
-            )
+            self.printer.info("Running commands...")
+            self.printer.info("")
 
         for process_group in self.process_groups:
             exit_code = process_group.stream()
@@ -38,11 +36,11 @@ class ProcessGroupManager:
     def from_args(
         cls,
         *args: str,
-        colours: Colours | None = None,
+        printer: Printer | None = None,
         interactive: bool = False,
         timer: bool = False,
     ) -> ProcessGroupManager:
-        colours = colours or Colours()
+        printer = printer or Printer()
         last_separator_index = 0
         commands: list[str] = []
         process_groups: list[ProcessGroup] = []
@@ -53,7 +51,7 @@ class ProcessGroupManager:
                     process_groups.append(
                         ProcessGroup.from_commands(
                             args[0],
-                            colours=colours,
+                            printer=printer,
                             interactive=interactive,
                             timer=timer,
                         )
@@ -62,7 +60,7 @@ class ProcessGroupManager:
                     process_groups.append(
                         ProcessGroup.from_commands(
                             *commands[last_separator_index:],
-                            colours=colours,
+                            printer=printer,
                             interactive=interactive,
                             timer=timer,
                         )
@@ -79,14 +77,14 @@ class ProcessGroupManager:
         process_groups.append(
             ProcessGroup.from_commands(
                 *commands[last_separator_index:],
-                colours=colours,
+                printer=printer,
                 interactive=interactive,
                 timer=timer,
             )
         )
 
         process_group_manager = cls(
-            process_groups=process_groups, interactive=interactive, colours=colours
+            process_groups=process_groups, interactive=interactive, printer=printer
         )
 
         signal.signal(signal.SIGINT, process_group_manager.handle_signal)
