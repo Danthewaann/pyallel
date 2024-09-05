@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from pyallel import constants
 from pyallel.colours import Colours
 from pyallel.errors import InvalidExecutableError, InvalidExecutableErrors
+from pyallel.printer import Printer
 from pyallel.process import Process
 
 
@@ -45,7 +46,7 @@ class ProcessGroup:
     interrupt_count: int = 0
     passed: bool = True
     icon: int = 0
-    colours: Colours = field(default_factory=Colours)
+    printer: Printer = field(default_factory=Printer)
 
     def __post_init__(self) -> None:
         self.process_lines = [0 for _ in self.processes]
@@ -63,21 +64,18 @@ class ProcessGroup:
             if self.icon == len(constants.ICONS):
                 self.icon = 0
 
-            print(output, end="", flush=True)
+            self.printer.write(output, end="", flush=True)
 
             # Clear all the lines that were just printed
             for _ in range(get_num_lines(output) - (1 if self.exit_code > 1 else 0)):
-                print(
-                    f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}",
-                    end="",
-                )
+                self.printer.clear_line()
 
             if len(self.completed_processes) == len(self.processes):
                 break
 
             time.sleep(0.1)
 
-        print(self.complete_output(all=True), flush=True)
+        self.printer.write(self.complete_output(all=True), flush=True)
 
         if not self.exit_code and not self.passed:
             self.exit_code = 1
@@ -136,7 +134,7 @@ class ProcessGroup:
                         passed=process.return_code() == 0,
                         timer=self.timer,
                     )
-                    output += f"\n{self.colours.dim_on}=>{self.colours.dim_off} \n"
+                    output += f"\n{self.printer.prefix}\n"
                     self.completed_processes.add(process.id)
                     running_process = None
 
@@ -148,11 +146,11 @@ class ProcessGroup:
                         and self.output[process.id][-1][-1] != "\n"
                     ):
                         output += "\n"
-                    output += f"{self.colours.dim_on}=>{self.colours.dim_off} \n{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}\n{self.colours.dim_on}=>{self.colours.dim_off} \n"
+                    output += f"{self.printer.prefix}\n{self.printer.prefix}{self.printer.colours.yellow_bold}Interrupt!{self.printer.colours.reset_colour}\n{self.printer.prefix}\n"
                     interrupted = True
 
             if output:
-                print(output, end="", flush=True)
+                self.printer.write(output, end="", flush=True)
 
             if len(self.completed_processes) == len(self.processes):
                 break
@@ -160,10 +158,7 @@ class ProcessGroup:
             time.sleep(0.01)
 
         if self.interrupt_count == 2:
-            print(
-                f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.red_bold}Abort!{self.colours.reset_colour}",
-                flush=True,
-            )
+            self.printer.error("Abort!", flush=True)
 
         if not self.exit_code and not self.passed:
             self.exit_code = 1
@@ -172,7 +167,7 @@ class ProcessGroup:
 
     def _prefix(self, output: str, keepend: bool = True) -> str:
         prefixed_output = "\n".join(
-            f"{self.colours.dim_on}=>{self.colours.dim_off} {line}{self.colours.reset_colour}"
+            f"{self.printer.prefix}{line}{self.printer.colours.reset_colour}"
             for line in output.splitlines()
         )
         if keepend and output and output[-1] == "\n":
@@ -187,28 +182,28 @@ class ProcessGroup:
         timer: bool = False,
     ) -> str:
         if passed is True:
-            colour = self.colours.green_bold
+            colour = self.printer.colours.green_bold
             msg = "done"
             icon = icon or constants.TICK
         elif passed is False:
-            colour = self.colours.red_bold
+            colour = self.printer.colours.red_bold
             msg = "failed"
             icon = icon or constants.X
         else:
-            colour = self.colours.white_bold
+            colour = self.printer.colours.white_bold
             msg = "running"
             icon = icon or ""
             if not icon:
                 msg += "..."
 
-        output = f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.white_bold}[{self.colours.reset_colour}{self.colours.blue_bold}{process.command}{self.colours.reset_colour}{self.colours.white_bold}]{self.colours.reset_colour}{colour} {msg} {icon}{self.colours.reset_colour}"
+        output = f"{self.printer.colours.dim_on}=>{self.printer.colours.dim_off} {self.printer.colours.white_bold}[{self.printer.colours.reset_colour}{self.printer.colours.blue_bold}{process.command}{self.printer.colours.reset_colour}{self.printer.colours.white_bold}]{self.printer.colours.reset_colour}{colour} {msg} {icon}{self.printer.colours.reset_colour}"
 
         if timer:
             end = process.end
             if not process.end:
                 end = time.perf_counter()
             elapsed = end - process.start
-            output += f" {self.colours.dim_on}({format_time_taken(elapsed)}){self.colours.dim_off}"
+            output += f" {self.printer.colours.dim_on}({format_time_taken(elapsed)}){self.printer.colours.dim_off}"
 
         return output
 
@@ -226,11 +221,11 @@ class ProcessGroup:
     def from_commands(
         cls,
         *commands: str,
-        colours: Colours | None = None,
+        printer: Printer | None = None,
         interactive: bool = False,
         timer: bool = False,
     ) -> ProcessGroup:
-        colours = colours or Colours()
+        printer = printer or Printer(Colours())
         processes: list[Process] = []
         errors: list[InvalidExecutableError] = []
 
@@ -247,7 +242,7 @@ class ProcessGroup:
             processes=processes,
             interactive=interactive,
             timer=timer,
-            colours=colours,
+            printer=printer,
         )
 
         return process_group
@@ -319,10 +314,8 @@ class ProcessGroup:
             return output
 
         if self.interrupt_count == 1:
-            output += (
-                f"\n{self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}"
-            )
+            output += f"\n{self.printer.colours.yellow_bold}Interrupt!{self.printer.colours.reset_colour}"
         elif self.interrupt_count == 2:
-            output += f"\n{self.colours.red_bold}Abort!{self.colours.reset_colour}"
+            output += f"\n{self.printer.colours.red_bold}Abort!{self.printer.colours.reset_colour}"
 
         return output

@@ -8,18 +8,19 @@ from pyallel import constants
 from pyallel.colours import Colours
 from pyallel.errors import InvalidExecutableErrors
 from pyallel.parser import Arguments, create_parser
+from pyallel.printer import Printer
 from pyallel.process_group_manager import ProcessGroupManager
 
 
 def main_loop(
     *args: str,
-    colours: Colours,
+    printer: Printer,
     interactive: bool = False,
     timer: bool = False,
 ) -> int:
     process_group_manager = ProcessGroupManager.from_args(
         *args,
-        colours=colours,
+        printer=printer,
         interactive=interactive,
         timer=timer,
     )
@@ -41,6 +42,7 @@ def run(*args: str) -> int:
         return 2
 
     colours = Colours.from_colour(parsed_args.colour)
+    printer = Printer(colours)
 
     interactive = True
     if not parsed_args.interactive:
@@ -52,7 +54,7 @@ def run(*args: str) -> int:
     try:
         exit_code = main_loop(
             *parsed_args.commands,
-            colours=colours,
+            printer=printer,
             interactive=interactive,
             timer=parsed_args.timer,
         )
@@ -65,17 +67,11 @@ def run(*args: str) -> int:
 
     if exit_code == 1:
         if not message:
-            print(
-                f"{colours.dim_on}=>{colours.dim_off} {colours.red_bold}Failed!{colours.reset_colour}"
-            )
+            printer.error("Failed!")
         else:
-            print(
-                f"{colours.dim_on}=>{colours.dim_off} {colours.red_bold}Error: {message}{colours.reset_colour}"
-            )
+            printer.error(f"Error: {message}")
     elif exit_code == 0:
-        print(
-            f"{colours.dim_on}=>{colours.dim_off} {colours.green_bold}Done!{colours.reset_colour}"
-        )
+        printer.ok("Done!")
 
     return exit_code
 
