@@ -1,4 +1,5 @@
 from __future__ import annotations
+import time
 
 
 import pytest
@@ -6,6 +7,32 @@ from pyallel.process import Process
 from pyallel.process_group import ProcessGroup
 from pyallel.process_group_manager import ProcessGroupManager
 
+
+def test_stream() -> None:
+    pg_manager = ProcessGroupManager(
+        process_groups=[
+            ProcessGroup(
+                processes=[
+                    Process(id=1, command="echo first"),
+                    Process(id=2, command="echo second"),
+                ]
+            ),
+            ProcessGroup(
+                processes=[
+                    Process(id=1, command="echo third"),
+                    Process(id=2, command="echo fourth"),
+                ]
+            )
+        ]
+    )
+    pg_manager.run()
+    time.sleep(1)
+    assert pg_manager.stream_2() == [["first"], ["second"]]
+    assert pg_manager.poll() == 0
+    pg_manager.run()
+    time.sleep(1)
+    assert pg_manager.stream_2() == [["third"], ["fourth"]]
+    assert pg_manager.poll() == 0
 
 def test_from_args() -> None:
     expected_process_group_manager = ProcessGroupManager(

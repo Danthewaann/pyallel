@@ -11,30 +11,25 @@ from pyallel.process_group import ProcessGroup
 @dataclass
 class ProcessGroupManager:
     process_groups: list[ProcessGroup]
+    cur_process_group: ProcessGroup | None = None
     interactive: bool = False
     printer: Printer = field(default_factory=Printer)
 
-    def stream(self) -> int:
-        exit_code = 0
+    def run(self) -> None:
+        self.cur_process_group = self.process_groups.pop(0)
+        self.cur_process_group.run()
 
-        for process_group in self.process_groups:
-            process_group.run()
-            exit_code = process_group.stream()
-            if exit_code > 0:
-                break
+    def stream(self) -> list[list[str]]:
+        if self.cur_process_group is None:
+            return []
 
-        return exit_code
+        return self.cur_process_group.stream_2()
 
-    def stream_non_interactive(self) -> int:
-        exit_code = 0
+    def poll(self) -> int | None:
+        if self.cur_process_group is None:
+            return 0
 
-        for process_group in self.process_groups:
-            process_group.run()
-            exit_code = process_group.stream_non_interactive()
-            if exit_code > 0:
-                break
-
-        return exit_code
+        return self.cur_process_group.poll()
 
     def handle_signal(self, signum: int, _frame: Any) -> None:
         for process_group in self.process_groups:
