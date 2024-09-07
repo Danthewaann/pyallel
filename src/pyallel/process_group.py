@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import time
-from collections import defaultdict
 from dataclasses import dataclass, field
 
 from pyallel import constants
@@ -11,19 +10,20 @@ from pyallel.printer import Printer
 from pyallel.process import Process
 
 
-def get_num_lines(output: str, columns: int | None = None) -> int:
+def get_num_lines(output: list[str], columns: int | None = None) -> int:
     lines = 0
     columns = columns or constants.COLUMNS()
-    for line in output.splitlines():
-        line = constants.ANSI_ESCAPE.sub("", line)
-        length = len(line)
-        line_lines = 1
-        if length > columns:
-            line_lines = length // columns
-            remainder = length % columns
-            if remainder:
-                line_lines += 1
-        lines += 1 * line_lines
+    for line in output:
+        for line in line.splitlines():
+            line = constants.ANSI_ESCAPE.sub("", line)
+            length = len(line)
+            line_lines = 1
+            if length > columns:
+                line_lines = length // columns
+                remainder = length % columns
+                if remainder:
+                    line_lines += 1
+            lines += 1 * line_lines
     return lines
 
 
@@ -38,9 +38,10 @@ def format_time_taken(time_taken: float) -> str:
 class ProcessGroup:
     processes: list[Process]
     timer: bool = False
-    output: dict[int, list[str]] = field(default_factory=lambda: defaultdict(list))
-    process_lines: list[int] = field(default_factory=list)
+    output: dict[int, list[str]] = field(init=False)
+    process_lines: list[int] = field(init=False)
     completed_processes: set[int] = field(default_factory=set)
+    num_processes: int = field(init=False)
     exit_code: int = 0
     interrupt_count: int = 0
     passed: bool = True
@@ -48,7 +49,9 @@ class ProcessGroup:
     printer: Printer = field(default_factory=Printer)
 
     def __post_init__(self) -> None:
+        self.num_processes = len(self.processes)
         self.process_lines = [0 for _ in self.processes]
+        self.output = {i: [None, ""] for i, _ in enumerate(self.processes, start=1)}  # type: ignore
 
     def run(self) -> None:
         for process in self.processes:
@@ -242,75 +245,79 @@ class ProcessGroup:
 
         return process_group
 
-    def complete_output(self, all: bool = False) -> str:
-        num_processes = len(self.processes)
-        lines = constants.LINES() - (2 * num_processes)
-        remainder = lines % num_processes
-        tail = lines // num_processes
-        for i in range(num_processes):
+    def complete_output(self, all: bool = False) -> list[str]:
+        lines = constants.LINES() - (2 * self.num_processes)
+        remainder = lines % self.num_processes
+        tail = lines // self.num_processes
+        for i in range(self.num_processes):
             self.process_lines[i] = tail
         if remainder:
             self.process_lines[-1] += remainder - 2
         else:
             self.process_lines[-1] -= 2
 
-        output = ""
+        output_lines: list[str] = []
         for i, process in enumerate(self.processes, start=1):
-            process_output = ""
             if process.poll() is not None:
                 self.completed_processes.add(process.id)
                 if process.return_code() != 0:
                     self.passed = False
-                process_output += self._get_command_status(
+                status_line = self._get_command_status(
                     process,
                     passed=process.return_code() == 0,
                     timer=self.timer,
                 )
-                process_output += "\n"
             else:
-                process_output += self._get_command_status(
+                status_line = self._get_command_status(
                     process,
                     icon=constants.ICONS[self.icon],
                     timer=self.timer,
                 )
-                process_output += "\n"
 
-            command_lines = get_num_lines(process_output)
-            p_output = process.read().decode()
-            if p_output:
-                self.output[process.id].append(p_output)
+            self.output[process.id][0] = status_line
+            status_lines = get_num_lines([status_line])
 
-            p_output = "\n".join(self.output[process.id])
+            output = process.read().decode()
+            if output:
+                lines = output.split()
+                num_lines = get_num_lines(lines)
+                self.output[process.id].extend(output.split())
+
+            process_output_lines = self.output[process.id]
             p_output_lines = 0
-            if p_output:
-                # if not all:
-                #     p_output = ""
-                    # for line in p_output.splitlines()[-self.process_lines[i - 1] :]:
-                    #     if len(line) + 3 > constants.COLUMNS():
-                    #         p_output += f"{''.join(line[:constants.COLUMNS()-3])}\n"
-                    #     else:
-                    #         p_output += line + "\n"
-                p_output = self._prefix(p_output)
-                if p_output and p_output[-1] != "\n":
-                    p_output += "\n"
+            if process_output_lines:
+                if process_output_lines and process_output_lines[-1] != "\n":
+                    process_output_lines += "\n"
                 if i != num_processes:
-                    p_output += "\n"
-                p_output_lines = get_num_lines(p_output)
+                    process_output_lines += "\n"
+                p_output_lines = get_num_lines(process_output_lines[2:])
 
-            if not all and (command_lines + p_output_lines) > self.process_lines[i - 1]:
-                truncate = (command_lines + p_output_lines) - self.process_lines[i - 1]
-                p_output = "\n".join(p_output.splitlines()[truncate:])
-                p_output += "\n"
+            if not all:
+                command_lines = get_num_lines(process_output_lines[:2])
+                if (command_lines + p_output_lines) > self.process_lines[i - 1]:
+                    truncate = (command_lines + p_output_lines) - self.process_lines[
+                        i - 1
+                    ]
+                    process_output_lines = "\n".join(
+                        process_output_lines.splitlines()[truncate:]
+                    )
+                    process_output_lines += "\n"
 
-            process_output += p_output
-            output += process_output
+            status_line += process_output_lines
+            process_output_lines += status_line
 
         if self.interrupt_count == 0:
-            return output
+            return output_lines
 
         if self.interrupt_count == 1:
-            output += f"\n{self.printer.colours.yellow_bold}Interrupt!{self.printer.colours.reset_colour}"
+            output_lines.append("")
+            output_lines.append(
+                f"{self.printer.colours.yellow_bold}Interrupt!{self.printer.colours.reset_colour}"
+            )
         elif self.interrupt_count == 2:
-            output += f"\n{self.printer.colours.red_bold}Abort!{self.printer.colours.reset_colour}"
+            output_lines.append("")
+            output_lines.append(
+                f"{self.printer.colours.red_bold}Abort!{self.printer.colours.reset_colour}"
+            )
 
-        return output
+        return output_lines
