@@ -1,4 +1,5 @@
 from __future__ import annotations
+import time
 
 
 import pytest
@@ -22,6 +23,22 @@ def test_from_commands() -> None:
     )
     process_group = ProcessGroup.from_commands("sleep 0.1", "sleep 0.2", "sleep 0.3")
     assert process_group == expected_process_group
+
+def test_stream() -> None:
+    process_group = ProcessGroup(
+        processes=[
+            Process(id=1, command="echo first; echo hi"),
+            Process(id=2, command="echo second"),
+            Process(id=3, command="echo third"),
+        ]
+    )
+    process_group.run()
+    time.sleep(0.1)
+    assert process_group.stream_2() == [
+        ["first", "hi"],
+        ["second"],
+        ["third"]
+    ]
 
 
 @pytest.mark.parametrize(

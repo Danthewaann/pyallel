@@ -57,154 +57,21 @@ class ProcessGroup:
         for process in self.processes:
             process.run()
 
-    def stream(self) -> int:
-        while True:
-            output = self.complete_output()
-            self.icon += 1
-            if self.icon == len(constants.ICONS):
-                self.icon = 0
+    def poll(self) -> int | None:
+        for process in self.processes:
+            poll = process.poll()
+            if poll is None:
+                return None
+            elif poll > 0:
+                return poll
 
-            self.printer.write(output, end="", flush=True)
+        return 0
 
-            # Clear all the lines that were just printed
-            for _ in range(get_num_lines(output) - (1 if self.exit_code > 1 else 0)):
-                self.printer.clear_line()
-
-            if len(self.completed_processes) == len(self.processes):
-                break
-
-            time.sleep(0.1)
-
-        self.printer.write(self.complete_output(all=True), flush=True)
-
-        if not self.exit_code and not self.passed:
-            self.exit_code = 1
-
-        return self.exit_code
-
-    def stream_non_interactive(self) -> int:
-        running_process = None
-        interrupted = False
-
-        while True:
-            output = ""
-            for process in self.processes:
-                if (
-                    running_process is None
-                    and process.id not in self.completed_processes
-                ):
-                    output += self._get_command_status(process)
-                    output += "\n"
-                    running_process = process
-                elif running_process is not process:
-                    # Need to do this to properly keep track of how long all the other
-                    # commands are taking
-                    process.poll()
-                    continue
-
-                process_output = process.readline().decode()
-
-                if not self.output[process.id] and process_output:
-                    process_output = self._prefix(process_output)
-                    self.output[process.id].append(process_output)
-                    output += process_output
-                elif process_output:
-                    if self.output[process.id][-1][-1] != "\n":
-                        self.output[process.id][-1] += process_output
-                    else:
-                        process_output = self._prefix(process_output)
-                        self.output[process.id].append(process_output)
-                    output += process_output
-
-                if process.poll() is not None:
-                    if process.return_code() != 0:
-                        self.passed = False
-                    process_output = process.read().decode()
-                    if process_output:
-                        output += self._prefix(process_output)
-
-                    if (output and output[-1] != "\n") or (
-                        self.output[process.id]
-                        and self.output[process.id][-1][-1] != "\n"
-                    ):
-                        output += "\n"
-
-                    output += self._get_command_status(
-                        process,
-                        passed=process.return_code() == 0,
-                        timer=self.timer,
-                    )
-                    output += f"\n{self.printer.prefix}\n"
-                    self.completed_processes.add(process.id)
-                    running_process = None
-
-                if self.interrupt_count == 0:
-                    pass
-                elif not interrupted and self.interrupt_count == 1:
-                    if (output and output[-1] != "\n") or (
-                        self.output[process.id]
-                        and self.output[process.id][-1][-1] != "\n"
-                    ):
-                        output += "\n"
-                    output += f"{self.printer.prefix}\n{self.printer.prefix}{self.printer.colours.yellow_bold}Interrupt!{self.printer.colours.reset_colour}\n{self.printer.prefix}\n"
-                    interrupted = True
-
-            if output:
-                self.printer.write(output, end="", flush=True)
-
-            if len(self.completed_processes) == len(self.processes):
-                break
-
-            time.sleep(0.01)
-
-        if self.interrupt_count == 2:
-            self.printer.error("Abort!", flush=True)
-
-        if not self.exit_code and not self.passed:
-            self.exit_code = 1
-
-        return self.exit_code
-
-    def _prefix(self, output: str, keepend: bool = True) -> str:
-        prefixed_output = "\n".join(
-            f"{self.printer.prefix}{line}{self.printer.colours.reset_colour}"
-            for line in output.splitlines()
-        )
-        if keepend and output and output[-1] == "\n":
-            prefixed_output += "\n"
-        return prefixed_output
-
-    def _get_command_status(
-        self,
-        process: Process,
-        icon: str | None = None,
-        passed: bool | None = None,
-        timer: bool = False,
-    ) -> str:
-        if passed is True:
-            colour = self.printer.colours.green_bold
-            msg = "done"
-            icon = icon or constants.TICK
-        elif passed is False:
-            colour = self.printer.colours.red_bold
-            msg = "failed"
-            icon = icon or constants.X
-        else:
-            colour = self.printer.colours.white_bold
-            msg = "running"
-            icon = icon or ""
-            if not icon:
-                msg += "..."
-
-        output = f"{self.printer.colours.dim_on}=>{self.printer.colours.dim_off} {self.printer.colours.white_bold}[{self.printer.colours.reset_colour}{self.printer.colours.blue_bold}{process.command}{self.printer.colours.reset_colour}{self.printer.colours.white_bold}]{self.printer.colours.reset_colour}{colour} {msg} {icon}{self.printer.colours.reset_colour}"
-
-        if timer:
-            end = process.end
-            if not process.end:
-                end = time.perf_counter()
-            elapsed = end - process.start
-            output += f" {self.printer.colours.dim_on}({format_time_taken(elapsed)}){self.printer.colours.dim_off}"
-
+    def stream(self) -> list[list[str]]:
+        output: list[list[str]] = []
+        for process in self.processes:
+            lines = process.read().decode().split()
+            output.append(lines)
         return output
 
     def handle_signal(self, signum: int) -> None:
@@ -224,7 +91,7 @@ class ProcessGroup:
         printer: Printer | None = None,
         timer: bool = False,
     ) -> ProcessGroup:
-        printer = printer or Printer(Colours())
+        printer = printer or Printer()
         processes: list[Process] = []
         errors: list[InvalidExecutableError] = []
 
@@ -244,80 +111,3 @@ class ProcessGroup:
         )
 
         return process_group
-
-    def complete_output(self, all: bool = False) -> list[str]:
-        lines = constants.LINES() - (2 * self.num_processes)
-        remainder = lines % self.num_processes
-        tail = lines // self.num_processes
-        for i in range(self.num_processes):
-            self.process_lines[i] = tail
-        if remainder:
-            self.process_lines[-1] += remainder - 2
-        else:
-            self.process_lines[-1] -= 2
-
-        output_lines: list[str] = []
-        for i, process in enumerate(self.processes, start=1):
-            if process.poll() is not None:
-                self.completed_processes.add(process.id)
-                if process.return_code() != 0:
-                    self.passed = False
-                status_line = self._get_command_status(
-                    process,
-                    passed=process.return_code() == 0,
-                    timer=self.timer,
-                )
-            else:
-                status_line = self._get_command_status(
-                    process,
-                    icon=constants.ICONS[self.icon],
-                    timer=self.timer,
-                )
-
-            self.output[process.id][0] = status_line
-            status_lines = get_num_lines([status_line])
-
-            output = process.read().decode()
-            if output:
-                lines = output.split()
-                num_lines = get_num_lines(lines)
-                self.output[process.id].extend(output.split())
-
-            process_output_lines = self.output[process.id]
-            p_output_lines = 0
-            if process_output_lines:
-                if process_output_lines and process_output_lines[-1] != "\n":
-                    process_output_lines += "\n"
-                if i != num_processes:
-                    process_output_lines += "\n"
-                p_output_lines = get_num_lines(process_output_lines[2:])
-
-            if not all:
-                command_lines = get_num_lines(process_output_lines[:2])
-                if (command_lines + p_output_lines) > self.process_lines[i - 1]:
-                    truncate = (command_lines + p_output_lines) - self.process_lines[
-                        i - 1
-                    ]
-                    process_output_lines = "\n".join(
-                        process_output_lines.splitlines()[truncate:]
-                    )
-                    process_output_lines += "\n"
-
-            status_line += process_output_lines
-            process_output_lines += status_line
-
-        if self.interrupt_count == 0:
-            return output_lines
-
-        if self.interrupt_count == 1:
-            output_lines.append("")
-            output_lines.append(
-                f"{self.printer.colours.yellow_bold}Interrupt!{self.printer.colours.reset_colour}"
-            )
-        elif self.interrupt_count == 2:
-            output_lines.append("")
-            output_lines.append(
-                f"{self.printer.colours.red_bold}Abort!{self.printer.colours.reset_colour}"
-            )
-
-        return output_lines
