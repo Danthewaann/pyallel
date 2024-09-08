@@ -20,17 +20,33 @@ def main_loop(
 ) -> int:
     process_group_manager = ProcessGroupManager.from_args(
         *args,
-        printer=printer,
         interactive=interactive,
         timer=timer,
     )
 
+
     if not interactive:
         printer.info("Running commands...")
         printer.info("")
-        return process_group_manager.stream_non_interactive()
 
-    return process_group_manager.stream()
+    done = False
+    process_group_manager.run()
+    while True:
+        poll = process_group_manager.poll()
+        if poll is not None:
+            done = True
+
+        outputs = process_group_manager.stream()
+        for output in outputs:
+            if output.data:
+                printer.write(output.data)
+
+        if done:
+            process_group_manager.run()
+            if process_group_manager.cur_process_group is None:
+                return poll
+            else:
+                done = False
 
 
 def run(*args: str) -> int:

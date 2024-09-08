@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import signal
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from pyallel.printer import Printer
-from pyallel.process_group import ProcessGroup
+from pyallel.process_group import Output, ProcessGroup
 
 
 @dataclass
@@ -13,17 +12,19 @@ class ProcessGroupManager:
     process_groups: list[ProcessGroup]
     cur_process_group: ProcessGroup | None = None
     interactive: bool = False
-    printer: Printer = field(default_factory=Printer)
 
     def run(self) -> None:
-        self.cur_process_group = self.process_groups.pop(0)
-        self.cur_process_group.run()
+        if self.process_groups:
+            self.cur_process_group = self.process_groups.pop(0)
+            self.cur_process_group.run()
+        else:
+            self.cur_process_group = None
 
-    def stream(self) -> list[list[str]]:
+    def stream(self) -> list[Output]:
         if self.cur_process_group is None:
             return []
 
-        return self.cur_process_group.stream_2()
+        return self.cur_process_group.stream()
 
     def poll(self) -> int | None:
         if self.cur_process_group is None:
@@ -39,11 +40,9 @@ class ProcessGroupManager:
     def from_args(
         cls,
         *args: str,
-        printer: Printer | None = None,
         interactive: bool = False,
         timer: bool = False,
     ) -> ProcessGroupManager:
-        printer = printer or Printer()
         last_separator_index = 0
         commands: list[str] = []
         process_groups: list[ProcessGroup] = []
@@ -54,7 +53,6 @@ class ProcessGroupManager:
                     process_groups.append(
                         ProcessGroup.from_commands(
                             args[0],
-                            printer=printer,
                             timer=timer,
                         )
                     )
@@ -62,7 +60,6 @@ class ProcessGroupManager:
                     process_groups.append(
                         ProcessGroup.from_commands(
                             *commands[last_separator_index:],
-                            printer=printer,
                             timer=timer,
                         )
                     )
@@ -78,13 +75,12 @@ class ProcessGroupManager:
         process_groups.append(
             ProcessGroup.from_commands(
                 *commands[last_separator_index:],
-                printer=printer,
                 timer=timer,
             )
         )
 
         process_group_manager = cls(
-            process_groups=process_groups, interactive=interactive, printer=printer
+            process_groups=process_groups, interactive=interactive
         )
 
         signal.signal(signal.SIGINT, process_group_manager.handle_signal)

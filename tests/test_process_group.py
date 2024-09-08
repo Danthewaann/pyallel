@@ -4,7 +4,7 @@ import time
 
 import pytest
 from pyallel.process import Process
-from pyallel.process_group import ProcessGroup, get_num_lines
+from pyallel.process_group import Output, ProcessGroup, get_num_lines
 
 
 def test_from_command() -> None:
@@ -34,10 +34,10 @@ def test_stream() -> None:
     )
     process_group.run()
     time.sleep(0.1)
-    assert process_group.stream_2() == [
-        ["first", "hi"],
-        ["second"],
-        ["third"]
+    assert process_group.stream() == [
+        Output(process=process_group.processes[0], data="first\nhi\n"),
+        Output(process=process_group.processes[1], data="second\n"),
+        Output(process=process_group.processes[2], data="third\n")
     ]
 
 
