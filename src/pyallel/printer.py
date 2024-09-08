@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 from pyallel import constants
 from pyallel.colours import Colours
+from pyallel.process_group import Output
 
 
 @dataclass
@@ -38,6 +39,11 @@ class Printer:
 
     def write(self, msg: str, end: str = "\n", flush: bool = False) -> None:
         print(msg, end=end, flush=flush)
+
+    def write_outputs(self, outputs: list[Output]) -> None:
+        for output in outputs:
+            if output.data:
+                self.write(output.data)
 
     def clear_line(self) -> None:
         print(

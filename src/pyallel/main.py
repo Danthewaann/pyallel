@@ -9,6 +9,7 @@ from pyallel.colours import Colours
 from pyallel.errors import InvalidExecutableErrors
 from pyallel.parser import Arguments, create_parser
 from pyallel.printer import Printer
+from pyallel.process_group import Output
 from pyallel.process_group_manager import ProcessGroupManager
 
 
@@ -18,17 +19,13 @@ def main_loop(
     interactive: bool = False,
     timer: bool = False,
 ) -> int:
-    process_group_manager = ProcessGroupManager.from_args(
-        *args,
-        interactive=interactive,
-        timer=timer,
-    )
-
+    process_group_manager = ProcessGroupManager.from_args(*args, timer=timer)
 
     if not interactive:
         printer.info("Running commands...")
         printer.info("")
 
+    all_output: list[list[Output]] = []
     done = False
     process_group_manager.run()
     while True:
@@ -37,9 +34,7 @@ def main_loop(
             done = True
 
         outputs = process_group_manager.stream()
-        for output in outputs:
-            if output.data:
-                printer.write(output.data)
+        printer.write_outputs(outputs)
 
         if done:
             process_group_manager.run()
