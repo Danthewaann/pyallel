@@ -11,7 +11,6 @@ from pyallel.process_group import Output, ProcessGroup
 class ProcessGroupManager:
     process_groups: list[ProcessGroup]
     cur_process_group: ProcessGroup | None = None
-    interactive: bool = False
 
     def run(self) -> None:
         if self.process_groups:
@@ -40,7 +39,6 @@ class ProcessGroupManager:
     def from_args(
         cls,
         *args: str,
-        interactive: bool = False,
         timer: bool = False,
     ) -> ProcessGroupManager:
         last_separator_index = 0
@@ -79,9 +77,7 @@ class ProcessGroupManager:
             )
         )
 
-        process_group_manager = cls(
-            process_groups=process_groups, interactive=interactive
-        )
+        process_group_manager = cls(process_groups=process_groups)
 
         signal.signal(signal.SIGINT, process_group_manager.handle_signal)
         signal.signal(signal.SIGTERM, process_group_manager.handle_signal)
