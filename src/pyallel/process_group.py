@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass, field
 
 from pyallel import constants
-from pyallel.colours import Colours
 from pyallel.errors import InvalidExecutableError, InvalidExecutableErrors
-from pyallel.printer import Printer
 from pyallel.process import Process
 
 
@@ -33,6 +30,10 @@ def format_time_taken(time_taken: float) -> str:
 
     return f"{seconds}s"
 
+@dataclass
+class Output:
+    process: Process
+    data: str
 
 @dataclass
 class ProcessGroup:
@@ -46,7 +47,6 @@ class ProcessGroup:
     interrupt_count: int = 0
     passed: bool = True
     icon: int = 0
-    printer: Printer = field(default_factory=Printer)
 
     def __post_init__(self) -> None:
         self.num_processes = len(self.processes)
@@ -67,11 +67,11 @@ class ProcessGroup:
 
         return 0
 
-    def stream(self) -> list[list[str]]:
-        output: list[list[str]] = []
+    def stream(self) -> list[Output]:
+        output: list[Output] = []
         for process in self.processes:
-            lines = process.read().decode().split()
-            output.append(lines)
+            data = process.read().decode()
+            output.append(Output(process, data))
         return output
 
     def handle_signal(self, signum: int) -> None:
@@ -88,10 +88,8 @@ class ProcessGroup:
     def from_commands(
         cls,
         *commands: str,
-        printer: Printer | None = None,
         timer: bool = False,
     ) -> ProcessGroup:
-        printer = printer or Printer()
         processes: list[Process] = []
         errors: list[InvalidExecutableError] = []
 
@@ -107,7 +105,6 @@ class ProcessGroup:
         process_group = cls(
             processes=processes,
             timer=timer,
-            printer=printer,
         )
 
         return process_group

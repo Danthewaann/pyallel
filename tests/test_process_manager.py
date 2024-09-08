@@ -4,7 +4,7 @@ import time
 
 import pytest
 from pyallel.process import Process
-from pyallel.process_group import ProcessGroup
+from pyallel.process_group import Output, ProcessGroup
 from pyallel.process_group_manager import ProcessGroupManager
 
 
@@ -26,12 +26,20 @@ def test_stream() -> None:
         ]
     )
     pg_manager.run()
-    time.sleep(1)
-    assert pg_manager.stream_2() == [["first"], ["second"]]
+    assert pg_manager.cur_process_group is not None
+    time.sleep(0.1)
+    assert pg_manager.stream() == [
+        Output(process=pg_manager.cur_process_group.processes[0], data="first\n"),
+        Output(process=pg_manager.cur_process_group.processes[1], data="second\n"),
+    ]
     assert pg_manager.poll() == 0
     pg_manager.run()
-    time.sleep(1)
-    assert pg_manager.stream_2() == [["third"], ["fourth"]]
+    assert pg_manager.cur_process_group is not None
+    time.sleep(0.1)
+    assert pg_manager.stream() == [
+        Output(process=pg_manager.cur_process_group.processes[0], data="third\n"),
+        Output(process=pg_manager.cur_process_group.processes[1], data="fourth\n"),
+    ]
     assert pg_manager.poll() == 0
 
 def test_from_args() -> None:
