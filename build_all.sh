@@ -25,4 +25,4 @@ poetry run pyallel "docker build --tag pyallel-x86_64 --build-arg 'arch=x86_64' 
         "docker build --tag pyallel-x86_64-alpine --build-arg 'arch=x86_64' --build-arg 'uid=$user_id' --build-arg 'gid=$group_id' --file Dockerfile.alpine . && docker run -e 'arch=x86_64' --rm --volume '$cur_dir:/src' pyallel-x86_64-alpine" \
         "docker build --tag pyallel-aarch64-alpine --build-arg 'arch=aarch64' --build-arg 'uid=$user_id' --build-arg 'gid=$group_id' --file Dockerfile.alpine . && docker run -e 'arch=aarch64' --rm --volume '$cur_dir:/src' pyallel-aarch64-alpine" \
         ::: \
-        "poetry run ./build.sh $distro $arch"
+        "./build.sh $distro $arch"
