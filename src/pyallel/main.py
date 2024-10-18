@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.metadata
 import sys
 import traceback
+import time
 
 from pyallel import constants
 from pyallel.colours import Colours
@@ -13,19 +14,15 @@ from pyallel.process_group import Output
 from pyallel.process_group_manager import ProcessGroupManager
 
 
-def main_loop(
-    *args: str,
-    printer: Printer,
-    interactive: bool = False,
-    timer: bool = False,
-) -> int:
-    process_group_manager = ProcessGroupManager.from_args(*args, timer=timer)
+def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
+    process_group_manager = ProcessGroupManager.from_args(*args)
 
     if not interactive:
         printer.info("Running commands...")
         printer.info("")
 
-    all_output: list[list[Output]] = []
+    all_output: list[list[Output]] = [[] for _ in process_group_manager.process_groups]
+    index = 0
     done = False
     process_group_manager.run()
     while True:
@@ -34,14 +31,25 @@ def main_loop(
             done = True
 
         outputs = process_group_manager.stream()
-        printer.write_outputs(outputs)
+        for i, output in enumerate(outputs):
+            if len(all_output[index]) < i + 1:
+                all_output[index].append(Output(process=output.process, data=output.data))
+            else:
+                all_output[index][i].data += output.data
 
         if done:
             process_group_manager.run()
             if process_group_manager.cur_process_group is None:
-                return poll
+                break
             else:
+                index += 1
                 done = False
+
+        time.sleep(0.1)
+
+    printer.write_outputs(all_output)
+
+    return poll
 
 
 def run(*args: str) -> int:
@@ -58,7 +66,7 @@ def run(*args: str) -> int:
         return 2
 
     colours = Colours.from_colour(parsed_args.colour)
-    printer = Printer(colours)
+    printer = Printer(colours, timer=parsed_args.timer)
 
     interactive = True
     if not parsed_args.interactive:
@@ -69,10 +77,7 @@ def run(*args: str) -> int:
     message = None
     try:
         exit_code = main_loop(
-            *parsed_args.commands,
-            printer=printer,
-            interactive=interactive,
-            timer=parsed_args.timer,
+            *parsed_args.commands, printer=printer, interactive=interactive
         )
     except InvalidExecutableErrors as e:
         exit_code = 1

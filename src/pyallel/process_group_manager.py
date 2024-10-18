@@ -36,11 +36,7 @@ class ProcessGroupManager:
             process_group.handle_signal(signum)
 
     @classmethod
-    def from_args(
-        cls,
-        *args: str,
-        timer: bool = False,
-    ) -> ProcessGroupManager:
+    def from_args(cls, *args: str) -> ProcessGroupManager:
         last_separator_index = 0
         commands: list[str] = []
         process_groups: list[ProcessGroup] = []
@@ -48,18 +44,10 @@ class ProcessGroupManager:
         for i, arg in enumerate(args):
             if arg == ":::":
                 if i - 1 == 0:
-                    process_groups.append(
-                        ProcessGroup.from_commands(
-                            args[0],
-                            timer=timer,
-                        )
-                    )
+                    process_groups.append(ProcessGroup.from_commands(args[0]))
                 else:
                     process_groups.append(
-                        ProcessGroup.from_commands(
-                            *commands[last_separator_index:],
-                            timer=timer,
-                        )
+                        ProcessGroup.from_commands(*commands[last_separator_index:])
                     )
 
                 last_separator_index = i
@@ -71,10 +59,7 @@ class ProcessGroupManager:
             last_separator_index -= 1
 
         process_groups.append(
-            ProcessGroup.from_commands(
-                *commands[last_separator_index:],
-                timer=timer,
-            )
+            ProcessGroup.from_commands(*commands[last_separator_index:])
         )
 
         process_group_manager = cls(process_groups=process_groups)
