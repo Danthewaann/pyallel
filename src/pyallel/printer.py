@@ -9,6 +9,7 @@ from pyallel.process_group import Output
 class Printer:
     colours: Colours = field(default_factory=Colours)
     prefix: str = ""
+    timer: bool = False
 
     def __post_init__(self) -> None:
         self.prefix = f"{self.colours.dim_on}=>{self.colours.dim_off} "
@@ -40,10 +41,11 @@ class Printer:
     def write(self, msg: str, end: str = "\n", flush: bool = False) -> None:
         print(msg, end=end, flush=flush)
 
-    def write_outputs(self, outputs: list[Output]) -> None:
-        for output in outputs:
-            if output.data:
-                self.write(output.data)
+    def write_outputs(self, outputs: list[list[Output]]) -> None:
+        for pgm_outputs in outputs:
+            for output in pgm_outputs:
+                if output.data:
+                    self.write(output.data, end="")
 
     def clear_line(self) -> None:
         print(

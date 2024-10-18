@@ -30,28 +30,22 @@ def format_time_taken(time_taken: float) -> str:
 
     return f"{seconds}s"
 
+
 @dataclass
 class Output:
     process: Process
-    data: str
+    data: str = ""
+
 
 @dataclass
 class ProcessGroup:
     processes: list[Process]
-    timer: bool = False
-    output: dict[int, list[str]] = field(init=False)
-    process_lines: list[int] = field(init=False)
-    completed_processes: set[int] = field(default_factory=set)
-    num_processes: int = field(init=False)
-    exit_code: int = 0
-    interrupt_count: int = 0
-    passed: bool = True
-    icon: int = 0
+    _output: list[Output] = field(init=False)
+    _exit_code: int = field(init=False, default=0)
+    _interrupt_count: int = field(init=False, default=0)
 
     def __post_init__(self) -> None:
-        self.num_processes = len(self.processes)
-        self.process_lines = [0 for _ in self.processes]
-        self.output = {i: [None, ""] for i, _ in enumerate(self.processes, start=1)}  # type: ignore
+        self._output = [Output(process=process) for process in self.processes]
 
     def run(self) -> None:
         for process in self.processes:
@@ -68,28 +62,22 @@ class ProcessGroup:
         return 0
 
     def stream(self) -> list[Output]:
-        output: list[Output] = []
-        for process in self.processes:
-            data = process.read().decode()
-            output.append(Output(process, data))
-        return output
+        for i, process in enumerate(self.processes):
+            self._output[i].data = process.read().decode()
+        return self._output
 
     def handle_signal(self, signum: int) -> None:
         for process in self.processes:
-            if self.interrupt_count == 0:
+            if self._interrupt_count == 0:
                 process.interrupt()
             else:
                 process.kill()
 
-        self.exit_code = 128 + signum
-        self.interrupt_count += 1
+        self._exit_code = 128 + signum
+        self._interrupt_count += 1
 
     @classmethod
-    def from_commands(
-        cls,
-        *commands: str,
-        timer: bool = False,
-    ) -> ProcessGroup:
+    def from_commands(cls, *commands: str) -> ProcessGroup:
         processes: list[Process] = []
         errors: list[InvalidExecutableError] = []
 
@@ -104,7 +92,6 @@ class ProcessGroup:
 
         process_group = cls(
             processes=processes,
-            timer=timer,
         )
 
         return process_group
