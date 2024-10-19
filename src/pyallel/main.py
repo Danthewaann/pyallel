@@ -37,6 +37,8 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
             else:
                 all_output[index][i].data += output.data
 
+        printer.write_outputs(all_output)
+
         if done:
             process_group_manager.run()
             if process_group_manager.cur_process_group is None:
@@ -47,7 +49,7 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
 
         time.sleep(0.1)
 
-    printer.write_outputs(all_output)
+    printer.write_outputs(all_output, clear=False)
 
     return poll
 

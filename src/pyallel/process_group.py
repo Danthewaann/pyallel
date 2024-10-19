@@ -52,14 +52,17 @@ class ProcessGroup:
             process.run()
 
     def poll(self) -> int | None:
-        for process in self.processes:
-            poll = process.poll()
-            if poll is None:
-                return None
-            elif poll > 0:
-                return poll
+        polls: list[int | None] = [process.poll() for process in self.processes]
 
-        return 0
+        running = [p for p in polls if p is None]
+        failed = [p for p in polls if p is not None and p > 0]
+
+        if running:
+            return None
+        elif failed:
+            return 1
+        else:
+            return 0
 
     def stream(self) -> list[Output]:
         for i, process in enumerate(self.processes):
