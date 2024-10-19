@@ -65,7 +65,26 @@ class Printer:
         print(msg, end=end, flush=flush)
 
     def write_outputs(self, outputs: list[list[Output]], clear: bool = True) -> None:
+        num_processes = 0
+        process_lines = []
+        for pgm_output in outputs:
+            for _ in pgm_output:
+                num_processes += 1
+                process_lines.append(0)
+
+        lines = constants.LINES() - (2 * num_processes)
+        remainder = lines % num_processes
+        tail = lines // num_processes
+
+        for i in range(num_processes):
+            process_lines[i] = tail
+        if remainder:
+            process_lines[-1] += remainder - 2
+        else:
+            process_lines[-1] -= 2
+
         all_output: list[str] = []
+        process_num = 0
         for pgm_output in outputs:
             for output in pgm_output:
                 if output.process.poll() is not None:
@@ -75,8 +94,9 @@ class Printer:
                     status = self._get_command_status(output.process, icon=constants.ICONS[self.icon], timer=self.timer)
                     all_output.append(status)
                 if output.data:
-                    for line in output.data.splitlines():
+                    for line in output.data.splitlines()[-process_lines[process_num] :]:
                         all_output.append(line)
+                process_num += 1
 
         for line in all_output:
             print(line)
