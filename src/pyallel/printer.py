@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import sys
 import time
 
 from pyallel import constants
@@ -33,6 +34,7 @@ class Printer:
     prefix: str = ""
     icon: int = 0
     timer: bool = False
+    output_data: dict[int, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.prefix = f"{self.colours.dim_on}=>{self.colours.dim_off} "
@@ -61,10 +63,28 @@ class Printer:
             flush=flush,
         )
 
-    def write(self, msg: str, end: str = "\n", flush: bool = False) -> None:
-        print(msg, end=end, flush=flush)
+    def write(self, msg: str, prefix: str = "", end: str = "\n", flush: bool = False) -> None:
+        print(f"{prefix}{msg}", end=end, flush=flush)
 
-    def write_outputs(self, outputs: list[list[Output]], clear: bool = True, exit_code: int = 0, interrupt_count: int = 0) -> None:
+    def write_command_status(self, process: Process, icon: str | None = None, passed: bool | None = None, timer: bool | None = None) -> None:
+        if timer is None:
+            timer = self.timer
+            
+        self.write(self._get_command_status(process, icon=icon, passed=passed, timer=timer), prefix=self.prefix)
+
+    def write_output(self, output: Output) -> None:
+        if output.data:
+            lines = output.data.splitlines(keepends=True)
+
+            if output.process.id in self.output_data and self.output_data[output.process.id][-1] != "\n":
+                self.write(lines.pop(0), end="")
+
+            for line in lines:
+                self.write(line, prefix=self.prefix, end="")
+
+            self.output_data[output.process.id] = output.data
+
+    def write_outputs(self, outputs: list[list[Output]], clear: bool = True, interrupt_count: int = 0) -> None:
         num_processes = 0
         process_lines = []
         for pgm_output in outputs:
@@ -103,7 +123,7 @@ class Printer:
                     for line in lines:
                         all_output.append(line)
 
-                    if all_output[-1] != "":
+                    if all_output[-1] != "" and outputs[-1][-1] is not output:
                         all_output.append("")
 
                 process_num += 1
@@ -114,7 +134,7 @@ class Printer:
             all_output.append(f"{self.colours.red_bold}Abort!{self.colours.reset_colour}")
 
         for line in all_output:
-            print(line)
+            self.write(line, prefix=self.prefix)
 
         # Clear all the lines that were just printed
         if clear:
@@ -124,7 +144,6 @@ class Printer:
         self.icon += 1
         if self.icon == len(constants.ICONS):
             self.icon = 0
-
 
     def clear_line(self) -> None:
         print(
@@ -154,7 +173,7 @@ class Printer:
             if not icon:
                 msg += "..."
 
-        output = f"{self.colours.dim_on}=>{self.colours.dim_off} {self.colours.white_bold}[{self.colours.reset_colour}{self.colours.blue_bold}{process.command}{self.colours.reset_colour}{self.colours.white_bold}]{self.colours.reset_colour}{colour} {msg} {icon}{self.colours.reset_colour}"
+        output = f"{self.colours.white_bold}[{self.colours.reset_colour}{self.colours.blue_bold}{process.command}{self.colours.reset_colour}{self.colours.white_bold}]{self.colours.reset_colour}{colour} {msg} {icon}{self.colours.reset_colour}"
 
         if timer:
             end = process.end

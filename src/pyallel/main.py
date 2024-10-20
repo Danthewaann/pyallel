@@ -17,42 +17,103 @@ from pyallel.process_group_manager import ProcessGroupManager
 def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
     process_group_manager = ProcessGroupManager.from_args(*args)
 
-    if not interactive:
-        printer.info("Running commands...")
-        printer.info("")
-
     all_output: list[list[Output]] = [[] for _ in process_group_manager.process_groups]
     index = 0
     exit_code = 0
     process_group_manager.run()
-    while True:
-        outputs = process_group_manager.stream()
-        for i, output in enumerate(outputs):
-            if len(all_output[index]) < i + 1:
-                all_output[index].append(Output(process=output.process, data=output.data))
-            else:
-                all_output[index][i].data += output.data
 
-        printer.write_outputs(all_output, exit_code=process_group_manager.exit_code, interrupt_count=process_group_manager.interrupt_count)
+    if not interactive:
+        printer.info("Running commands...")
+        printer.info("")
 
-        poll = process_group_manager.poll()
-        if poll is not None:
-            if process_group_manager.exit_code:
+        current_process = None
+        interrupted = False
+        while True:
+            outputs = process_group_manager.stream()
+
+            for i, output in enumerate(outputs):
+                if len(all_output[index]) < i + 1:
+                    all_output[index].append(Output(process=output.process, data=output.data))
+                else:
+                    all_output[index][i].data += output.data
+
+                if current_process is None:
+                    current_process = output.process
+                    printer.write_command_status(current_process, timer=False)
+                    printer.write_output(all_output[index][i])
+                elif current_process is not output.process:
+                    continue
+                else:
+                    printer.write_output(output)
+
+                if not interrupted and process_group_manager.interrupt_count == 1:
+                    printer.write("", prefix=printer.prefix)
+                    printer.write(f"{printer.colours.yellow_bold}Interrupt!{printer.colours.reset_colour}", prefix=printer.prefix)
+                    printer.write("", prefix=printer.prefix)
+                    interrupted = True
+                    printer.write_command_status(output.process, passed=False)
+                    printer.write("", prefix=printer.prefix)
+                    current_process = None
+
+                if output.process.poll() is not None:
+                    printer.write_command_status(output.process, passed=output.process.return_code() == 0)
+                    printer.write("", prefix=printer.prefix)
+                    current_process = None
+
+            if process_group_manager.interrupt_count > 1:
+                printer.write(f"{printer.colours.red_bold}Abort!{printer.colours.reset_colour}", prefix=printer.prefix)
                 exit_code = process_group_manager.exit_code
                 break
 
-            if poll > 0:
-                exit_code = poll
+            poll = process_group_manager.poll()
+            if poll is not None or interrupted:
+                if process_group_manager.exit_code:
+                    exit_code = process_group_manager.exit_code
+                    break
 
-            process_group_manager.run()
-            if process_group_manager.cur_process_group is None:
-                break
-            else:
-                index += 1
+                if poll and poll > 0:
+                    exit_code = poll
+                    break
 
-        time.sleep(0.1)
+                process_group_manager.run()
+                if process_group_manager.cur_process_group is None:
+                    break
+                else:
+                    index += 1
 
-    printer.write_outputs(all_output, clear=False, exit_code=process_group_manager.exit_code, interrupt_count=process_group_manager.interrupt_count)
+            time.sleep(0.1)
+
+    else:
+        while True:
+            outputs = process_group_manager.stream()
+            for i, output in enumerate(outputs):
+                if len(all_output[index]) < i + 1:
+                    all_output[index].append(Output(process=output.process, data=output.data))
+                else:
+                    all_output[index][i].data += output.data
+
+            printer.write_outputs(all_output, interrupt_count=process_group_manager.interrupt_count)
+
+            poll = process_group_manager.poll()
+            if poll is not None:
+                if process_group_manager.exit_code:
+                    exit_code = process_group_manager.exit_code
+                    break
+
+                if poll > 0:
+                    exit_code = poll
+                    break
+
+                process_group_manager.run()
+                if process_group_manager.cur_process_group is None:
+                    break
+                else:
+                    index += 1
+
+            time.sleep(0.1)
+
+        printer.write_outputs(all_output, clear=False, interrupt_count=process_group_manager.interrupt_count)
+        printer.write("", prefix=printer.prefix)
 
     return exit_code
 
