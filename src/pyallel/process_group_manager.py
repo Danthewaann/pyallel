@@ -11,6 +11,8 @@ from pyallel.process_group import Output, ProcessGroup
 class ProcessGroupManager:
     process_groups: list[ProcessGroup]
     cur_process_group: ProcessGroup | None = None
+    exit_code: int = 0
+    interrupt_count: int = 0
 
     def run(self) -> None:
         if self.process_groups:
@@ -34,6 +36,9 @@ class ProcessGroupManager:
     def handle_signal(self, signum: int, _frame: Any) -> None:
         for process_group in self.process_groups:
             process_group.handle_signal(signum)
+
+        self.exit_code = 128 + signum
+        self.interrupt_count += 1
 
     @classmethod
     def from_args(cls, *args: str) -> ProcessGroupManager:

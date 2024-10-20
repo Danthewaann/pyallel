@@ -64,7 +64,7 @@ class Printer:
     def write(self, msg: str, end: str = "\n", flush: bool = False) -> None:
         print(msg, end=end, flush=flush)
 
-    def write_outputs(self, outputs: list[list[Output]], clear: bool = True) -> None:
+    def write_outputs(self, outputs: list[list[Output]], clear: bool = True, exit_code: int = 0, interrupt_count: int = 0) -> None:
         num_processes = 0
         process_lines = []
         for pgm_output in outputs:
@@ -93,10 +93,25 @@ class Printer:
                 else:
                     status = self._get_command_status(output.process, icon=constants.ICONS[self.icon], timer=self.timer)
                     all_output.append(status)
+
                 if output.data:
-                    for line in output.data.splitlines()[-process_lines[process_num] :]:
+                    if clear:
+                        lines = output.data.splitlines()[-process_lines[process_num] :]
+                    else:
+                        lines = output.data.splitlines()
+
+                    for line in lines:
                         all_output.append(line)
+
+                    if all_output[-1] != "":
+                        all_output.append("")
+
                 process_num += 1
+
+        if interrupt_count == 1:
+            all_output.append(f"{self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}")
+        elif interrupt_count > 1:
+            all_output.append(f"{self.colours.red_bold}Abort!{self.colours.reset_colour}")
 
         for line in all_output:
             print(line)
