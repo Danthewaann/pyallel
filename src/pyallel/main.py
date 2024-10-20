@@ -23,13 +23,9 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
 
     all_output: list[list[Output]] = [[] for _ in process_group_manager.process_groups]
     index = 0
-    done = False
+    exit_code = 0
     process_group_manager.run()
     while True:
-        poll = process_group_manager.poll()
-        if poll is not None:
-            done = True
-
         outputs = process_group_manager.stream()
         for i, output in enumerate(outputs):
             if len(all_output[index]) < i + 1:
@@ -37,21 +33,28 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
             else:
                 all_output[index][i].data += output.data
 
-        printer.write_outputs(all_output)
+        printer.write_outputs(all_output, exit_code=process_group_manager.exit_code, interrupt_count=process_group_manager.interrupt_count)
 
-        if done:
+        poll = process_group_manager.poll()
+        if poll is not None:
+            if process_group_manager.exit_code:
+                exit_code = process_group_manager.exit_code
+                break
+
+            if poll > 0:
+                exit_code = poll
+
             process_group_manager.run()
             if process_group_manager.cur_process_group is None:
                 break
             else:
                 index += 1
-                done = False
 
         time.sleep(0.1)
 
-    printer.write_outputs(all_output, clear=False)
+    printer.write_outputs(all_output, clear=False, exit_code=process_group_manager.exit_code, interrupt_count=process_group_manager.interrupt_count)
 
-    return poll
+    return exit_code
 
 
 def run(*args: str) -> int:
