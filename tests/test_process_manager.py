@@ -12,17 +12,19 @@ def test_stream() -> None:
     pg_manager = ProcessGroupManager(
         process_groups=[
             ProcessGroup(
+                id=1,
                 processes=[
                     Process(id=1, command="echo first"),
                     Process(id=2, command="echo second"),
-                ]
+                ],
             ),
             ProcessGroup(
+                id=2,
                 processes=[
                     Process(id=1, command="echo third"),
                     Process(id=2, command="echo fourth"),
-                ]
-            )
+                ],
+            ),
         ]
     )
     pg_manager.run()
@@ -42,14 +44,16 @@ def test_stream() -> None:
     ]
     assert pg_manager.poll() == 0
 
+
 def test_from_args() -> None:
     expected_process_group_manager = ProcessGroupManager(
         process_groups=[
             ProcessGroup(
+                id=1,
                 processes=[
                     Process(id=1, command="sleep 0.1"),
                     Process(id=2, command="sleep 0.2"),
-                ]
+                ],
             )
         ]
     )
@@ -65,20 +69,23 @@ def test_from_args() -> None:
             ProcessGroupManager(
                 process_groups=[
                     ProcessGroup(
+                        id=1,
                         processes=[
                             Process(id=1, command="sleep 0.1"),
                         ],
                     ),
                     ProcessGroup(
+                        id=2,
                         processes=[
                             Process(id=1, command="sleep 0.2"),
                             Process(id=2, command="sleep 0.3"),
-                        ]
+                        ],
                     ),
                     ProcessGroup(
+                        id=3,
                         processes=[
                             Process(id=1, command="sleep 0.4"),
-                        ]
+                        ],
                     ),
                 ]
             ),
@@ -97,18 +104,21 @@ def test_from_args() -> None:
             ProcessGroupManager(
                 process_groups=[
                     ProcessGroup(
+                        id=1,
                         processes=[
                             Process(id=1, command="sleep 0.1"),
                             Process(id=2, command="sleep 0.2"),
                         ],
                     ),
                     ProcessGroup(
+                        id=2,
                         processes=[
                             Process(id=1, command="sleep 0.3"),
                             Process(id=2, command="sleep 0.4"),
                         ],
                     ),
                     ProcessGroup(
+                        id=3,
                         processes=[
                             Process(id=1, command="sleep 0.5"),
                             Process(id=2, command="sleep 0.6"),

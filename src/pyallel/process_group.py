@@ -7,20 +7,19 @@ from pyallel.errors import InvalidExecutableError, InvalidExecutableErrors
 from pyallel.process import Process
 
 
-def get_num_lines(output: list[str], columns: int | None = None) -> int:
+def get_num_lines(output: str, columns: int | None = None) -> int:
     lines = 0
     columns = columns or constants.COLUMNS()
-    for line in output:
-        for line in line.splitlines():
-            line = constants.ANSI_ESCAPE.sub("", line)
-            length = len(line)
-            line_lines = 1
-            if length > columns:
-                line_lines = length // columns
-                remainder = length % columns
-                if remainder:
-                    line_lines += 1
-            lines += 1 * line_lines
+    for line in output.splitlines():
+        line = constants.ANSI_ESCAPE.sub("", line)
+        length = len(line)
+        line_lines = 1
+        if length > columns:
+            line_lines = length // columns
+            remainder = length % columns
+            if remainder:
+                line_lines += 1
+        lines += 1 * line_lines
     return lines
 
 
@@ -39,6 +38,7 @@ class Output:
 
 @dataclass
 class ProcessGroup:
+    id: int
     processes: list[Process]
     _output: list[Output] = field(init=False)
     _exit_code: int = field(init=False, default=0)
@@ -80,7 +80,7 @@ class ProcessGroup:
         self._interrupt_count += 1
 
     @classmethod
-    def from_commands(cls, *commands: str) -> ProcessGroup:
+    def from_commands(cls, id: int, *commands: str) -> ProcessGroup:
         processes: list[Process] = []
         errors: list[InvalidExecutableError] = []
 
@@ -93,8 +93,6 @@ class ProcessGroup:
         if errors:
             raise InvalidExecutableErrors(*errors)
 
-        process_group = cls(
-            processes=processes,
-        )
+        process_group = cls(id=id, processes=processes)
 
         return process_group
