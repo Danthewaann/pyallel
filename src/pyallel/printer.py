@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
+import sys
 import time
+from typing import Any
 
 from pyallel import constants
 from pyallel.colours import Colours
@@ -26,7 +28,7 @@ def truncate_line(line: str) -> str:
     columns = constants.COLUMNS()
     escaped_line = constants.ANSI_ESCAPE.sub("", line)
     # length = len(escaped_line)
-    return "".join(line[:columns-1])
+    return "".join(line[: columns - 1])
 
 
 def format_time_taken(time_taken: float) -> str:
@@ -39,10 +41,11 @@ def format_time_taken(time_taken: float) -> str:
 @dataclass
 class Printer:
     colours: Colours = field(default_factory=Colours)
-    prefix: str = ""
-    icon: int = 0
     timer: bool = False
-    output_data: dict[int, str] = field(default_factory=dict)
+    debug: bool = False
+    prefix: str = field(init=False)
+    icon: int = field(init=False, default=0)
+    output_data: dict[int, str] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
         self.prefix = f"{self.colours.dim_on}=>{self.colours.dim_off} "
@@ -70,6 +73,9 @@ class Printer:
             f"{self.prefix}{self.colours.red_bold}{msg}{self.colours.reset_colour}",
             flush=flush,
         )
+
+    def stderr(self, msg: Any) -> None:
+        print(msg, flush=True, file=sys.stderr)
 
     def write(
         self, msg: str, prefix: str = "", end: str = "\n", flush: bool = False
@@ -109,28 +115,19 @@ class Printer:
     def write_outputs(
         self, outputs: list[list[Output]], clear: bool = True, interrupt_count: int = 0
     ) -> None:
-        num_processes = 0
-        process_lines: list[int] = []
-        for pgm_output in outputs:
-            for _ in pgm_output:
-                num_processes += 1
-                process_lines.append(0)
+        process_lines = self.get_process_lines(outputs)
 
-        lines = constants.LINES() - (2 * num_processes)
-        remainder = lines % num_processes
-        tail = lines // num_processes
-
-        for i in range(num_processes):
-            process_lines[i] = tail
-        if remainder:
-            process_lines[-1] += remainder - 2
-        else:
-            process_lines[-1] -= 2
-
+        debug_output: list[Any] = []
         all_output: list[str] = []
         process_num = 0
+
+        if self.debug:
+            debug_output.append(process_lines)
+            debug_output.append(outputs)
+
         for pgm_output in outputs:
             for output in pgm_output:
+                lines_to_print = 0
                 if output.process.poll() is not None:
                     status = self._get_command_status(
                         output.process,
@@ -138,6 +135,7 @@ class Printer:
                         timer=self.timer,
                     )
                     all_output.append(status)
+                    lines_to_print += get_num_lines(status)
                 else:
                     status = self._get_command_status(
                         output.process,
@@ -145,6 +143,7 @@ class Printer:
                         timer=self.timer,
                     )
                     all_output.append(status)
+                    lines_to_print += get_num_lines(status)
 
                 if output.data:
                     if clear:
@@ -152,7 +151,6 @@ class Printer:
                             -process_lines[process_num] :
                         ]
                         lines: list[str] = []
-                        lines_to_print = 0
                         for line in tailed_lines:
                             num_lines = get_num_lines(line)
                             if num_lines > 1:
@@ -183,17 +181,115 @@ class Printer:
                 f"{self.colours.red_bold}Abort!{self.colours.reset_colour}"
             )
 
-        for line in all_output:
-            self.write(line, prefix=self.prefix)
+        if self.debug:
+            for line in debug_output:
+                self.write(line, prefix="")
+        else:
+            for line in all_output:
+                self.write(line, prefix=self.prefix)
 
         # Clear all the lines that were just printed
         if clear:
-            for _ in range(len(all_output)):
-                self.clear_line()
+            if self.debug:
+                for _ in range(len(debug_output)):
+                    self.clear_line()
+            else:
+                for _ in range(len(all_output)):
+                    self.clear_line()
 
         self.icon += 1
         if self.icon == len(constants.ICONS):
             self.icon = 0
+
+    def generate_outputs(
+        self, outputs: list[list[Output]], clear: bool = True, interrupt_count: int = 0
+    ) -> list[str]:
+        process_lines = self.get_process_lines(outputs)
+
+        all_output: list[str] = []
+        process_num = 0
+        for pgm_output in outputs:
+            for output in pgm_output:
+                if output.process.poll() is not None:
+                    status = self._get_command_status(
+                        output.process,
+                        passed=output.process.return_code() == 0,
+                        timer=self.timer,
+                    )
+                    all_output.append(status)
+                else:
+                    status = self._get_command_status(
+                        output.process,
+                        icon=constants.ICONS[self.icon],
+                        timer=self.timer,
+                    )
+                    all_output.append(status)
+
+                if output.data:
+                    if clear:
+                        tailed_lines = output.data.splitlines()[
+                            -process_lines[process_num] :
+                        ]
+                        lines: list[str] = []
+                        lines_printed = 0
+                        for line in tailed_lines:
+                            num_lines = get_num_lines(line)
+                            if num_lines > 1:
+                                line = truncate_line(line)
+                            lines.append(line)
+                    else:
+                        lines = output.data.splitlines()
+
+                    for line in lines:
+                        all_output.append(line)
+
+                    if (
+                        all_output[-1] != ""
+                        and outputs
+                        and outputs[-1]
+                        and outputs[-1][-1] is not output
+                    ):
+                        all_output.append("")
+
+                process_num += 1
+
+        if interrupt_count == 1:
+            all_output.append(
+                f"{self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}"
+            )
+        elif interrupt_count > 1:
+            all_output.append(
+                f"{self.colours.red_bold}Abort!{self.colours.reset_colour}"
+            )
+
+        self.icon += 1
+        if self.icon == len(constants.ICONS):
+            self.icon = 0
+
+        return all_output
+
+    def get_process_lines(
+        self, outputs: list[list[Output]], lines: int | None = None
+    ) -> list[int]:
+        num_processes = 0
+        process_lines: list[int] = []
+        for pgm_output in outputs:
+            for _ in pgm_output:
+                num_processes += 1
+                process_lines.append(0)
+
+        lines = lines or constants.LINES()
+
+        remainder = lines % num_processes
+        tail = lines // num_processes
+
+        for i in range(num_processes):
+            process_lines[i] = tail
+
+        if remainder:
+            process_lines[-1] += remainder
+
+        return process_lines
 
     def clear_line(self) -> None:
         print(

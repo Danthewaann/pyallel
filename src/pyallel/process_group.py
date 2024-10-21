@@ -40,12 +40,8 @@ class Output:
 class ProcessGroup:
     id: int
     processes: list[Process]
-    _output: list[Output] = field(init=False)
     _exit_code: int = field(init=False, default=0)
     _interrupt_count: int = field(init=False, default=0)
-
-    def __post_init__(self) -> None:
-        self._output = [Output(process=process) for process in self.processes]
 
     def run(self) -> None:
         for process in self.processes:
@@ -65,9 +61,10 @@ class ProcessGroup:
             return 0
 
     def stream(self) -> list[Output]:
-        for i, process in enumerate(self.processes):
-            self._output[i].data = process.read().decode()
-        return self._output
+        return [
+            Output(process=process, data=process.read().decode())
+            for process in self.processes
+        ]
 
     def handle_signal(self, signum: int) -> None:
         for process in self.processes:
