@@ -85,10 +85,6 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
 
             poll = process_group_manager.poll()
             if poll is not None:
-                if process_group_manager.exit_code:
-                    exit_code = process_group_manager.exit_code
-                    break
-
                 if poll > 0:
                     exit_code = poll
                     break
