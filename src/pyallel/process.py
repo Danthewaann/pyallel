@@ -12,8 +12,8 @@ from typing import BinaryIO
 class Process:
     id: int
     command: str
-    start: float = 0.0
-    end: float = 0.0
+    start: float = field(init=False, default=0.0)
+    end: float = field(init=False, default=0.0)
     _fd: BinaryIO | None = field(init=False, repr=False, compare=False, default=None)
     _process: subprocess.Popen[bytes] | None = field(
         init=False, repr=False, compare=False, default=None
