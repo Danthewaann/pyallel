@@ -7,20 +7,26 @@ from pyallel.process import Process
 from pyallel.process_group import Output
 
 
-def get_num_lines(output: list[str], columns: int | None = None) -> int:
+def get_num_lines(line: str, columns: int | None = None) -> int:
     lines = 0
     columns = columns or constants.COLUMNS()
-    for line in output:
-        line = constants.ANSI_ESCAPE.sub("", line)
-        length = len(line)
-        line_lines = 1
-        if length > columns:
-            line_lines = length // columns
-            remainder = length % columns
-            if remainder:
-                line_lines += 1
-        lines += 1 * line_lines
+    line = constants.ANSI_ESCAPE.sub("", line)
+    length = len(line)
+    line_lines = 1
+    if length > columns:
+        line_lines = length // columns
+        remainder = length % columns
+        if remainder:
+            line_lines += 1
+    lines += 1 * line_lines
     return lines
+
+
+def truncate_line(line: str) -> str:
+    columns = constants.COLUMNS()
+    escaped_line = constants.ANSI_ESCAPE.sub("", line)
+    # length = len(escaped_line)
+    return "".join(line[:columns-1])
 
 
 def format_time_taken(time_taken: float) -> str:
@@ -104,7 +110,7 @@ class Printer:
         self, outputs: list[list[Output]], clear: bool = True, interrupt_count: int = 0
     ) -> None:
         num_processes = 0
-        process_lines = []
+        process_lines: list[int] = []
         for pgm_output in outputs:
             for _ in pgm_output:
                 num_processes += 1
@@ -142,7 +148,16 @@ class Printer:
 
                 if output.data:
                     if clear:
-                        lines = output.data.splitlines()[-process_lines[process_num] :]
+                        tailed_lines = output.data.splitlines()[
+                            -process_lines[process_num] :
+                        ]
+                        lines: list[str] = []
+                        lines_to_print = 0
+                        for line in tailed_lines:
+                            num_lines = get_num_lines(line)
+                            if num_lines > 1:
+                                line = truncate_line(line)
+                            lines.append(line)
                     else:
                         lines = output.data.splitlines()
 
@@ -173,7 +188,7 @@ class Printer:
 
         # Clear all the lines that were just printed
         if clear:
-            for _ in range(get_num_lines(all_output)):
+            for _ in range(len(all_output)):
                 self.clear_line()
 
         self.icon += 1
