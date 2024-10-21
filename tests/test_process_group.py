@@ -15,29 +15,32 @@ def test_from_command() -> None:
 
 def test_from_commands() -> None:
     expected_process_group = ProcessGroup(
+        id=1,
         processes=[
             Process(id=1, command="sleep 0.1"),
             Process(id=2, command="sleep 0.2"),
             Process(id=3, command="sleep 0.3"),
-        ]
+        ],
     )
-    process_group = ProcessGroup.from_commands("sleep 0.1", "sleep 0.2", "sleep 0.3")
+    process_group = ProcessGroup.from_commands(1, "sleep 0.1", "sleep 0.2", "sleep 0.3")
     assert process_group == expected_process_group
+
 
 def test_stream() -> None:
     process_group = ProcessGroup(
+        id=1,
         processes=[
             Process(id=1, command="echo first; echo hi"),
             Process(id=2, command="echo second"),
             Process(id=3, command="echo third"),
-        ]
+        ],
     )
     process_group.run()
     time.sleep(0.1)
     assert process_group.stream() == [
         Output(process=process_group.processes[0], data="first\nhi\n"),
         Output(process=process_group.processes[1], data="second\n"),
-        Output(process=process_group.processes[2], data="third\n")
+        Output(process=process_group.processes[2], data="third\n"),
     ]
 
 
