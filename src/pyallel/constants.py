@@ -1,5 +1,5 @@
-import os
 import re
+import shutil
 import sys
 
 IN_TTY = sys.stdout.isatty()
@@ -10,10 +10,10 @@ ANSI_ESCAPE = re.compile(r"(\x9B|\x1B\[|\x1B\()[0-?]*[ -\/]*[@-~]")
 if IN_TTY:
 
     def COLUMNS() -> int:
-        return os.get_terminal_size().columns
+        return shutil.get_terminal_size().columns
 
     def LINES() -> int:
-        return os.get_terminal_size().lines
+        return shutil.get_terminal_size().lines
 
 else:
 
