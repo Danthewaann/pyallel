@@ -10,18 +10,16 @@ from pyallel.colours import Colours
 from pyallel.errors import InvalidExecutableErrors
 from pyallel.parser import Arguments, create_parser
 from pyallel.printer import Printer
-from pyallel.process_group import Output
 from pyallel.process_group_manager import ProcessGroupManager
 
 
 def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
     process_group_manager = ProcessGroupManager.from_args(*args)
 
-    all_output: list[list[Output]] = [[] for _ in process_group_manager.process_groups]
     index = 0
     exit_code = 0
-    process_group_manager.run()
 
+    process_group_manager.run()
     if not interactive:
         printer.info("Running commands...")
         printer.info("")
@@ -29,23 +27,27 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
         current_process = None
         while True:
             outputs = process_group_manager.stream()
+            process_group_manager.outputs.merge(outputs)
 
-            for i, output in enumerate(outputs):
-                if len(all_output[index]) < i + 1:
-                    all_output[index].append(
-                        Output(process=output.process, data=output.data)
-                    )
-                else:
-                    all_output[index][i].data += output.data
-
+            for i, output in enumerate(
+                outputs.process_group_outputs[outputs.cur_process_group_id].processes
+            ):
                 if current_process is None:
                     current_process = output.process
                     printer.write_command_status(current_process, timer=False)
-                    printer.write_output(all_output[index][i])
+                    printer.write_output(
+                        process_group_manager.outputs.process_group_outputs[
+                            outputs.cur_process_group_id
+                        ].processes[i]
+                    )
                 elif current_process is not output.process:
                     continue
                 else:
-                    printer.write_output(output)
+                    printer.write_output(
+                        outputs.process_group_outputs[
+                            outputs.cur_process_group_id
+                        ].processes[i]
+                    )
 
                 if output.process.poll() is not None:
                     printer.write_command_status(
@@ -71,16 +73,11 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
     else:
         while True:
             outputs = process_group_manager.stream()
-            for i, output in enumerate(outputs):
-                if len(all_output[index]) < i + 1:
-                    all_output[index].append(
-                        Output(process=output.process, data=output.data)
-                    )
-                else:
-                    all_output[index][i].data += output.data
+            process_group_manager.outputs.merge(outputs)
 
             printer.write_outputs(
-                all_output, interrupt_count=process_group_manager.interrupt_count
+                process_group_manager.outputs,
+                interrupt_count=process_group_manager.interrupt_count,
             )
 
             poll = process_group_manager.poll()
@@ -98,7 +95,7 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
             time.sleep(0.1)
 
         printer.write_outputs(
-            all_output,
+            process_group_manager.outputs,
             clear=False,
             interrupt_count=process_group_manager.interrupt_count,
         )
@@ -121,7 +118,7 @@ def run(*args: str) -> int:
         return 2
 
     colours = Colours.from_colour(parsed_args.colour)
-    printer = Printer(colours, timer=parsed_args.timer, debug=True)
+    printer = Printer(colours, timer=parsed_args.timer, debug=False)
 
     interactive = True
     if not parsed_args.interactive:

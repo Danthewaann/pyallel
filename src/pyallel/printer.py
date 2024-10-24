@@ -5,8 +5,8 @@ from typing import Any
 
 from pyallel import constants
 from pyallel.colours import Colours
-from pyallel.process import Process
-from pyallel.process_group import Output
+from pyallel.process import Process, ProcessOutput
+from pyallel.process_group_manager import ProcessGroupManagerOutput
 
 
 def get_num_lines(line: str, columns: int | None = None) -> int:
@@ -97,7 +97,7 @@ class Printer:
             prefix=self.prefix,
         )
 
-    def write_output(self, output: Output) -> None:
+    def write_output(self, output: ProcessOutput) -> None:
         if output.data:
             lines = output.data.splitlines(keepends=True)
 
@@ -113,7 +113,10 @@ class Printer:
             self.output_data[output.process.id] = output.data
 
     def write_outputs(
-        self, outputs: list[list[Output]], clear: bool = True, interrupt_count: int = 0
+        self,
+        outputs: ProcessGroupManagerOutput,
+        clear: bool = True,
+        interrupt_count: int = 0,
     ) -> None:
         process_lines = self.get_process_lines(outputs)
 
@@ -125,8 +128,8 @@ class Printer:
             debug_output.append(process_lines)
             debug_output.append(outputs)
 
-        for pgm_output in outputs:
-            for output in pgm_output:
+        for pg_id, pg_output in outputs.process_group_outputs.items():
+            for output in pg_output.processes:
                 lines_to_print = 0
                 if output.process.poll() is not None:
                     status = self._get_command_status(
@@ -137,13 +140,14 @@ class Printer:
                     all_output.append(status)
                     lines_to_print += get_num_lines(status)
                 else:
-                    status = self._get_command_status(
-                        output.process,
-                        icon=constants.ICONS[self.icon],
-                        timer=self.timer,
-                    )
-                    all_output.append(status)
-                    lines_to_print += get_num_lines(status)
+                    if pg_id == outputs.cur_process_group_id:
+                        status = self._get_command_status(
+                            output.process,
+                            icon=constants.ICONS[self.icon],
+                            timer=self.timer,
+                        )
+                        all_output.append(status)
+                        lines_to_print += get_num_lines(status)
 
                 if output.data:
                     if clear:
@@ -162,12 +166,7 @@ class Printer:
                     for line in lines:
                         all_output.append(line)
 
-                    if (
-                        all_output[-1] != ""
-                        and outputs
-                        and outputs[-1]
-                        and outputs[-1][-1] is not output
-                    ):
+                    if all_output[-1] != "" and output.id != outputs.num_processes:
                         all_output.append("")
 
                 process_num += 1
@@ -201,82 +200,11 @@ class Printer:
         if self.icon == len(constants.ICONS):
             self.icon = 0
 
-    def generate_outputs(
-        self, outputs: list[list[Output]], clear: bool = True, interrupt_count: int = 0
-    ) -> list[str]:
-        process_lines = self.get_process_lines(outputs)
-
-        all_output: list[str] = []
-        process_num = 0
-        for pgm_output in outputs:
-            for output in pgm_output:
-                if output.process.poll() is not None:
-                    status = self._get_command_status(
-                        output.process,
-                        passed=output.process.return_code() == 0,
-                        timer=self.timer,
-                    )
-                    all_output.append(status)
-                else:
-                    status = self._get_command_status(
-                        output.process,
-                        icon=constants.ICONS[self.icon],
-                        timer=self.timer,
-                    )
-                    all_output.append(status)
-
-                if output.data:
-                    if clear:
-                        tailed_lines = output.data.splitlines()[
-                            -process_lines[process_num] :
-                        ]
-                        lines: list[str] = []
-                        lines_printed = 0
-                        for line in tailed_lines:
-                            num_lines = get_num_lines(line)
-                            if num_lines > 1:
-                                line = truncate_line(line)
-                            lines.append(line)
-                    else:
-                        lines = output.data.splitlines()
-
-                    for line in lines:
-                        all_output.append(line)
-
-                    if (
-                        all_output[-1] != ""
-                        and outputs
-                        and outputs[-1]
-                        and outputs[-1][-1] is not output
-                    ):
-                        all_output.append("")
-
-                process_num += 1
-
-        if interrupt_count == 1:
-            all_output.append(
-                f"{self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}"
-            )
-        elif interrupt_count > 1:
-            all_output.append(
-                f"{self.colours.red_bold}Abort!{self.colours.reset_colour}"
-            )
-
-        self.icon += 1
-        if self.icon == len(constants.ICONS):
-            self.icon = 0
-
-        return all_output
-
     def get_process_lines(
-        self, outputs: list[list[Output]], lines: int | None = None
+        self, outputs: ProcessGroupManagerOutput, lines: int | None = None
     ) -> list[int]:
-        num_processes = 0
-        process_lines: list[int] = []
-        for pgm_output in outputs:
-            for _ in pgm_output:
-                num_processes += 1
-                process_lines.append(0)
+        num_processes = outputs.num_processes
+        process_lines: list[int] = [0 for _ in range(num_processes)]
 
         lines = lines or constants.LINES()
 

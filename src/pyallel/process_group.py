@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Sequence
 
 from pyallel import constants
 from pyallel.errors import InvalidExecutableError, InvalidExecutableErrors
-from pyallel.process import Process
+from pyallel.process import Process, ProcessOutput
 
 
 def get_num_lines(output: str, columns: int | None = None) -> int:
@@ -23,17 +24,14 @@ def get_num_lines(output: str, columns: int | None = None) -> int:
     return lines
 
 
-def format_time_taken(time_taken: float) -> str:
-    time_taken = round(time_taken, 1)
-    seconds = time_taken % (24 * 3600)
-
-    return f"{seconds}s"
-
-
 @dataclass
-class Output:
-    process: Process
-    data: str = ""
+class ProcessGroupOutput:
+    id: int = 0
+    processes: Sequence[ProcessOutput] = field(default_factory=list)
+
+    def merge(self, other: ProcessGroupOutput) -> None:
+        for i, _ in enumerate(self.processes):
+            self.processes[i].merge(other.processes[i])
 
 
 @dataclass
@@ -60,11 +58,16 @@ class ProcessGroup:
         else:
             return 0
 
-    def stream(self) -> list[Output]:
-        return [
-            Output(process=process, data=process.read().decode())
-            for process in self.processes
-        ]
+    def stream(self) -> ProcessGroupOutput:
+        return ProcessGroupOutput(
+            id=self.id,
+            processes=[
+                ProcessOutput(
+                    id=process.id, process=process, data=process.read().decode()
+                )
+                for process in self.processes
+            ],
+        )
 
     def handle_signal(self, signum: int) -> None:
         for process in self.processes:
@@ -77,13 +80,13 @@ class ProcessGroup:
         self._interrupt_count += 1
 
     @classmethod
-    def from_commands(cls, id: int, *commands: str) -> ProcessGroup:
+    def from_commands(cls, id: int, process_id: int, *commands: str) -> ProcessGroup:
         processes: list[Process] = []
         errors: list[InvalidExecutableError] = []
 
         for i, command in enumerate(commands):
             try:
-                processes.append(Process(i + 1, command))
+                processes.append(Process(i + process_id, command))
             except InvalidExecutableError as e:
                 errors.append(e)
 
