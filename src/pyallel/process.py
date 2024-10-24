@@ -9,11 +9,21 @@ from typing import BinaryIO
 
 
 @dataclass
+class ProcessOutput:
+    process: Process
+    id: int = 0
+    data: str = ""
+
+    def merge(self, other: ProcessOutput) -> None:
+        self.data += other.data
+
+
+@dataclass
 class Process:
     id: int
     command: str
-    start: float = field(init=False, default=0.0)
-    end: float = field(init=False, default=0.0)
+    start: float = field(init=False, repr=False, compare=False, default=0.0)
+    end: float = field(init=False, repr=False, compare=False, default=0.0)
     _fd: BinaryIO | None = field(init=False, repr=False, compare=False, default=None)
     _process: subprocess.Popen[bytes] | None = field(
         init=False, repr=False, compare=False, default=None
