@@ -438,6 +438,12 @@ class TestNonInteractiveMode:
                 f"{PREFIX}\n",
                 f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] running... \n",
                 f"{PREFIX}hi\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Interrupt!\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] failed ✘\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Abort!\n",
             ]
         )
 
@@ -473,5 +479,11 @@ class TestNonInteractiveMode:
                 f"{PREFIX}\n",
                 f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] running... \n",
                 f"{PREFIX}hi\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Interrupt!\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] failed ✘\n",
+                f"{PREFIX}\n",
+                f"{PREFIX}Abort!\n",
             ]
         )

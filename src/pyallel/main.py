@@ -75,6 +75,7 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
             outputs = process_group_manager.stream()
             process_group_manager.outputs.merge(outputs)
 
+            printer.clear()
             printer.write_outputs(
                 process_group_manager.outputs,
                 interrupt_count=process_group_manager.interrupt_count,
@@ -88,8 +89,10 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
 
                 process_group_manager.run()
                 if process_group_manager.cur_process_group is None:
+                    printer.clear()
                     break
                 else:
+                    # printer.last_output.clear()
                     index += 1
 
             time.sleep(0.1)
