@@ -291,11 +291,12 @@ class ProcessGroup:
                 self.output[process.id].append("")
             self.output[process.id][0] += p_output
             p_output = self.output[process.id][0]
-            p_output_lines = 0
+            p_output_lines_num = 0
             if p_output:
                 if not all:
+                    p_output_lines = p_output.splitlines()[-self.process_lines[i - 1] :]
                     p_output = ""
-                    for line in p_output.splitlines()[-self.process_lines[i - 1] :]:
+                    for line in p_output_lines:
                         if len(line) + 3 > constants.COLUMNS():
                             p_output += f"{''.join(line[:constants.COLUMNS()-3])}\n"
                         else:
@@ -305,10 +306,15 @@ class ProcessGroup:
                     p_output += "\n"
                 if i != num_processes:
                     p_output += "\n"
-                p_output_lines = get_num_lines(p_output)
+                p_output_lines_num = get_num_lines(p_output)
 
-            if not all and (command_lines + p_output_lines) > self.process_lines[i - 1]:
-                truncate = (command_lines + p_output_lines) - self.process_lines[i - 1]
+            if (
+                not all
+                and (command_lines + p_output_lines_num) > self.process_lines[i - 1]
+            ):
+                truncate = (command_lines + p_output_lines_num) - self.process_lines[
+                    i - 1
+                ]
                 p_output = "\n".join(p_output.splitlines()[truncate:])
                 p_output += "\n"
 
