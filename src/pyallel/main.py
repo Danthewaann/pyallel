@@ -52,7 +52,6 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
                     printer.write_command_status(
                         output.process, passed=output.process.return_code() == 0
                     )
-                    printer.write("", prefix=printer.prefix)
                     current_process = None
 
             poll = process_group_manager.poll()
@@ -141,11 +140,11 @@ def run(*args: str) -> int:
 
     if exit_code == 1:
         if not message:
-            printer.error("Failed!")
+            printer.error("\nFailed!")
         else:
             printer.error(f"Error: {message}")
     elif exit_code == 0:
-        printer.ok("Done!")
+        printer.ok("\nDone!")
 
     return exit_code
 

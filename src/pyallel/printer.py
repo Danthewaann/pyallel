@@ -105,10 +105,18 @@ class Printer:
                 output.process.id in self.output_data
                 and self.output_data[output.process.id][-1] != "\n"
             ):
-                self.write(lines.pop(0), end="")
+                self.write(
+                    lines.pop(0),
+                    prefix=f"{self.colours.dim_on}=>{self.colours.dim_off} ",
+                    end="",
+                )
 
             for line in lines:
-                self.write(line, prefix=self.prefix, end="")
+                self.write(
+                    line,
+                    prefix=f"{self.colours.dim_on}=>{self.colours.dim_off} ",
+                    end="",
+                )
 
             self.output_data[output.process.id] = output.data
 
@@ -139,7 +147,9 @@ class Printer:
                 data = output.data.splitlines()
 
             for line in data:
-                self.last_output.append(line)
+                self.last_output.append(
+                    f"{self.colours.dim_on}=>{self.colours.dim_off} {line}"
+                )
 
             process_num += 1
 
