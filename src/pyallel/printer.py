@@ -112,7 +112,7 @@ class Printer:
 
             self.output_data[output.process.id] = output.data
 
-    def temp(self, outputs: ProcessGroupOutput, tail: bool = True) -> None:
+    def interactive_print(self, outputs: ProcessGroupOutput, tail: bool = True) -> None:
         process_num = 0
         process_lines = self.get_process_lines(outputs)
 
@@ -151,96 +151,6 @@ class Printer:
             if get_num_lines(line) > 1:
                 line = truncate_line(line)
             self.write(line)
-
-    # def generate_output(
-    #     self,
-    #     outputs: ProcessGroupManagerOutput,
-    #     clear: bool = True,
-    #     interrupt_count: int = 0,
-    # ) -> list[str]:
-    #     process_lines = self.get_process_lines(outputs)
-    #
-    #     all_output: list[str] = []
-    #     process_num = 0
-    #
-    #     process_group_outputs = outputs.process_group_outputs[
-    #         outputs.cur_process_group_id
-    #     ].processes
-    #
-    #     if not clear:
-    #         process_group_outputs = []
-    #         for pg in outputs.process_group_outputs.values():
-    #             for p in pg.processes:
-    #                 process_group_outputs.append(p)
-    #
-    #     for output in process_group_outputs:
-    #         lines_to_print = 0
-    #         if output.process.poll() is not None:
-    #             status = self._get_command_status(
-    #                 output.process,
-    #                 passed=output.process.return_code() == 0,
-    #                 timer=self.timer,
-    #             )
-    #             all_output.append(status)
-    #             lines_to_print += get_num_lines(status)
-    #         else:
-    #             status = self._get_command_status(
-    #                 output.process,
-    #                 icon=constants.ICONS[self.icon],
-    #                 timer=self.timer,
-    #             )
-    #             all_output.append(status)
-    #             lines_to_print += get_num_lines(status)
-    #
-    #         if output.data:
-    #             if clear:
-    #                 tailed_lines = output.data.splitlines()[
-    #                     -process_lines[process_num] :
-    #                 ]
-    #                 lines: list[str] = []
-    #                 for line in tailed_lines:
-    #                     num_lines = get_num_lines(line)
-    #                     if num_lines > 1:
-    #                         line = truncate_line(line)
-    #                     lines.append(line)
-    #             else:
-    #                 lines = output.data.splitlines()
-    #
-    #             for line in lines:
-    #                 all_output.append(line)
-    #
-    #             if all_output[-1] != "" and output.id != outputs.num_processes:
-    #                 all_output.append("")
-    #
-    #         process_num += 1
-    #
-    #     if interrupt_count == 1:
-    #         all_output.append(
-    #             f"{self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}"
-    #         )
-    #     elif interrupt_count > 1:
-    #         all_output.append(
-    #             f"{self.colours.red_bold}Abort!{self.colours.reset_colour}"
-    #         )
-    #
-    #     return all_output
-    #
-    # def write_outputs(
-    #     self,
-    #     outputs: ProcessGroupManagerOutput,
-    #     clear: bool = True,
-    #     interrupt_count: int = 0,
-    # ) -> None:
-    #     output = self.generate_output(outputs, clear, interrupt_count)
-    #
-    #     for line in output:
-    #         self.write(line, prefix=self.prefix)
-    #
-    #     self.last_output = output
-    #
-    #     self.icon += 1
-    #     if self.icon == len(constants.ICONS):
-    #         self.icon = 0
 
     def get_process_lines(
         self, outputs: ProcessGroupOutput, lines: int | None = None

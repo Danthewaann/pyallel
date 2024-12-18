@@ -74,7 +74,7 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
 
             printer.clear()
             if process_group_manager.cur_process_group is not None:
-                printer.temp(
+                printer.interactive_print(
                     process_group_manager.outputs.process_group_outputs[
                         process_group_manager.cur_process_group.id
                     ]
@@ -83,12 +83,13 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
             poll = process_group_manager.poll()
             if poll is not None:
                 printer.clear()
-                printer.temp(
-                    process_group_manager.outputs.process_group_outputs[
-                        process_group_manager.cur_process_group.id
-                    ],
-                    tail=False,
-                )
+                if process_group_manager.cur_process_group is not None:
+                    printer.interactive_print(
+                        process_group_manager.outputs.process_group_outputs[
+                            process_group_manager.cur_process_group.id
+                        ],
+                        tail=False,
+                    )
 
                 if poll > 0:
                     exit_code = poll
@@ -100,13 +101,6 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
                     break
 
             time.sleep(0.1)
-
-        # printer.write_outputs(
-        #     process_group_manager.outputs,
-        #     clear=False,
-        #     interrupt_count=process_group_manager.interrupt_count,
-        # )
-        # printer.write("", prefix=printer.prefix)
 
     return exit_code
 
