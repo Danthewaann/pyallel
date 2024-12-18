@@ -16,7 +16,6 @@ from pyallel.process_group_manager import ProcessGroupManager
 def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
     process_group_manager = ProcessGroupManager.from_args(*args)
 
-    index = 0
     exit_code = 0
 
     process_group_manager.run()
@@ -65,8 +64,6 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
                 process_group_manager.run()
                 if process_group_manager.cur_process_group is None:
                     break
-                else:
-                    index += 1
 
             time.sleep(0.1)
 
@@ -76,33 +73,40 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
             process_group_manager.outputs.merge(outputs)
 
             printer.clear()
-            printer.write_outputs(
-                process_group_manager.outputs,
-                interrupt_count=process_group_manager.interrupt_count,
-            )
+            if process_group_manager.cur_process_group is not None:
+                printer.temp(
+                    process_group_manager.outputs.process_group_outputs[
+                        process_group_manager.cur_process_group.id
+                    ]
+                )
 
             poll = process_group_manager.poll()
             if poll is not None:
+                printer.clear()
+                printer.temp(
+                    process_group_manager.outputs.process_group_outputs[
+                        process_group_manager.cur_process_group.id
+                    ],
+                    tail=False,
+                )
+
                 if poll > 0:
                     exit_code = poll
                     break
 
+                printer.last_output.clear()
                 process_group_manager.run()
                 if process_group_manager.cur_process_group is None:
-                    printer.clear()
                     break
-                else:
-                    # printer.last_output.clear()
-                    index += 1
 
             time.sleep(0.1)
 
-        printer.write_outputs(
-            process_group_manager.outputs,
-            clear=False,
-            interrupt_count=process_group_manager.interrupt_count,
-        )
-        printer.write("", prefix=printer.prefix)
+        # printer.write_outputs(
+        #     process_group_manager.outputs,
+        #     clear=False,
+        #     interrupt_count=process_group_manager.interrupt_count,
+        # )
+        # printer.write("", prefix=printer.prefix)
 
     return exit_code
 

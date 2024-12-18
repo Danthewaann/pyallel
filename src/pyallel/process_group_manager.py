@@ -14,36 +14,40 @@ class ProcessGroupManagerOutput:
     cur_process_group_id: int = 1
     num_processes: int = field(init=False)
 
-    def __post_init__(self) -> None:
-        num = 0
-        for pg in self.process_group_outputs.values():
-            num += len(pg.processes)
-
-        self.num_processes = num
+    # def __post_init__(self) -> None:
+    #     num = 0
+    #     for pg in self.process_group_outputs.values():
+    #         num += len(pg.processes)
+    #
+    #     self.num_processes = num
 
     def merge(self, other: ProcessGroupManagerOutput) -> None:
         self.cur_process_group_id = other.cur_process_group_id
-        for key in self.process_group_outputs:
-            if key in other.process_group_outputs:
-                self.process_group_outputs[key].merge(other.process_group_outputs[key])
+        for key, value in other.process_group_outputs.items():
+            if key in self.process_group_outputs:
+                self.process_group_outputs[key].merge(value)
+            else:
+                self.process_group_outputs[key] = value
 
 
 @dataclass
 class ProcessGroupManager:
     process_groups: list[ProcessGroup]
-    outputs: ProcessGroupManagerOutput = field(init=False)
+    outputs: ProcessGroupManagerOutput = field(
+        init=False, default_factory=ProcessGroupManagerOutput
+    )
     cur_process_group: ProcessGroup | None = field(init=False, default=None)
     exit_code: int = field(init=False, default=0)
     interrupt_count: int = field(init=False, default=0)
 
     def __post_init__(self) -> None:
+        pg = self.process_groups[0]
         self.outputs = ProcessGroupManagerOutput(
             process_group_outputs={
                 pg.id: ProcessGroupOutput(
                     id=pg.id,
                     processes=[ProcessOutput(id=p.id, process=p) for p in pg.processes],
                 )
-                for pg in self.process_groups
             }
         )
 
