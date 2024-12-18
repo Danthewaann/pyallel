@@ -24,8 +24,8 @@ def get_num_lines(line: str, columns: int | None = None) -> int:
     return lines
 
 
-def truncate_line(line: str) -> str:
-    columns = constants.COLUMNS()
+def truncate_line(line: str, columns: int | None = None) -> str:
+    columns = columns or constants.COLUMNS()
     escaped_line = constants.ANSI_ESCAPE.sub("", line)
     return "".join(escaped_line[: columns - 3]) + "..."
 
@@ -45,7 +45,7 @@ class Printer:
     prefix: str = field(init=False)
     icon: int = field(init=False, default=0)
     output_data: dict[int, str] = field(init=False, default_factory=dict)
-    last_output: list[str] = field(init=False, default_factory=list)
+    last_output: list[tuple[str, str]] = field(init=False, default_factory=list)
 
     def __post_init__(self) -> None:
         self.prefix = ""
@@ -138,7 +138,7 @@ class Printer:
                     timer=self.timer,
                 )
 
-            self.last_output.append(status)
+            self.last_output.append(("", status))
             if tail:
                 status_num = get_num_lines(status)
                 p_lines = process_lines[process_num] - status_num
@@ -148,7 +148,7 @@ class Printer:
 
             for line in data:
                 self.last_output.append(
-                    f"{self.colours.dim_on}=>{self.colours.dim_off} {line}"
+                    (f"{self.colours.dim_on}=>{self.colours.dim_off} ", line)
                 )
 
             process_num += 1
@@ -158,9 +158,13 @@ class Printer:
             self.icon = 0
 
         for line in self.last_output:
-            if tail and get_num_lines(line) > 1:
-                line = truncate_line(line)
-            self.write(line)
+            if tail and get_num_lines(line[1], columns=constants.COLUMNS() - 3) > 1:
+                self.write(
+                    truncate_line(line[1], columns=constants.COLUMNS() - 3),
+                    prefix=line[0],
+                )
+            else:
+                self.write(line[1], prefix=line[0])
 
     def get_process_lines(
         self, outputs: ProcessGroupOutput, lines: int | None = None
