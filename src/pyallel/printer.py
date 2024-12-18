@@ -48,7 +48,7 @@ class Printer:
     last_output: list[str] = field(init=False, default_factory=list)
 
     def __post_init__(self) -> None:
-        self.prefix = f"{self.colours.dim_on}=>{self.colours.dim_off} "
+        self.prefix = ""
 
     def info(self, msg: str) -> None:
         print(
@@ -78,9 +78,9 @@ class Printer:
         print(msg, flush=True, file=sys.stderr)
 
     def write(
-        self, msg: str, prefix: str = "", end: str = "\n", flush: bool = False
+        self, msg: str, prefix: str | None = None, end: str = "\n", flush: bool = False
     ) -> None:
-        print(f"{prefix}{msg}", end=end, flush=flush)
+        print(f"{self.prefix if prefix is None else prefix}{msg}", end=end, flush=flush)
 
     def write_command_status(
         self,
@@ -148,7 +148,7 @@ class Printer:
             self.icon = 0
 
         for line in self.last_output:
-            if get_num_lines(line) > 1:
+            if tail and get_num_lines(line) > 1:
                 line = truncate_line(line)
             self.write(line)
 
