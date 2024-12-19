@@ -27,7 +27,7 @@ def get_num_lines(line: str, columns: int | None = None) -> int:
 def truncate_line(line: str, columns: int | None = None) -> str:
     columns = columns or constants.COLUMNS()
     escaped_line = constants.ANSI_ESCAPE.sub("", line)
-    return "".join(escaped_line[: columns - 3]) + "..."
+    return "".join(escaped_line[:columns]) + "..."
 
 
 def format_time_taken(time_taken: float) -> str:
@@ -105,11 +105,7 @@ class Printer:
                 output.process.id in self.output_data
                 and self.output_data[output.process.id][-1] != "\n"
             ):
-                self.write(
-                    lines.pop(0),
-                    prefix=f"{self.colours.dim_on}=>{self.colours.dim_off} ",
-                    end="",
-                )
+                self.write(lines.pop(0), end="")
 
             for line in lines:
                 self.write(
@@ -139,12 +135,11 @@ class Printer:
                 )
 
             self.last_output.append(("", status))
+            data = output.data.splitlines()
             if tail:
                 status_num = get_num_lines(status)
                 p_lines = process_lines[process_num] - status_num
-                data = output.data.splitlines()[-p_lines:]
-            else:
-                data = output.data.splitlines()
+                data = data[-p_lines:]
 
             for line in data:
                 self.last_output.append(
@@ -157,14 +152,11 @@ class Printer:
         if self.icon == len(constants.ICONS):
             self.icon = 0
 
-        for line in self.last_output:
-            if tail and get_num_lines(line[1], columns=constants.COLUMNS() - 3) > 1:
-                self.write(
-                    truncate_line(line[1], columns=constants.COLUMNS() - 3),
-                    prefix=line[0],
-                )
-            else:
-                self.write(line[1], prefix=line[0])
+        for prefix, line in self.last_output:
+            columns = constants.COLUMNS() - len(prefix)
+            if tail and get_num_lines(line, columns) > 1:
+                line = truncate_line(line, columns)
+            self.write(line, prefix=prefix)
 
     def get_process_lines(
         self, outputs: ProcessGroupOutput, lines: int | None = None

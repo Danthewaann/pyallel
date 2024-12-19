@@ -12,14 +12,6 @@ from pyallel.process_group import ProcessGroupOutput, ProcessGroup
 class ProcessGroupManagerOutput:
     process_group_outputs: dict[int, ProcessGroupOutput] = field(default_factory=dict)
     cur_process_group_id: int = 1
-    num_processes: int = field(init=False)
-
-    # def __post_init__(self) -> None:
-    #     num = 0
-    #     for pg in self.process_group_outputs.values():
-    #         num += len(pg.processes)
-    #
-    #     self.num_processes = num
 
     def merge(self, other: ProcessGroupManagerOutput) -> None:
         self.cur_process_group_id = other.cur_process_group_id
@@ -62,12 +54,24 @@ class ProcessGroupManager:
         if self.cur_process_group is None:
             return ProcessGroupManagerOutput()
 
-        return ProcessGroupManagerOutput(
+        output = ProcessGroupManagerOutput(
             cur_process_group_id=self.cur_process_group.id,
             process_group_outputs={
                 self.cur_process_group.id: self.cur_process_group.stream()
             },
         )
+
+        self.outputs.merge(output)
+
+        return output
+
+    def get_process(self, id: int) -> ProcessOutput:
+        for pg in self.outputs.process_group_outputs.values():
+            for process in pg.processes:
+                if process.id == id:
+                    return process
+
+        raise KeyError(f"process with id '{id}' not found")
 
     def poll(self) -> int | None:
         if self.cur_process_group is None:

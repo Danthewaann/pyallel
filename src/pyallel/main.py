@@ -17,8 +17,8 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
     process_group_manager = ProcessGroupManager.from_args(*args)
 
     exit_code = 0
-
     process_group_manager.run()
+
     if not interactive:
         printer.info("Running commands...")
         printer.info("")
@@ -26,37 +26,27 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
         current_process = None
         while True:
             outputs = process_group_manager.stream()
-            process_group_manager.outputs.merge(outputs)
 
-            for i, output in enumerate(
-                outputs.process_group_outputs[outputs.cur_process_group_id].processes
-            ):
-                if current_process is None:
-                    current_process = output.process
-                    printer.write_command_status(current_process, timer=False)
-                    printer.write_output(
-                        process_group_manager.outputs.process_group_outputs[
-                            outputs.cur_process_group_id
-                        ].processes[i]
-                    )
-                elif current_process is not output.process:
-                    continue
-                else:
-                    printer.write_output(
-                        outputs.process_group_outputs[
-                            outputs.cur_process_group_id
-                        ].processes[i]
-                    )
+            for pg in outputs.process_group_outputs.values():
+                for output in pg.processes:
+                    if current_process is None:
+                        current_process = output.process
+                        output = process_group_manager.get_process(output.id)
+                        printer.write_command_status(current_process, timer=False)
+                    elif current_process is not output.process:
+                        continue
 
-                if output.process.poll() is not None:
-                    printer.write_command_status(
-                        output.process, passed=output.process.return_code() == 0
-                    )
-                    current_process = None
+                    printer.write_output(output)
+
+                    if output.process.poll() is not None:
+                        printer.write_command_status(
+                            output.process, passed=output.process.return_code() == 0
+                        )
+                        current_process = None
 
             poll = process_group_manager.poll()
             if poll is not None:
-                if poll and poll > 0:
+                if poll > 0:
                     exit_code = poll
                     break
 
@@ -69,7 +59,6 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
     else:
         while True:
             outputs = process_group_manager.stream()
-            process_group_manager.outputs.merge(outputs)
 
             printer.clear()
             if process_group_manager.cur_process_group is not None:
