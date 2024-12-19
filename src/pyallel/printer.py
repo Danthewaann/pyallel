@@ -1,7 +1,5 @@
 from dataclasses import dataclass, field
-import sys
 import time
-from typing import Any
 
 from pyallel import constants
 from pyallel.colours import Colours
@@ -45,42 +43,39 @@ class Printer:
     prefix: str = field(init=False)
     icon: int = field(init=False, default=0)
     output_data: dict[int, str] = field(init=False, default_factory=dict)
-    last_output: list[tuple[str, str]] = field(init=False, default_factory=list)
+    last_output: list[tuple[bool, str]] = field(init=False, default_factory=list)
 
     def __post_init__(self) -> None:
-        self.prefix = ""
+        self.prefix = f"{self.colours.dim_on}=>{self.colours.dim_off} "
 
     def info(self, msg: str) -> None:
         print(
-            f"{self.prefix}{self.colours.white_bold}{msg}{self.colours.reset_colour}",
+            f"{self.colours.white_bold}{msg}{self.colours.reset_colour}",
             flush=True,
         )
 
     def ok(self, msg: str) -> None:
         print(
-            f"{self.prefix}{self.colours.green_bold}{msg}{self.colours.reset_colour}",
+            f"{self.colours.green_bold}{msg}{self.colours.reset_colour}",
             flush=True,
         )
 
     def warn(self, msg: str) -> None:
         print(
-            f"{self.prefix}{self.colours.yellow_bold}{msg}{self.colours.reset_colour}",
+            f"{self.colours.yellow_bold}{msg}{self.colours.reset_colour}",
             flush=True,
         )
 
     def error(self, msg: str, flush: bool = False) -> None:
         print(
-            f"{self.prefix}{self.colours.red_bold}{msg}{self.colours.reset_colour}",
+            f"{self.colours.red_bold}{msg}{self.colours.reset_colour}",
             flush=flush,
         )
 
-    def stderr(self, msg: Any) -> None:
-        print(msg, flush=True, file=sys.stderr)
-
     def write(
-        self, msg: str, prefix: str | None = None, end: str = "\n", flush: bool = False
+        self, msg: str, prefix: bool = False, end: str = "\n", flush: bool = False
     ) -> None:
-        print(f"{self.prefix if prefix is None else prefix}{msg}", end=end, flush=flush)
+        print(f"{self.prefix if prefix else ''}{msg}", end=end, flush=flush)
 
     def write_command_status(
         self,
@@ -93,8 +88,7 @@ class Printer:
             timer = self.timer
 
         self.write(
-            self._get_command_status(process, icon=icon, passed=passed, timer=timer),
-            prefix=self.prefix,
+            self._get_command_status(process, icon=icon, passed=passed, timer=timer)
         )
 
     def write_output(self, output: ProcessOutput) -> None:
@@ -108,11 +102,7 @@ class Printer:
                 self.write(lines.pop(0), end="")
 
             for line in lines:
-                self.write(
-                    line,
-                    prefix=f"{self.colours.dim_on}=>{self.colours.dim_off} ",
-                    end="",
-                )
+                self.write(line, prefix=True, end="")
 
             self.output_data[output.process.id] = output.data
 
@@ -134,7 +124,7 @@ class Printer:
                     timer=self.timer,
                 )
 
-            self.last_output.append(("", status))
+            self.last_output.append((False, status))
             data = output.data.splitlines()
             if tail:
                 status_num = get_num_lines(status)
@@ -142,9 +132,7 @@ class Printer:
                 data = data[-p_lines:]
 
             for line in data:
-                self.last_output.append(
-                    (f"{self.colours.dim_on}=>{self.colours.dim_off} ", line)
-                )
+                self.last_output.append((True, line))
 
             process_num += 1
 
@@ -153,7 +141,7 @@ class Printer:
             self.icon = 0
 
         for prefix, line in self.last_output:
-            columns = constants.COLUMNS() - len(prefix)
+            columns = constants.COLUMNS() - len(self.prefix if prefix else "")
             if tail and get_num_lines(line, columns) > 1:
                 line = truncate_line(line, columns)
             self.write(line, prefix=prefix)
