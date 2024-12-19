@@ -4,30 +4,27 @@ import signal
 import subprocess
 import tempfile
 import time
-from dataclasses import dataclass, field
 from typing import BinaryIO
 
 
-@dataclass
 class ProcessOutput:
-    process: Process
-    id: int = 0
-    data: str = ""
+    def __init__(self, id: int, process: Process, data: str = "") -> None:
+        self.id = id
+        self.data = data
+        self.process = process
 
     def merge(self, other: ProcessOutput) -> None:
         self.data += other.data
 
 
-@dataclass
 class Process:
-    id: int
-    command: str
-    start: float = field(init=False, repr=False, compare=False, default=0.0)
-    end: float = field(init=False, repr=False, compare=False, default=0.0)
-    _fd: BinaryIO | None = field(init=False, repr=False, compare=False, default=None)
-    _process: subprocess.Popen[bytes] | None = field(
-        init=False, repr=False, compare=False, default=None
-    )
+    def __init__(self, id: int, command: str) -> None:
+        self.id = id
+        self.command = command
+        self.start = 0.0
+        self.end = 0.0
+        self._fd: BinaryIO | None = None
+        self._process: subprocess.Popen[bytes] | None = None
 
     def run(self) -> None:
         self.start = time.perf_counter()

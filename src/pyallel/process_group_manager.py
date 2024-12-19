@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import signal
-from dataclasses import dataclass, field
 from typing import Any
 
 from pyallel.process import ProcessOutput
 from pyallel.process_group import ProcessGroupOutput, ProcessGroup
 
 
-@dataclass
 class ProcessGroupManagerOutput:
-    process_group_outputs: dict[int, ProcessGroupOutput] = field(default_factory=dict)
-    cur_process_group_id: int = 1
+    def __init__(
+        self,
+        process_group_outputs: dict[int, ProcessGroupOutput] | None = None,
+        cur_process_group_id: int = 1,
+    ) -> None:
+        self.process_group_outputs = process_group_outputs or {}
+        self.cur_process_group_id = cur_process_group_id
 
     def merge(self, other: ProcessGroupManagerOutput) -> None:
         self.cur_process_group_id = other.cur_process_group_id
@@ -23,16 +26,10 @@ class ProcessGroupManagerOutput:
 
 
 class ProcessGroupManager:
-    process_groups: list[ProcessGroup]
-    outputs: ProcessGroupManagerOutput
-    exit_code: int
-    interrupt_count: int
-    cur_process_group: ProcessGroup | None
-
     def __init__(self, process_groups: list[ProcessGroup]) -> None:
         self.exit_code = 0
         self.interrupt_count = 0
-        self.cur_process_group = None
+        self.cur_process_group: ProcessGroup | None = None
         self.process_groups = process_groups
         pg = self.process_groups[0]
         self.outputs = ProcessGroupManagerOutput(

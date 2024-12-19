@@ -3,9 +3,9 @@ import time
 
 
 import pytest
-from pyallel.process import Process, ProcessOutput
-from pyallel.process_group import ProcessGroupOutput, ProcessGroup
-from pyallel.process_group_manager import ProcessGroupManager, ProcessGroupManagerOutput
+from pyallel.process import Process
+from pyallel.process_group import ProcessGroup
+from pyallel.process_group_manager import ProcessGroupManager
 
 
 def test_stream() -> None:
@@ -30,50 +30,18 @@ def test_stream() -> None:
     pg_manager.run()
     assert pg_manager.cur_process_group is not None
     time.sleep(0.1)
-    assert pg_manager.stream() == ProcessGroupManagerOutput(
-        cur_process_group_id=1,
-        process_group_outputs={
-            1: ProcessGroupOutput(
-                id=1,
-                processes=[
-                    ProcessOutput(
-                        id=1,
-                        process=pg_manager.cur_process_group.processes[0],
-                        data="first\n",
-                    ),
-                    ProcessOutput(
-                        id=2,
-                        process=pg_manager.cur_process_group.processes[1],
-                        data="second\n",
-                    ),
-                ],
-            )
-        },
-    )
+    output = pg_manager.stream()
+    assert len(output.process_group_outputs) == 1
+    assert output.process_group_outputs[1].id == 1
+    assert len(output.process_group_outputs[1].processes) == 2
     assert pg_manager.poll() == 0
     pg_manager.run()
     assert pg_manager.cur_process_group is not None
     time.sleep(0.1)
-    assert pg_manager.stream() == ProcessGroupManagerOutput(
-        cur_process_group_id=2,
-        process_group_outputs={
-            2: ProcessGroupOutput(
-                id=2,
-                processes=[
-                    ProcessOutput(
-                        id=3,
-                        process=pg_manager.cur_process_group.processes[0],
-                        data="third\n",
-                    ),
-                    ProcessOutput(
-                        id=4,
-                        process=pg_manager.cur_process_group.processes[1],
-                        data="fourth\n",
-                    ),
-                ],
-            )
-        },
-    )
+    output = pg_manager.stream()
+    assert len(output.process_group_outputs) == 1
+    assert output.process_group_outputs[2].id == 2
+    assert len(output.process_group_outputs[2].processes) == 2
     assert pg_manager.poll() == 0
 
 

@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import Sequence
 
 from pyallel.errors import InvalidExecutableError, InvalidExecutableErrors
 from pyallel.process import Process, ProcessOutput
 
 
-@dataclass
 class ProcessGroupOutput:
-    id: int = 0
-    processes: Sequence[ProcessOutput] = field(default_factory=list)
+    def __init__(
+        self, id: int, processes: Sequence[ProcessOutput] | None = None
+    ) -> None:
+        self.id = id
+        self.processes = processes or []
 
     def merge(self, other: ProcessGroupOutput) -> None:
         for i, _ in enumerate(self.processes):
