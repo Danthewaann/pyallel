@@ -135,9 +135,10 @@ class Printer:
         output = self.generate_output(outputs, interrupt_count, tail)
 
         for prefix, line in output:
-            columns = constants.COLUMNS() - len(self.prefix if prefix else "")
-            if tail and get_num_lines(line, columns) > 1:
-                line = truncate_line(line, columns)
+            if tail:
+                columns = constants.COLUMNS() - len(self.prefix if prefix else "")
+                if get_num_lines(line, columns) > 1:
+                    line = truncate_line(line, columns)
             self.write(line, prefix=prefix)
 
     def get_process_lines(
