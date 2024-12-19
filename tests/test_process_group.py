@@ -2,9 +2,8 @@ from __future__ import annotations
 import time
 
 
-import pytest
 from pyallel.process import Process, ProcessOutput
-from pyallel.process_group import ProcessGroupOutput, ProcessGroup, get_num_lines
+from pyallel.process_group import ProcessGroupOutput, ProcessGroup
 
 
 def test_from_command() -> None:
@@ -102,44 +101,3 @@ def test_output_merge() -> None:
             ),
         ],
     )
-
-
-@pytest.mark.parametrize(
-    "output,expected",
-    (
-        (
-            "Hello Mr Anderson",
-            1,
-        ),
-        (
-            "Hello Mr Anderson\nIt is inevitable",
-            2,
-        ),
-        (
-            "Hello Mr Anderson\nIt is inevitable\nHAHAHAHAH",
-            3,
-        ),
-    ),
-)
-def test_get_num_lines(output: str, expected: int) -> None:
-    assert get_num_lines(output) == expected
-
-
-@pytest.mark.parametrize("columns,lines", ((8, 3), (5, 4)))
-def test_get_num_lines_with_columns(columns: int, lines: int) -> None:
-    assert get_num_lines("Hello Mr Anderson", columns=columns) == lines
-
-
-def test_get_num_lines_with_long_command() -> None:
-    # First line is a 800 length string, which divides evenly into `200`
-    line = "long" * 200
-    assert get_num_lines(f"{line}\nLong output", columns=200) == 5
-
-
-def test_get_num_lines_with_long_line() -> None:
-    assert get_num_lines(" " * 250, columns=200) == 2
-
-
-@pytest.mark.parametrize("chars", ["\x1B[0m", "\x1B(B"])
-def test_get_num_lines_ignores_ansi_chars(chars: str) -> None:
-    assert get_num_lines(chars * 100, columns=10) == 1

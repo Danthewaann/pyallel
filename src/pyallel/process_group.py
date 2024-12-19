@@ -3,25 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Sequence
 
-from pyallel import constants
 from pyallel.errors import InvalidExecutableError, InvalidExecutableErrors
 from pyallel.process import Process, ProcessOutput
-
-
-def get_num_lines(output: str, columns: int | None = None) -> int:
-    lines = 0
-    columns = columns or constants.COLUMNS()
-    for line in output.splitlines():
-        line = constants.ANSI_ESCAPE.sub("", line)
-        length = len(line)
-        line_lines = 1
-        if length > columns:
-            line_lines = length // columns
-            remainder = length % columns
-            if remainder:
-                line_lines += 1
-        lines += 1 * line_lines
-    return lines
 
 
 @dataclass

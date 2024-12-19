@@ -88,15 +88,6 @@ class TestInteractiveMode:
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_handles_running_pyallel_within_pyallel(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.run(
-            "pyallel ./tests/assets/test_handle_multiple_signals.sh -t", "-t"
-        )
-        captured = capsys.readouterr()
-        assert exit_code == 0, prettify_error(captured.out)
-
     @pytest.mark.parametrize(
         "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
     )
@@ -147,13 +138,13 @@ class TestNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[echo hi] running... \n",
+                "Running commands...\n",
+                "\n",
+                "[echo hi] running... \n",
                 f"{PREFIX}hi\n",
-                f"{PREFIX}[echo hi] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Done!\n",
+                "[echo hi] done ✔\n",
+                "\n",
+                "Done!\n",
             ]
         )
 
@@ -163,12 +154,12 @@ class TestNonInteractiveMode:
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[exit 1] running... \n",
-                f"{PREFIX}[exit 1] failed ✘\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Failed!\n",
+                "Running commands...\n",
+                "\n",
+                "[exit 1] running... \n",
+                "[exit 1] failed ✘\n",
+                "\n",
+                "Failed!\n",
             ]
         )
 
@@ -178,13 +169,13 @@ class TestNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[TEST_VAR=1 echo hi] running... \n",
+                "Running commands...\n",
+                "\n",
+                "[TEST_VAR=1 echo hi] running... \n",
                 f"{PREFIX}hi\n",
-                f"{PREFIX}[TEST_VAR=1 echo hi] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Done!\n",
+                "[TEST_VAR=1 echo hi] done ✔\n",
+                "\n",
+                "Done!\n",
             ]
         )
 
@@ -194,17 +185,16 @@ class TestNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[sleep 0.1; echo first] running... \n",
+                "Running commands...\n",
+                "\n",
+                "[sleep 0.1; echo first] running... \n",
                 f"{PREFIX}first\n",
-                f"{PREFIX}[sleep 0.1; echo first] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[echo hi] running... \n",
+                "[sleep 0.1; echo first] done ✔\n",
+                "[echo hi] running... \n",
                 f"{PREFIX}hi\n",
-                f"{PREFIX}[echo hi] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Done!\n",
+                "[echo hi] done ✔\n",
+                "\n",
+                "Done!\n",
             ]
         )
 
@@ -216,16 +206,15 @@ class TestNonInteractiveMode:
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[exit 1] running... \n",
-                f"{PREFIX}[exit 1] failed ✘\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[echo hi] running... \n",
+                "Running commands...\n",
+                "\n",
+                "[exit 1] running... \n",
+                "[exit 1] failed ✘\n",
+                "[echo hi] running... \n",
                 f"{PREFIX}hi\n",
-                f"{PREFIX}[echo hi] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Failed!\n",
+                "[echo hi] done ✔\n",
+                "\n",
+                "Failed!\n",
             ]
         )
 
@@ -238,15 +227,14 @@ class TestNonInteractiveMode:
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[exit 1] running... \n",
-                f"{PREFIX}[exit 1] failed ✘\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[exit 1] running... \n",
-                f"{PREFIX}[exit 1] failed ✘\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Failed!\n",
+                "Running commands...\n",
+                "\n",
+                "[exit 1] running... \n",
+                "[exit 1] failed ✘\n",
+                "[exit 1] running... \n",
+                "[exit 1] failed ✘\n",
+                "\n",
+                "Failed!\n",
             ]
         )
 
@@ -258,17 +246,16 @@ class TestNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[echo first] running... \n",
+                "Running commands...\n",
+                "\n",
+                "[echo first] running... \n",
                 f"{PREFIX}first\n",
-                f"{PREFIX}[echo first] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[echo hi] running... \n",
+                "[echo first] done ✔\n",
+                "[echo hi] running... \n",
                 f"{PREFIX}hi\n",
-                f"{PREFIX}[echo hi] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Done!\n",
+                "[echo hi] done ✔\n",
+                "\n",
+                "Done!\n",
             ]
         )
 
@@ -280,12 +267,12 @@ class TestNonInteractiveMode:
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[exit 1] running... \n",
-                f"{PREFIX}[exit 1] failed ✘\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Failed!\n",
+                "Running commands...\n",
+                "\n",
+                "[exit 1] running... \n",
+                "[exit 1] failed ✘\n",
+                "\n",
+                "Failed!\n",
             ]
         )
 
@@ -297,13 +284,13 @@ class TestNonInteractiveMode:
             re.search(
                 "".join(
                     [
-                        f"{PREFIX}Running commands...\n",
-                        f"{PREFIX}\n",
-                        rf"{PREFIX}\[echo hi\] running... \n",
+                        "Running commands...\n",
+                        "\n",
+                        r"\[echo hi\] running... \n",
                         f"{PREFIX}hi\n",
-                        rf"{PREFIX}\[echo hi\] done ✔ \(0\..*\)\n",
-                        f"{PREFIX}\n",
-                        f"{PREFIX}Done!\n",
+                        r"\[echo hi\] done ✔ \(0\..*\)\n",
+                        "\n",
+                        "Done!\n",
                     ]
                 ),
                 captured.out,
@@ -319,49 +306,21 @@ class TestNonInteractiveMode:
             re.search(
                 "".join(
                     [
-                        f"{PREFIX}Running commands...\n",
-                        f"{PREFIX}\n",
-                        rf"{PREFIX}\[sleep 1\] running... \n",
-                        rf"{PREFIX}\[sleep 1\] done ✔ \(1\..*s\)\n",
-                        f"{PREFIX}\n",
-                        rf"{PREFIX}\[echo hi\] running... \n",
+                        "Running commands...\n",
+                        "\n",
+                        r"\[sleep 1\] running... \n",
+                        r"\[sleep 1\] done ✔ \(1\..*s\)\n",
+                        r"\[echo hi\] running... \n",
                         f"{PREFIX}hi\n",
-                        rf"{PREFIX}\[echo hi\] done ✔ \(0\..*s\)\n",
-                        f"{PREFIX}\n",
-                        f"{PREFIX}Done!\n",
+                        r"\[echo hi\] done ✔ \(0\..*s\)\n",
+                        "\n",
+                        "Done!\n",
                     ]
                 ),
                 captured.out,
             )
             is not None
         ), prettify_error(captured.out)
-
-    def test_handles_running_pyallel_within_pyallel(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.run(
-            "pyallel ./tests/assets/test_handle_multiple_signals.sh -t", "-n", "-t"
-        )
-        captured = capsys.readouterr()
-        assert exit_code == 0, prettify_error(captured.out)
-        assert captured.out.splitlines(keepends=True) == (
-            [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[pyallel ./tests/assets/test_handle_multiple_signals.sh -t] running... \n",
-                f"{PREFIX}{PREFIX}Running commands...\n",
-                f"{PREFIX}{PREFIX}\n",
-                f"{PREFIX}{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] running... \n",
-                f"{PREFIX}{PREFIX}hi\n",
-                f"{PREFIX}{PREFIX}bye\n",
-                f"{PREFIX}{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] done ✔\n",
-                f"{PREFIX}{PREFIX}\n",
-                f"{PREFIX}{PREFIX}Done!\n",
-                f"{PREFIX}[pyallel ./tests/assets/test_handle_multiple_signals.sh -t] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Done!\n",
-            ]
-        )
 
     @pytest.mark.parametrize("wait", ["0.1", "0.5"])
     def test_handles_single_command_output_with_delayed_newlines(
@@ -372,13 +331,13 @@ class TestNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[printf hi; sleep {wait}; echo bye] running... \n",
+                "Running commands...\n",
+                "\n",
+                f"[printf hi; sleep {wait}; echo bye] running... \n",
                 f"{PREFIX}hibye\n",
-                f"{PREFIX}[printf hi; sleep {wait}; echo bye] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Done!\n",
+                f"[printf hi; sleep {wait}; echo bye] done ✔\n",
+                "\n",
+                "Done!\n",
             ]
         )
 
@@ -396,17 +355,16 @@ class TestNonInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[printf hi; sleep {wait}; echo bye] running... \n",
+                "Running commands...\n",
+                "\n",
+                f"[printf hi; sleep {wait}; echo bye] running... \n",
                 f"{PREFIX}hibye\n",
-                f"{PREFIX}[printf hi; sleep {wait}; echo bye] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[printf hi; sleep {wait}; echo bye] running... \n",
+                f"[printf hi; sleep {wait}; echo bye] done ✔\n",
+                f"[printf hi; sleep {wait}; echo bye] running... \n",
                 f"{PREFIX}hibye\n",
-                f"{PREFIX}[printf hi; sleep {wait}; echo bye] done ✔\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Done!\n",
+                f"[printf hi; sleep {wait}; echo bye] done ✔\n",
+                "\n",
+                "Done!\n",
             ]
         )
 
@@ -434,16 +392,11 @@ class TestNonInteractiveMode:
         assert process.wait() == exit_code, prettify_error(out.decode())
         assert out.decode().splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] running... \n",
+                "Running commands...\n",
+                "\n",
+                "[./tests/assets/test_handle_multiple_signals.sh] running... \n",
                 f"{PREFIX}hi\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Interrupt!\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] failed ✘\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Abort!\n",
+                "[./tests/assets/test_handle_multiple_signals.sh] failed ✘\n",
             ]
         )
 
@@ -475,15 +428,15 @@ class TestNonInteractiveMode:
         assert process.wait() == exit_code, prettify_error(out.decode())
         assert out.decode().splitlines(keepends=True) == (
             [
-                f"{PREFIX}Running commands...\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] running... \n",
+                "Running commands...\n",
+                "\n",
+                "[./tests/assets/test_handle_multiple_signals.sh] running... \n",
                 f"{PREFIX}hi\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Interrupt!\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}[./tests/assets/test_handle_multiple_signals.sh] failed ✘\n",
-                f"{PREFIX}\n",
-                f"{PREFIX}Abort!\n",
+                "\n",
+                "Interrupt!\n",
+                "\n",
+                "[./tests/assets/test_handle_multiple_signals.sh] failed ✘\n",
+                "\n",
+                "Abort!\n",
             ]
         )

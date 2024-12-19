@@ -174,8 +174,7 @@ class Printer:
 
     def clear_line(self) -> None:
         print(
-            f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}",
-            end="",
+            f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}", end=""
         )
 
     def _get_command_status(
