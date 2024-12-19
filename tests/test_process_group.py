@@ -1,65 +1,77 @@
 from __future__ import annotations
+import time
 
 
-import pytest
-from pyallel.process import Process
-from pyallel.process_group import ProcessGroup, get_num_lines
-
-
-def test_from_command() -> None:
-    expected_process = Process(id=1, command="sleep 0.1")
-    process = Process(1, "sleep 0.1")
-    assert process == expected_process
+from pyallel.process import Process, ProcessOutput
+from pyallel.process_group import ProcessGroupOutput, ProcessGroup
 
 
 def test_from_commands() -> None:
     expected_process_group = ProcessGroup(
+        id=1,
         processes=[
             Process(id=1, command="sleep 0.1"),
             Process(id=2, command="sleep 0.2"),
             Process(id=3, command="sleep 0.3"),
-        ]
+        ],
     )
-    process_group = ProcessGroup.from_commands("sleep 0.1", "sleep 0.2", "sleep 0.3")
-    assert process_group == expected_process_group
+    process_group = ProcessGroup.from_commands(
+        1, 1, "sleep 0.1", "sleep 0.2", "sleep 0.3"
+    )
+    assert process_group.id == expected_process_group.id
+    assert len(process_group.processes) == len(expected_process_group.processes)
 
 
-@pytest.mark.parametrize(
-    "output,expected",
-    (
-        (
-            "Hello Mr Anderson",
-            1,
-        ),
-        (
-            "Hello Mr Anderson\nIt is inevitable",
-            2,
-        ),
-        (
-            "Hello Mr Anderson\nIt is inevitable\nHAHAHAHAH",
-            3,
-        ),
-    ),
-)
-def test_get_num_lines(output: str, expected: int) -> None:
-    assert get_num_lines(output) == expected
+def test_stream() -> None:
+    process_group = ProcessGroup(
+        id=1,
+        processes=[
+            Process(id=1, command="echo first; echo hi"),
+            Process(id=2, command="echo second"),
+            Process(id=3, command="echo third"),
+        ],
+    )
+    process_group.run()
+    time.sleep(0.1)
+    output = process_group.stream()
+    assert len(output.processes) == 3
 
 
-@pytest.mark.parametrize("columns,lines", ((8, 3), (5, 4)))
-def test_get_num_lines_with_columns(columns: int, lines: int) -> None:
-    assert get_num_lines("Hello Mr Anderson", columns=columns) == lines
+def test_output_merge() -> None:
+    output = ProcessGroupOutput(
+        id=1,
+        processes=[
+            ProcessOutput(
+                id=1,
+                process=Process(id=1, command="echo first; echo hi"),
+                data="first\nhi\n",
+            ),
+            ProcessOutput(
+                id=1, process=Process(id=2, command="echo second"), data="second\n"
+            ),
+            ProcessOutput(
+                id=3, process=Process(id=3, command="echo third"), data="third\n"
+            ),
+        ],
+    )
 
+    output.merge(
+        ProcessGroupOutput(
+            id=1,
+            processes=[
+                ProcessOutput(
+                    id=1,
+                    process=Process(id=1, command="echo first; echo hi"),
+                    data="bye\n",
+                ),
+                ProcessOutput(
+                    id=1, process=Process(id=2, command="echo second"), data="hi\n"
+                ),
+                ProcessOutput(
+                    id=3, process=Process(id=3, command="echo third"), data="five\n"
+                ),
+            ],
+        )
+    )
 
-def test_get_num_lines_with_long_command() -> None:
-    # First line is a 800 length string, which divides evenly into `200`
-    line = "long" * 200
-    assert get_num_lines(f"{line}\nLong output", columns=200) == 5
-
-
-def test_get_num_lines_with_long_line() -> None:
-    assert get_num_lines(" " * 250, columns=200) == 2
-
-
-@pytest.mark.parametrize("chars", ["\x1B[0m", "\x1B(B"])
-def test_get_num_lines_ignores_ansi_chars(chars: str) -> None:
-    assert get_num_lines(chars * 100, columns=10) == 1
+    assert len(output.processes) == 3

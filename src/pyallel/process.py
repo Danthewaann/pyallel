@@ -4,20 +4,28 @@ import signal
 import subprocess
 import tempfile
 import time
-from dataclasses import dataclass, field
 from typing import BinaryIO
 
 
-@dataclass
+class ProcessOutput:
+    def __init__(self, id: int, process: Process, data: str = "") -> None:
+        self.id = id
+        self.data = data
+        self.process = process
+        self.lines = -1
+
+    def merge(self, other: ProcessOutput) -> None:
+        self.data += other.data
+
+
 class Process:
-    id: int
-    command: str
-    start: float = 0.0
-    end: float = 0.0
-    _fd: BinaryIO | None = field(init=False, repr=False, compare=False, default=None)
-    _process: subprocess.Popen[bytes] | None = field(
-        init=False, repr=False, compare=False, default=None
-    )
+    def __init__(self, id: int, command: str) -> None:
+        self.id = id
+        self.command = command
+        self.start = 0.0
+        self.end = 0.0
+        self._fd: BinaryIO
+        self._process: subprocess.Popen[bytes]
 
     def run(self) -> None:
         self.start = time.perf_counter()
@@ -32,41 +40,34 @@ class Process:
         )
 
     def __del__(self) -> None:
-        if self._fd:
+        try:
             self._fd.close()
+        except AttributeError:
+            pass
 
     def poll(self) -> int | None:
-        if self._process:
-            poll = self._process.poll()
-            if poll is not None and not self.end:
-                self.end = time.perf_counter()
-            return poll
-        return None
+        poll = self._process.poll()
+        if poll is not None and not self.end:
+            self.end = time.perf_counter()
+        return poll
 
     def read(self) -> bytes:
-        if self._fd:
-            return self._fd.read()
-        return b""
+        return self._fd.read()
 
     def readline(self) -> bytes:
-        if self._fd:
-            return self._fd.readline()
-        return b""
+        return self._fd.readline()
 
     def return_code(self) -> int | None:
-        if self._process:
-            return self._process.returncode
-        return None
+        return self._process.returncode
 
     def interrupt(self) -> None:
-        if self._process:
+        if hasattr(self, "_process"):
             self._process.send_signal(signal.SIGINT)
 
     def kill(self) -> None:
-        if self._process:
+        if hasattr(self, "_process"):
             self._process.send_signal(signal.SIGKILL)
 
     def wait(self) -> int:
-        if self._process:
-            return self._process.wait()
-        return -1
+        return self._process.wait()
+
