@@ -69,10 +69,10 @@ def test_get_process_lines() -> None:
     assert process_lines == [58]
 
 
-def test_printer_generate_output() -> None:
+def test_printer_generate_process_group_output() -> None:
     printer = Printer(colours=Colours.from_colour("no"))
 
-    output = printer.generate_output(
+    output = printer.generate_process_group_output(
         ProcessGroupOutput(
             id=1,
             processes=[
@@ -91,10 +91,10 @@ def test_printer_generate_output() -> None:
     )
 
     assert output == [
-        (False, "[echo first; echo second] running /"),
-        (True, "first"),
-        (True, "second"),
-        (False, "[echo third; echo fourth] running /"),
-        (True, "third"),
-        (True, "fourth"),
+        (False, "[echo first; echo second] running /", "\n"),
+        (True, "first", "\n"),
+        (True, "second", "\n"),
+        (False, "[echo third; echo fourth] running /", "\n"),
+        (True, "third", "\n"),
+        (True, "fourth", "\n"),
     ]

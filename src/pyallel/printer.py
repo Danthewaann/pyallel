@@ -13,7 +13,7 @@ class Printer:
         self.prefix = f"{self.colours.dim_on}=>{self.colours.dim_off} "
         self.icon = 0
         self.output_data: dict[int, str] = {}
-        self.last_output: list[tuple[bool, str]] = []
+        self.last_output: list[tuple[bool, str, str]] = []
 
     def info(self, msg: str) -> None:
         print(
@@ -44,20 +44,6 @@ class Printer:
     ) -> None:
         print(f"{self.prefix if prefix else ''}{msg}", end=end, flush=flush)
 
-    def write_command_status(
-        self,
-        process: Process,
-        icon: str | None = None,
-        passed: bool | None = None,
-        timer: bool | None = None,
-    ) -> None:
-        if timer is None:
-            timer = self.timer
-
-        self.write(
-            self._get_command_status(process, icon=icon, passed=passed, timer=timer)
-        )
-
     def write_output(self, output: ProcessOutput) -> None:
         if output.data:
             lines = output.data.splitlines(keepends=True)
@@ -73,50 +59,109 @@ class Printer:
 
             self.output_data[output.process.id] = output.data
 
-    def generate_output(
-        self, outputs: ProcessGroupOutput, interrupt_count: int = 0, tail: bool = True
-    ) -> list[tuple[bool, str]]:
-        process_num = 0
-        process_lines = self.get_process_lines(outputs, interrupt_count)
+    def generate_process_output(
+        self,
+        output: ProcessOutput,
+        tail: bool = False,
+        include_cmd: bool = True,
+        include_output: bool = True,
+        include_progress: bool = True,
+        include_timer: bool = True,
+    ) -> list[tuple[bool, str, str]]:
+        out: list[tuple[bool, str, str]] = []
 
-        for output in outputs.processes:
+        if include_cmd:
             if output.process.poll() is not None:
                 status = self._get_command_status(
                     output.process,
-                    passed=output.process.return_code() == 0,
-                    timer=self.timer,
+                    passed=output.process.return_code() == 0
+                    if include_progress
+                    else None,
+                    timer=include_timer,
                 )
             else:
                 status = self._get_command_status(
                     output.process,
-                    icon=constants.ICONS[self.icon],
-                    timer=self.timer,
+                    icon=constants.ICONS[self.icon] if include_progress else None,
+                    timer=include_timer,
                 )
+            out.append((False, status, "\n"))
+            self.last_output.append((False, status, "\n"))
 
-            self.last_output.append((False, status))
-            data = output.data.splitlines()
+        if include_output:
+            data = output.data.splitlines(keepends=True)
+
             if tail:
                 status_num = get_num_lines(status)
-                p_lines = process_lines[process_num] - status_num
+                p_lines = output.lines - status_num
                 data = data[-p_lines:]
 
             for line in data:
-                self.last_output.append((True, line))
+                end = line[-1]
+                if end != "\n":
+                    end = ""
+                else:
+                    line = line[:-1]
 
+                try:
+                    prev_line = self.last_output[-1]
+                except IndexError:
+                    prefix = True
+                else:
+                    if prev_line[2] != "\n":
+                        prefix = False
+                    else:
+                        prefix = True
+
+                out.append((prefix, line, end))
+                self.last_output.append((prefix, line, end))
+
+        return out
+
+    def print_process_output(
+        self,
+        output: ProcessOutput,
+        tail: bool = False,
+        include_cmd: bool = True,
+        include_output: bool = True,
+        include_progress: bool = True,
+        include_timer: bool = True,
+    ) -> None:
+        out = self.generate_process_output(
+            output, tail, include_cmd, include_output, include_progress, include_timer
+        )
+
+        for prefix, line, end in out:
+            self.print_line(prefix, line, end)
+
+    def generate_process_group_output(
+        self, pg_output: ProcessGroupOutput, interrupt_count: int = 0, tail: bool = True
+    ) -> list[tuple[bool, str, str]]:
+        process_num = 0
+        process_lines = self.get_process_lines(pg_output, interrupt_count)
+
+        for output in pg_output.processes:
+            output.lines = process_lines[process_num]
+            self.generate_process_output(output, tail)
             process_num += 1
 
         if interrupt_count == 1:
-            self.last_output.append((False, ""))
+            self.last_output.append((False, "", "\n"))
             self.last_output.append(
                 (
                     False,
                     f"{self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}",
+                    "\n",
                 )
             )
         elif interrupt_count == 2:
-            self.last_output.append((False, ""))
+            self.last_output.append((False, "", "\n"))
             self.last_output.append(
-                (False, f"{self.colours.red_bold}Abort!{self.colours.reset_colour}")
+                (
+                    False,
+                    f"{self.colours.red_bold}Abort!{self.colours.reset_colour}",
+                    "\n",
+                )
             )
 
         self.icon += 1
@@ -125,17 +170,22 @@ class Printer:
 
         return self.last_output
 
-    def interactive_print(
-        self, outputs: ProcessGroupOutput, interrupt_count: int = 0, tail: bool = True
+    def print_progress_group_output(
+        self, output: ProcessGroupOutput, interrupt_count: int = 0, tail: bool = True
     ) -> None:
-        output = self.generate_output(outputs, interrupt_count, tail)
+        out = self.generate_process_group_output(output, interrupt_count, tail)
 
-        for prefix, line in output:
-            if tail:
-                columns = constants.COLUMNS() - len(self.prefix if prefix else "")
-                if get_num_lines(line, columns) > 1:
-                    line = truncate_line(line, columns)
-            self.write(line, prefix=prefix)
+        for prefix, line, end in out:
+            self.print_line(prefix, line, end, tail)
+
+    def print_line(
+        self, prefix: bool, line: str, end: str = "\n", tail: bool = False
+    ) -> None:
+        if tail:
+            columns = constants.COLUMNS() - len(self.prefix if prefix else "")
+            if get_num_lines(line, columns) > 1:
+                line = truncate_line(line, columns)
+        self.write(line, prefix=prefix, end=end)
 
     def get_process_lines(
         self,
@@ -164,8 +214,9 @@ class Printer:
 
     def clear(self) -> None:
         # Clear all the lines that were just printed
-        for _ in range(len(self.last_output)):
-            self.clear_line()
+        for _, _, end in self.last_output:
+            if end == "\n":
+                self.clear_line()
 
         self.last_output.clear()
 

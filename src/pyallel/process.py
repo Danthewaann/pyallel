@@ -12,6 +12,7 @@ class ProcessOutput:
         self.id = id
         self.data = data
         self.process = process
+        self.lines = -1
 
     def merge(self, other: ProcessOutput) -> None:
         self.data += other.data

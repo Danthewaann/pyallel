@@ -32,15 +32,17 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
                     if current_process is None:
                         current_process = output.process
                         output = process_group_manager.get_process(output.id)
-                        printer.write_command_status(current_process, timer=False)
+                        printer.print_process_output(
+                            output, include_progress=False, include_timer=False
+                        )
                     elif current_process is not output.process:
                         continue
-
-                    printer.write_output(output)
+                    else:
+                        printer.print_process_output(output, include_cmd=False)
 
                     if output.process.poll() is not None:
-                        printer.write_command_status(
-                            output.process, passed=output.process.return_code() == 0
+                        printer.print_process_output(
+                            output, include_output=False, include_timer=printer.timer
                         )
                         current_process = None
 
@@ -62,7 +64,7 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
 
             printer.clear()
             if process_group_manager.cur_process_group is not None:
-                printer.interactive_print(
+                printer.print_progress_group_output(
                     process_group_manager.outputs.process_group_outputs[
                         process_group_manager.cur_process_group.id
                     ],
@@ -73,7 +75,7 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
             if poll is not None:
                 printer.clear()
                 if process_group_manager.cur_process_group is not None:
-                    printer.interactive_print(
+                    printer.print_progress_group_output(
                         process_group_manager.outputs.process_group_outputs[
                             process_group_manager.cur_process_group.id
                         ],
