@@ -23,9 +23,12 @@ class Printer:
         end: str = "\n",
         truncate: bool = False,
     ) -> None:
+        truncate_num = 0
         prefix = self._prefix if include_prefix else ""
+        if prefix:
+            truncate_num = 6
         if truncate:
-            columns = constants.COLUMNS() - len(prefix)
+            columns = constants.COLUMNS() - truncate_num
             if get_num_lines(line, columns) > 1:
                 line = truncate_line(line, columns)
         print(f"{prefix}{line}", end=end, flush=True)
@@ -79,8 +82,7 @@ class Printer:
             lines = output.data.splitlines(keepends=True)
 
             if tail_output:
-                status_lines = get_num_lines(status)
-                output_lines = output.lines - status_lines
+                output_lines = output.lines - 1
                 lines = lines[-output_lines:]
 
             for line in lines:
@@ -136,14 +138,23 @@ class Printer:
             if not icon:
                 msg += "..."
 
-        out = f"{self._colours.white_bold}[{self._colours.reset_colour}{self._colours.blue_bold}{output.process.command}{self._colours.reset_colour}{self._colours.white_bold}]{self._colours.reset_colour}{colour} {msg} {icon}{self._colours.reset_colour}"
-
+        timer = ""
         if include_timer:
             end = output.process.end
             if not output.process.end:
                 end = time.perf_counter()
             elapsed = end - output.process.start
-            out += f" {self._colours.dim_on}({format_time_taken(elapsed)}){self._colours.dim_off}"
+            timer = f"({format_time_taken(elapsed)})"
+
+        command = output.process.command
+        if get_num_lines(output.process.command) > 1:
+            columns = constants.COLUMNS() - (len(msg) + len(timer) + 9)
+            command = truncate_line(command, columns)
+
+        out = f"{self._colours.white_bold}[{self._colours.reset_colour}{self._colours.blue_bold}{command}{self._colours.reset_colour}{self._colours.white_bold}]{self._colours.reset_colour}{colour} {msg} {icon}{self._colours.reset_colour}"
+
+        if timer:
+            out += f" {self._colours.dim_on}{timer}{self._colours.dim_off}"
 
         return out
 
