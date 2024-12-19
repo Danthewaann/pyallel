@@ -65,7 +65,8 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
                 printer.interactive_print(
                     process_group_manager.outputs.process_group_outputs[
                         process_group_manager.cur_process_group.id
-                    ]
+                    ],
+                    process_group_manager.interrupt_count,
                 )
 
             poll = process_group_manager.poll()
@@ -76,6 +77,7 @@ def main_loop(*args: str, printer: Printer, interactive: bool = False) -> int:
                         process_group_manager.outputs.process_group_outputs[
                             process_group_manager.cur_process_group.id
                         ],
+                        process_group_manager.interrupt_count,
                         tail=False,
                     )
 

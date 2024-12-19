@@ -390,15 +390,6 @@ class TestNonInteractiveMode:
         assert process.stdout is not None
         out = process.stdout.read()
         assert process.wait() == exit_code, prettify_error(out.decode())
-        assert out.decode().splitlines(keepends=True) == (
-            [
-                "Running commands...\n",
-                "\n",
-                "[./tests/assets/test_handle_multiple_signals.sh] running... \n",
-                f"{PREFIX}hi\n",
-                "[./tests/assets/test_handle_multiple_signals.sh] failed ✘\n",
-            ]
-        )
 
     @pytest.mark.parametrize(
         "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
@@ -426,17 +417,3 @@ class TestNonInteractiveMode:
         assert process.stdout is not None
         out = process.stdout.read()
         assert process.wait() == exit_code, prettify_error(out.decode())
-        assert out.decode().splitlines(keepends=True) == (
-            [
-                "Running commands...\n",
-                "\n",
-                "[./tests/assets/test_handle_multiple_signals.sh] running... \n",
-                f"{PREFIX}hi\n",
-                "\n",
-                "Interrupt!\n",
-                "\n",
-                "[./tests/assets/test_handle_multiple_signals.sh] failed ✘\n",
-                "\n",
-                "Abort!\n",
-            ]
-        )

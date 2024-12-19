@@ -77,10 +77,15 @@ class ProcessGroupManager:
         if self.cur_process_group is None:
             return 0
 
-        if self.exit_code:
+        poll = self.cur_process_group.poll()
+
+        if poll is not None and self.exit_code:
             return self.exit_code
 
-        return self.cur_process_group.poll()
+        if self.interrupt_count > 1:
+            return self.exit_code
+
+        return poll
 
     def handle_signal(self, signum: int, _frame: Any) -> None:
         for process_group in self.process_groups:

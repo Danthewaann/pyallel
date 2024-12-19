@@ -78,10 +78,10 @@ class Printer:
             self.output_data[output.process.id] = output.data
 
     def generate_output(
-        self, outputs: ProcessGroupOutput, tail: bool = True
+        self, outputs: ProcessGroupOutput, interrupt_count: int = 0, tail: bool = True
     ) -> list[tuple[bool, str]]:
         process_num = 0
-        process_lines = self.get_process_lines(outputs)
+        process_lines = self.get_process_lines(outputs, interrupt_count)
 
         for output in outputs.processes:
             if output.process.poll() is not None:
@@ -109,14 +109,30 @@ class Printer:
 
             process_num += 1
 
+        if interrupt_count == 1:
+            self.last_output.append((False, ""))
+            self.last_output.append(
+                (
+                    False,
+                    f"{self.colours.yellow_bold}Interrupt!{self.colours.reset_colour}",
+                )
+            )
+        elif interrupt_count == 2:
+            self.last_output.append((False, ""))
+            self.last_output.append(
+                (False, f"{self.colours.red_bold}Abort!{self.colours.reset_colour}")
+            )
+
         self.icon += 1
         if self.icon == len(constants.ICONS):
             self.icon = 0
 
         return self.last_output
 
-    def interactive_print(self, outputs: ProcessGroupOutput, tail: bool = True) -> None:
-        output = self.generate_output(outputs, tail)
+    def interactive_print(
+        self, outputs: ProcessGroupOutput, interrupt_count: int = 0, tail: bool = True
+    ) -> None:
+        output = self.generate_output(outputs, interrupt_count, tail)
 
         for prefix, line in output:
             columns = constants.COLUMNS() - len(self.prefix if prefix else "")
@@ -125,12 +141,18 @@ class Printer:
             self.write(line, prefix=prefix)
 
     def get_process_lines(
-        self, outputs: ProcessGroupOutput, lines: int | None = None
+        self,
+        outputs: ProcessGroupOutput,
+        interrupt_count: int = 0,
+        lines: int | None = None,
     ) -> list[int]:
         num_processes = len(outputs.processes)
         process_lines: list[int] = [0 for _ in range(num_processes)]
 
         lines = lines or constants.LINES() - 1
+
+        if interrupt_count:
+            lines -= 2
 
         remainder = lines % num_processes
         tail = lines // num_processes
