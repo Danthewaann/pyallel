@@ -1,4 +1,3 @@
-from dataclasses import dataclass, field
 import time
 
 from pyallel import constants
@@ -7,17 +6,14 @@ from pyallel.process import Process, ProcessOutput
 from pyallel.process_group import ProcessGroupOutput
 
 
-@dataclass
 class Printer:
-    colours: Colours = field(default_factory=Colours)
-    timer: bool = False
-    prefix: str = field(init=False)
-    icon: int = field(init=False, default=0)
-    output_data: dict[int, str] = field(init=False, default_factory=dict)
-    last_output: list[tuple[bool, str]] = field(init=False, default_factory=list)
-
-    def __post_init__(self) -> None:
+    def __init__(self, colours: Colours | None = None, timer: bool = False) -> None:
+        self.colours = colours or Colours()
+        self.timer = timer
         self.prefix = f"{self.colours.dim_on}=>{self.colours.dim_off} "
+        self.icon = 0
+        self.output_data: dict[int, str] = {}
+        self.last_output: list[tuple[bool, str]] = []
 
     def info(self, msg: str) -> None:
         print(
