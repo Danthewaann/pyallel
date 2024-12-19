@@ -90,7 +90,10 @@ def test_from_args() -> None:
         ]
     )
     process_group_manager = ProcessGroupManager.from_args("sleep 0.1", "sleep 0.2")
-    assert process_group_manager == expected_process_group_manager
+    assert (
+        process_group_manager.process_groups
+        == expected_process_group_manager.process_groups
+    )
 
 
 @pytest.mark.parametrize(
@@ -165,4 +168,7 @@ def test_from_args_with_separators(
     args: list[str], expected_process_group_manager: ProcessGroupManager
 ) -> None:
     process_group_manager = ProcessGroupManager.from_args(*args)
-    assert process_group_manager == expected_process_group_manager
+    assert (
+        process_group_manager.process_groups
+        == expected_process_group_manager.process_groups
+    )

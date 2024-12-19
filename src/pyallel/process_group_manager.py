@@ -22,17 +22,18 @@ class ProcessGroupManagerOutput:
                 self.process_group_outputs[key] = value
 
 
-@dataclass
 class ProcessGroupManager:
     process_groups: list[ProcessGroup]
-    outputs: ProcessGroupManagerOutput = field(
-        init=False, default_factory=ProcessGroupManagerOutput
-    )
-    cur_process_group: ProcessGroup | None = field(init=False, default=None)
-    exit_code: int = field(init=False, default=0)
-    interrupt_count: int = field(init=False, default=0)
+    outputs: ProcessGroupManagerOutput
+    exit_code: int
+    interrupt_count: int
+    cur_process_group: ProcessGroup | None
 
-    def __post_init__(self) -> None:
+    def __init__(self, process_groups: list[ProcessGroup]) -> None:
+        self.exit_code = 0
+        self.interrupt_count = 0
+        self.cur_process_group = None
+        self.process_groups = process_groups
         pg = self.process_groups[0]
         self.outputs = ProcessGroupManagerOutput(
             process_group_outputs={
