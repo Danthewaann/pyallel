@@ -24,7 +24,8 @@ def test_from_commands() -> None:
     process_group = ProcessGroup.from_commands(
         1, 1, "sleep 0.1", "sleep 0.2", "sleep 0.3"
     )
-    assert process_group == expected_process_group
+    assert process_group.id == expected_process_group.id
+    assert process_group.processes == expected_process_group.processes
 
 
 def test_stream() -> None:

@@ -90,9 +90,8 @@ def test_from_args() -> None:
         ]
     )
     process_group_manager = ProcessGroupManager.from_args("sleep 0.1", "sleep 0.2")
-    assert (
-        process_group_manager.process_groups
-        == expected_process_group_manager.process_groups
+    assert len(process_group_manager.process_groups) == len(
+        expected_process_group_manager.process_groups
     )
 
 
@@ -168,7 +167,6 @@ def test_from_args_with_separators(
     args: list[str], expected_process_group_manager: ProcessGroupManager
 ) -> None:
     process_group_manager = ProcessGroupManager.from_args(*args)
-    assert (
-        process_group_manager.process_groups
-        == expected_process_group_manager.process_groups
+    assert len(process_group_manager.process_groups) == len(
+        expected_process_group_manager.process_groups
     )

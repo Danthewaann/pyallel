@@ -17,12 +17,12 @@ class ProcessGroupOutput:
             self.processes[i].merge(other.processes[i])
 
 
-@dataclass
 class ProcessGroup:
-    id: int
-    processes: list[Process]
-    _exit_code: int = field(init=False, default=0)
-    _interrupt_count: int = field(init=False, default=0)
+    def __init__(self, id: int, processes: list[Process]) -> None:
+        self.id = id
+        self.processes = processes
+        self._exit_code: int = 0
+        self._interrupt_count: int = 0
 
     def run(self) -> None:
         for process in self.processes:
