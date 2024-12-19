@@ -1,5 +1,8 @@
 import pytest
-from pyallel.printer import get_num_lines
+from pyallel.colours import Colours
+from pyallel.printer import Printer, get_num_lines
+from pyallel.process import Process, ProcessOutput
+from pyallel.process_group import ProcessGroupOutput
 
 
 @pytest.mark.parametrize(
@@ -46,58 +49,52 @@ def test_get_num_lines_ignores_ansi_chars(chars: str) -> None:
     assert get_num_lines(chars * 100, columns=10) == 1
 
 
-# def test_get_process_lines() -> None:
-#     printer = Printer(colours=Colours.from_colour("no"))
-#
-#     process_lines = printer.get_process_lines(
-#         ProcessGroupManagerOutput(
-#             process_group_outputs={
-#                 1: ProcessGroupOutput(
-#                     id=1,
-#                     processes=[
-#                         ProcessOutput(
-#                             id=1,
-#                             process=Process(1, "echo first; echo second"),
-#                             data="first\nsecond\n",
-#                         )
-#                     ],
-#                 )
-#             }
-#         ),
-#         lines=58,
-#     )
-#
-#     assert process_lines == [58]
-#
-#
-# def test_printer_generate_output() -> None:
-#     printer = Printer(colours=Colours.from_colour("no"))
-#
-#     output = printer.generate_output(
-#         ProcessGroupManagerOutput(
-#             process_group_outputs={
-#                 1: ProcessGroupOutput(
-#                     id=1,
-#                     processes=[
-#                         ProcessOutput(
-#                             id=1,
-#                             process=Process(1, "echo first; echo second"),
-#                             data="first\nsecond\n",
-#                         )
-#                     ],
-#                 ),
-#                 2: ProcessGroupOutput(
-#                     id=2,
-#                     processes=[
-#                         ProcessOutput(
-#                             id=2,
-#                             process=Process(2, "echo first; echo second"),
-#                             data="first\nsecond\n",
-#                         )
-#                     ],
-#                 ),
-#             }
-#         ),
-#     )
-#
-#     assert output == ["[echo first; echo second] running /", "first", "second", ""]
+def test_get_process_lines() -> None:
+    printer = Printer(colours=Colours.from_colour("no"))
+
+    process_lines = printer.get_process_lines(
+        ProcessGroupOutput(
+            id=1,
+            processes=[
+                ProcessOutput(
+                    id=1,
+                    process=Process(1, "echo first; echo second"),
+                    data="first\nsecond\n",
+                )
+            ],
+        ),
+        lines=58,
+    )
+
+    assert process_lines == [58]
+
+
+def test_printer_generate_output() -> None:
+    printer = Printer(colours=Colours.from_colour("no"))
+
+    output = printer.generate_output(
+        ProcessGroupOutput(
+            id=1,
+            processes=[
+                ProcessOutput(
+                    id=1,
+                    process=Process(1, "echo first; echo second"),
+                    data="first\nsecond\n",
+                ),
+                ProcessOutput(
+                    id=2,
+                    process=Process(2, "echo third; echo fourth"),
+                    data="third\nfourth\n",
+                ),
+            ],
+        ),
+    )
+
+    assert output == [
+        (False, "[echo first; echo second] running /"),
+        (True, "first"),
+        (True, "second"),
+        (False, "[echo third; echo fourth] running /"),
+        (True, "third"),
+        (True, "fourth"),
+    ]

@@ -7,39 +7,10 @@ from pyallel.process import Process, ProcessOutput
 from pyallel.process_group import ProcessGroupOutput
 
 
-def get_num_lines(line: str, columns: int | None = None) -> int:
-    lines = 0
-    columns = columns or constants.COLUMNS()
-    line = constants.ANSI_ESCAPE.sub("", line)
-    length = len(line)
-    line_lines = 1
-    if length > columns:
-        line_lines = length // columns
-        remainder = length % columns
-        if remainder:
-            line_lines += 1
-    lines += 1 * line_lines
-    return lines
-
-
-def truncate_line(line: str, columns: int | None = None) -> str:
-    columns = columns or constants.COLUMNS()
-    escaped_line = constants.ANSI_ESCAPE.sub("", line)
-    return "".join(escaped_line[:columns]) + "..."
-
-
-def format_time_taken(time_taken: float) -> str:
-    time_taken = round(time_taken, 1)
-    seconds = time_taken % (24 * 3600)
-
-    return f"{seconds}s"
-
-
 @dataclass
 class Printer:
     colours: Colours = field(default_factory=Colours)
     timer: bool = False
-    debug: bool = False
     prefix: str = field(init=False)
     icon: int = field(init=False, default=0)
     output_data: dict[int, str] = field(init=False, default_factory=dict)
@@ -106,7 +77,9 @@ class Printer:
 
             self.output_data[output.process.id] = output.data
 
-    def interactive_print(self, outputs: ProcessGroupOutput, tail: bool = True) -> None:
+    def generate_output(
+        self, outputs: ProcessGroupOutput, tail: bool = True
+    ) -> list[tuple[bool, str]]:
         process_num = 0
         process_lines = self.get_process_lines(outputs)
 
@@ -140,7 +113,12 @@ class Printer:
         if self.icon == len(constants.ICONS):
             self.icon = 0
 
-        for prefix, line in self.last_output:
+        return self.last_output
+
+    def interactive_print(self, outputs: ProcessGroupOutput, tail: bool = True) -> None:
+        output = self.generate_output(outputs, tail)
+
+        for prefix, line in output:
             columns = constants.COLUMNS() - len(self.prefix if prefix else "")
             if tail and get_num_lines(line, columns) > 1:
                 line = truncate_line(line, columns)
@@ -209,3 +187,31 @@ class Printer:
             output += f" {self.colours.dim_on}({format_time_taken(elapsed)}){self.colours.dim_off}"
 
         return output
+
+
+def get_num_lines(line: str, columns: int | None = None) -> int:
+    lines = 0
+    columns = columns or constants.COLUMNS()
+    line = constants.ANSI_ESCAPE.sub("", line)
+    length = len(line)
+    line_lines = 1
+    if length > columns:
+        line_lines = length // columns
+        remainder = length % columns
+        if remainder:
+            line_lines += 1
+    lines += 1 * line_lines
+    return lines
+
+
+def truncate_line(line: str, columns: int | None = None) -> str:
+    columns = columns or constants.COLUMNS()
+    escaped_line = constants.ANSI_ESCAPE.sub("", line)
+    return "".join(escaped_line[:columns]) + "..."
+
+
+def format_time_taken(time_taken: float) -> str:
+    time_taken = round(time_taken, 1)
+    seconds = time_taken % (24 * 3600)
+
+    return f"{seconds}s"

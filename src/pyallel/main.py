@@ -107,7 +107,7 @@ def run(*args: str) -> int:
         return 2
 
     colours = Colours.from_colour(parsed_args.colour)
-    printer = Printer(colours, timer=parsed_args.timer, debug=False)
+    printer = Printer(colours, timer=parsed_args.timer)
 
     interactive = True
     if not parsed_args.interactive:
