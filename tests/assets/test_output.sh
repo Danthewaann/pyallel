@@ -12,10 +12,10 @@ echo "long line"
 echo -n "this line contains..."
 sleep 1
 echo "some delayed output"
-# sleep 1
-# for i in {1..25}; do
-# 	echo "line $i"
-# 	sleep 0.1
-# done
-# sleep 1
-# echo "bye!"
+sleep 1
+for i in {1..25}; do
+	echo "line $i"
+	sleep 0.1
+done
+sleep 1
+echo "bye!"
