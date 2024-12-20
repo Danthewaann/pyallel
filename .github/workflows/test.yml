@@ -37,7 +37,7 @@ jobs:
 
       - name: Install pyallel
         run: |
-          pip install pyallel==0.18.2
+          pip install pyallel==1.2.8
 
       - name: Install dev dependencies
         run: |
@@ -45,4 +45,4 @@ jobs:
 
       - name: Run pyallel
         run: |
-          PYTHONPATH=./src pyallel "MYPY_FORCE_COLOR=1 mypy ." "pytest ." --colour yes
+          PYTHONPATH=./src pyallel "MYPY_FORCE_COLOR=1 mypy ." "pytest --color=yes -s ." --colour yes
