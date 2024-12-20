@@ -8,11 +8,13 @@ from typing import BinaryIO
 
 
 class ProcessOutput:
-    def __init__(self, id: int, process: Process, data: str = "") -> None:
+    def __init__(
+        self, id: int, process: Process, data: str = "", lines: int = 0
+    ) -> None:
         self.id = id
         self.data = data
         self.process = process
-        self.lines = -1
+        self.lines = lines
 
     def merge(self, other: ProcessOutput) -> None:
         self.data += other.data
@@ -70,4 +72,3 @@ class Process:
 
     def wait(self) -> int:
         return self._process.wait()
-

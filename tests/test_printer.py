@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from typing import Any
 import pytest
 from pyallel.colours import Colours
 from pyallel.printer import Printer, get_num_lines, set_process_lines
@@ -52,13 +55,7 @@ def test_get_num_lines_ignores_ansi_chars(chars: str) -> None:
 def test_set_process_lines() -> None:
     output = ProcessGroupOutput(
         id=1,
-        processes=[
-            ProcessOutput(
-                id=1,
-                process=Process(1, "echo first; echo second"),
-                data="first\nsecond\n",
-            )
-        ],
+        processes=[ProcessOutput(id=1, process=Process(1, "echo first; echo second"))],
     )
 
     set_process_lines(output, lines=58)
@@ -66,42 +63,110 @@ def test_set_process_lines() -> None:
     assert output.processes[0].lines == 58
 
 
-def test_printer_generate_process_output() -> None:
+@pytest.mark.parametrize(
+    "lines,expected_lines1,expected_lines2,expected_lines3",
+    (
+        (59, 19, 19, 21),
+        (50, 16, 16, 18),
+        (31, 10, 10, 11),
+    ),
+)
+def test_set_process_lines_many_processes(
+    lines: int, expected_lines1: int, expected_lines2: int, expected_lines3: int
+) -> None:
+    output = ProcessGroupOutput(
+        id=1,
+        processes=[
+            ProcessOutput(id=1, process=Process(1, "echo first; echo second")),
+            ProcessOutput(id=2, process=Process(2, "echo first; echo second")),
+            ProcessOutput(id=3, process=Process(3, "echo first; echo second")),
+        ],
+    )
+
+    set_process_lines(output, lines=lines)
+
+    assert output.processes[0].lines == expected_lines1
+    assert output.processes[1].lines == expected_lines2
+    assert output.processes[2].lines == expected_lines3
+
+
+def test_set_process_lines_many_more_processes() -> None:
+    output = ProcessGroupOutput(
+        id=1,
+        processes=[
+            ProcessOutput(id=i, process=Process(i, "echo first; echo second"))
+            for i in range(1, 60)
+        ],
+    )
+
+    set_process_lines(output, lines=59)
+
+    for i in range(59):
+        assert output.processes[i].lines == 1, f"process index {i}"
+
+
+@pytest.mark.parametrize(
+    "kwargs,lines,expected",
+    (
+        (
+            {},
+            0,
+            [
+                (False, "[echo first; echo second] done ✔", "\n"),
+                (True, "first", "\n"),
+                (True, "second", "\n"),
+            ],
+        ),
+        ({"tail_output": True}, 0, []),
+        ({"tail_output": True}, 1, [(False, "[echo first; echo second] done ✔", "\n")]),
+        (
+            {"tail_output": True},
+            3,
+            [
+                (False, "[echo first; echo second] done ✔", "\n"),
+                (True, "first", "\n"),
+                (True, "second", "\n"),
+            ],
+        ),
+    ),
+)
+def test_printer_generate_process_output(
+    kwargs: dict[str, Any], lines: int, expected: list[tuple[bool, str, str]]
+) -> None:
     printer = Printer(colours=Colours.from_colour("no"))
     process = Process(1, "echo first; echo second")
     process.run()
     process.wait()
 
     output = printer.generate_process_output(
-        ProcessOutput(
-            id=1,
-            process=process,
-            data="first\nsecond\n",
-        )
+        ProcessOutput(id=1, process=process, data="first\nsecond\n", lines=lines),
+        **kwargs,
     )
 
-    assert output == [
-        (False, "[echo first; echo second] done ✔", "\n"),
-        (True, "first", "\n"),
-        (True, "second", "\n"),
-    ]
+    assert output == expected
 
 
-def test_printer_generate_process_output_status() -> None:
+@pytest.mark.parametrize(
+    "kwargs,expected",
+    (
+        ({}, "[echo first; echo second] done ✔"),
+        ({"include_progress": False}, "[echo first; echo second] running... "),
+        ({"include_timer": True}, "[echo first; echo second] done ✔ (0.0s)"),
+    ),
+)
+def test_printer_generate_process_output_status(
+    kwargs: dict[str, Any], expected: str
+) -> None:
     printer = Printer(colours=Colours.from_colour("no"))
     process = Process(1, "echo first; echo second")
     process.run()
     process.wait()
 
     output = printer.generate_process_output_status(
-        ProcessOutput(
-            id=1,
-            process=process,
-            data="first\nsecond\n",
-        )
+        ProcessOutput(id=1, process=process, data="first\nsecond\n"), **kwargs
     )
 
-    assert output == "[echo first; echo second] done ✔"
+    assert output == expected
 
 
 def test_printer_generate_process_group_output() -> None:
@@ -117,16 +182,8 @@ def test_printer_generate_process_group_output() -> None:
         ProcessGroupOutput(
             id=1,
             processes=[
-                ProcessOutput(
-                    id=1,
-                    process=process1,
-                    data="first\nsecond\n",
-                ),
-                ProcessOutput(
-                    id=2,
-                    process=process2,
-                    data="third\nfourth\n",
-                ),
+                ProcessOutput(id=1, process=process1, data="first\nsecond\n"),
+                ProcessOutput(id=2, process=process2, data="third\nfourth\n"),
             ],
         ),
     )

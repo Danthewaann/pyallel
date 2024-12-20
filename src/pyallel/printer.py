@@ -70,6 +70,9 @@ class Printer:
         out: list[tuple[bool, str, str]] = []
         line_parts: tuple[bool, str, str]
 
+        if tail_output and output.lines == 0:
+            return out
+
         if include_cmd:
             status = self.generate_process_output_status(
                 output, include_progress, include_timer
@@ -83,7 +86,10 @@ class Printer:
 
             if tail_output:
                 output_lines = output.lines - 1
-                lines = lines[-output_lines:]
+                if output_lines == 0:
+                    lines = []
+                else:
+                    lines = lines[-output_lines:]
 
             for line in lines:
                 prefix = True
