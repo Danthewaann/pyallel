@@ -30,7 +30,8 @@ def test_from_command_with_lines_modifier(value: str, expected: float) -> None:
 @pytest.mark.parametrize("value", ["invalid", "0", "-1", "110", ""])
 def test_from_command_with_invalid_lines_modifier(value: str) -> None:
     with pytest.raises(
-        InvalidLinesModifierError, match="lines modifier must be a number between 1 and 100"
+        InvalidLinesModifierError,
+        match="lines modifier must be a number between 1 and 100",
     ):
         Process.from_command(1, f"lines={value} :: sleep 0.1")
 

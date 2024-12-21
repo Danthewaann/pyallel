@@ -72,7 +72,7 @@ class ProcessGroup:
             percentage_lines_sum += process.percentage_lines
             processes.append(process)
 
-        if percentage_lines_sum > 1.0:
+        if round(percentage_lines_sum, 2) > 1.0:
             raise InvalidLinesModifierError(
                 "lines modifier must not exceed 100 across all processes within each process group"
             )

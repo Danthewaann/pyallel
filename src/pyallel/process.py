@@ -82,7 +82,7 @@ class Process:
 
         args, *parts = cmd
 
-        percentage_lines = 0.0
+        percentage_lines = 0
         for arg in args.split(" "):
             try:
                 arg, value = args.split("=")
@@ -91,17 +91,17 @@ class Process:
 
             if arg == "lines":
                 try:
-                    percentage_lines = int(value) / 100
+                    percentage_lines = int(value)
                 except ValueError:
                     raise InvalidLinesModifierError(
                         "lines modifier must be a number between 1 and 100"
                     )
 
-                if not 0.0 < percentage_lines <= 1.0:
+                if not 0 < percentage_lines <= 100:
                     raise InvalidLinesModifierError(
                         "lines modifier must be a number between 1 and 100"
                     )
 
                 break
 
-        return cls(id, " ".join(parts), percentage_lines)
+        return cls(id, " ".join(parts), round(percentage_lines / 100, 2))
