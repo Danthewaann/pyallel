@@ -35,7 +35,7 @@ def run_interactive(
             if poll > 0:
                 return poll
 
-            printer.clear()
+            printer.reset()
             process_group_manager.run()
             if not process_group_manager.next():
                 return 0

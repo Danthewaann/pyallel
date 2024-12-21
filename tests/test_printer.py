@@ -107,7 +107,14 @@ def test_set_process_lines_shares_lines_across_many_more_processes() -> None:
     "lines,lines1,lines2,lines3,expected_lines1,expected_lines2,expected_lines3",
     (
         pytest.param(
-            59, 0.4, 0.2, 0.2, 23, 11, 11, id="59 lines shared between 3 processes"
+            59,
+            0.4,
+            0.2,
+            0.2,
+            37,
+            11,
+            11,
+            id="59 lines shared between 3 processes with remainder given to process with most lines",
         ),
         pytest.param(
             59,
@@ -117,10 +124,11 @@ def test_set_process_lines_shares_lines_across_many_more_processes() -> None:
             23,
             11,
             25,
-            id="59 lines shared between 3 processes with remainder",
+            id="59 lines shared between 3 processes with remainder given to last process",
         ),
+        pytest.param(59, 1.0, 0.0, 0.0, 59, 0, 0, id="59 lines given to first process"),
         pytest.param(
-            59, 1.0, 0.0, 0.0, 59, 0, 0, id="59 lines given to first process"
+            59, 0.5, 0.0, 0.0, 29, 15, 15, id="59 lines given to first process"
         ),
     ),
 )

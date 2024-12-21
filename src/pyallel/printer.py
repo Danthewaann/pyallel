@@ -243,9 +243,9 @@ class Printer:
                     end="",
                 )
 
-        self.clear()
+        self.reset()
 
-    def clear(self) -> None:
+    def reset(self) -> None:
         self._printed.clear()
 
 
@@ -260,6 +260,7 @@ def set_process_lines(
 
     # Allocate lines to processes that have a fixed percentage of lines set
     used_lines = 0
+    process_with_most_lines: ProcessOutput | None = None
     other_processes: list[ProcessOutput] = []
     for out in output.processes:
         if not out.process.percentage_lines:
@@ -268,6 +269,12 @@ def set_process_lines(
 
         out.process.lines = int(lines * out.process.percentage_lines)
         used_lines += out.process.lines
+
+        if (
+            process_with_most_lines is None
+            or process_with_most_lines.process.lines < out.process.lines
+        ):
+            process_with_most_lines = out
 
     lines -= used_lines
 
@@ -280,11 +287,18 @@ def set_process_lines(
         for out in other_processes:
             out.process.lines = tail
 
-        # If we have lines left to allocate, we give all of them to the last process
+        # If we have lines left to allocate, we give all of them to the process with the highest 
+        # allocated lines or to the last process
         if remainder:
-            for out in other_processes[-1::-1]:
-                out.process.lines += remainder
-                break
+            if process_with_most_lines:
+                process_with_most_lines.process.lines += remainder
+            else:
+                other_processes[-1].process.lines += remainder
+    else:
+        # Otherwise allocate remaining lines to the process with the highest allocated lines
+        remainder = lines
+        if remainder and process_with_most_lines:
+            process_with_most_lines.process.lines += remainder
 
 
 def get_num_lines(line: str, columns: int | None = None) -> int:
