@@ -21,6 +21,7 @@ class Printer:
         line: str,
         include_prefix: bool = False,
         end: str = "\n",
+        flush: bool = False,
         truncate: bool = False,
     ) -> None:
         truncate_num = 0
@@ -31,7 +32,7 @@ class Printer:
             columns = constants.COLUMNS() - truncate_num
             if get_num_lines(line, columns) > 1:
                 line = truncate_line(line, columns)
-        print(f"{prefix}{line}", end=end, flush=True)
+        print(f"{prefix}{line}", end=end, flush=flush)
 
     def info(self, msg: str) -> None:
         self.write(
@@ -218,6 +219,9 @@ class Printer:
             include_timer,
         ):
             self.write(line, include_prefix, end)
+
+        # Force a flush otherwise lines that don't end in a newline character will not get printed as they are read
+        self.write("", include_prefix=False, end="", flush=True)
 
     def print_progress_group_output(
         self,
