@@ -31,14 +31,27 @@ if you were running the command directly in a shell, some examples are below
      "echo \$SHELL" or "\$(echo mypy .)"  <- expand variables and commands to evaluate (must be escaped)
      "pytest . && mypy . || echo failed!" <- use AND (&&) and OR (||) to run commands conditionally
 
+PROCESS GROUPS
+--------------
 commands can be grouped using the group separator symbol (:::)
 
-     "echo boil kettle" "sleep 1" ::: "echo make coffee"
+     %(prog)s "echo boil kettle" "sleep 1" ::: "echo make coffee"
 
 the above will print "boil kettle" and sleep for 1 second first before printing "make coffee"
 
 command groups are ran in the sequence you provide them, and if a command group fails
 (if a command fails inside the command group) the rest of the command groups in the sequence are not run
+
+COMMAND MODIFIERS
+-----------------
+modifiers can be set for commands to augment their behaviour using the command modifier symbol (::)
+
+lines (only used in interactive mode):
+    the lines modifier allows you to specify how many lines the command output can take up on the screen
+        
+        %(prog)s "lines=90 :: echo running long command..." "echo running other command..."
+
+    90 is expressed as a percentage value, which must be between 1 and 100 inclusive
 """
 
 
