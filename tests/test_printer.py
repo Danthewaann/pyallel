@@ -11,20 +11,18 @@ from pyallel.process_group import ProcessGroupOutput
 @pytest.mark.parametrize(
     "output,columns,expected",
     (
-        (
-            "Hello Mr Anderson",
-            20,
-            1,
-        ),
-        (
+        pytest.param("Hello Mr Anderson", 20, 1, id="output fits within 20 columns"),
+        pytest.param(
             "Hello Mr Anderson\nIt is inevitable",
             20,
             2,
+            id="output wraps over 2 lines with 20 columns",
         ),
-        (
+        pytest.param(
             "Hello Mr Anderson\nIt is inevitable\nHAHAHAHAH",
             20,
             3,
+            id="output wraps over 3 lines with 20 columns",
         ),
     ),
 )
@@ -60,18 +58,18 @@ def test_set_process_lines() -> None:
 
     set_process_lines(output, lines=58)
 
-    assert output.processes[0].lines == 58
+    assert output.processes[0].process.lines == 58
 
 
 @pytest.mark.parametrize(
     "lines,expected_lines1,expected_lines2,expected_lines3",
     (
-        (59, 19, 19, 21),
-        (50, 16, 16, 18),
-        (31, 10, 10, 11),
+        pytest.param(59, 19, 19, 21, id="59 lines shared between 3 processes"),
+        pytest.param(50, 16, 16, 18, id="50 lines shared between 3 processes"),
+        pytest.param(31, 10, 10, 11, id="31 lines shared between 3 processes"),
     ),
 )
-def test_set_process_lines_many_processes(
+def test_set_process_lines_shares_lines_across_processes(
     lines: int, expected_lines1: int, expected_lines2: int, expected_lines3: int
 ) -> None:
     output = ProcessGroupOutput(
@@ -85,12 +83,12 @@ def test_set_process_lines_many_processes(
 
     set_process_lines(output, lines=lines)
 
-    assert output.processes[0].lines == expected_lines1
-    assert output.processes[1].lines == expected_lines2
-    assert output.processes[2].lines == expected_lines3
+    assert output.processes[0].process.lines == expected_lines1
+    assert output.processes[1].process.lines == expected_lines2
+    assert output.processes[2].process.lines == expected_lines3
 
 
-def test_set_process_lines_many_more_processes() -> None:
+def test_set_process_lines_shares_lines_across_many_more_processes() -> None:
     output = ProcessGroupOutput(
         id=1,
         processes=[
@@ -102,13 +100,59 @@ def test_set_process_lines_many_more_processes() -> None:
     set_process_lines(output, lines=59)
 
     for i in range(59):
-        assert output.processes[i].lines == 1, f"process index {i}"
+        assert output.processes[i].process.lines == 1, f"process index {i}"
+
+
+@pytest.mark.parametrize(
+    "lines,lines1,lines2,lines3,expected_lines1,expected_lines2,expected_lines3",
+    (
+        pytest.param(
+            59, 0.4, 0.2, 0.2, 23, 11, 11, id="59 lines shared between 3 processes"
+        ),
+        pytest.param(
+            59,
+            0.4,
+            0.2,
+            0.0,
+            23,
+            11,
+            25,
+            id="59 lines shared between 3 processes with remainder",
+        ),
+        pytest.param(
+            59, 1.0, 0.0, 0.0, 59, 0, 0, id="59 lines given to first process"
+        ),
+    ),
+)
+def test_set_process_lines_with_fixed_and_dynamic_lines(
+    lines: int,
+    lines1: float,
+    lines2: float,
+    lines3: float,
+    expected_lines1: int,
+    expected_lines2: int,
+    expected_lines3: int,
+) -> None:
+    output = ProcessGroupOutput(
+        id=1,
+        processes=[
+            ProcessOutput(id=1, process=Process(1, "echo first; echo second", lines1)),
+            ProcessOutput(id=2, process=Process(2, "echo first; echo second", lines2)),
+            ProcessOutput(id=3, process=Process(3, "echo first; echo second", lines3)),
+        ],
+    )
+
+    set_process_lines(output, lines=lines)
+
+    assert output.processes[0].process.lines == expected_lines1
+    assert output.processes[1].process.lines == expected_lines2
+    assert output.processes[2].process.lines == expected_lines3
 
 
 @pytest.mark.parametrize(
     "kwargs,lines,expected",
     (
-        (
+        pytest.param(
             {},
             0,
             [
@@ -116,10 +160,21 @@ def test_set_process_lines_many_more_processes() -> None:
                 (True, "first", "\n"),
                 (True, "second", "\n"),
             ],
+            id="no flags and no lines yields all output",
         ),
-        ({"tail_output": True}, 0, []),
-        ({"tail_output": True}, 1, [(False, "[echo first; echo second] done ✔", "\n")]),
-        (
+        pytest.param(
+            {"tail_output": True},
+            0,
+            [],
+            id="tail output with no lines",
+        ),
+        pytest.param(
+            {"tail_output": True},
+            1,
+            [(False, "[echo first; echo second] done ✔", "\n")],
+            id="tail output with 1 line yields only command status line",
+        ),
+        pytest.param(
             {"tail_output": True},
             3,
             [
@@ -127,6 +182,7 @@ def test_set_process_lines_many_more_processes() -> None:
                 (True, "first", "\n"),
                 (True, "second", "\n"),
             ],
+            id="tail output with 3 lines yields command status line plus 2 output lines",
         ),
     ),
 )
@@ -135,11 +191,12 @@ def test_printer_generate_process_output(
 ) -> None:
     printer = Printer(colours=Colours.from_colour("no"))
     process = Process(1, "echo first; echo second")
+    process.lines = lines
     process.run()
     process.wait()
 
     output = printer.generate_process_output(
-        ProcessOutput(id=1, process=process, data="first\nsecond\n", lines=lines),
+        ProcessOutput(id=1, process=process, data="first\nsecond\n"),
         **kwargs,
     )
 
@@ -149,9 +206,21 @@ def test_printer_generate_process_output(
 @pytest.mark.parametrize(
     "kwargs,expected",
     (
-        ({}, "[echo first; echo second] done ✔"),
-        ({"include_progress": False}, "[echo first; echo second] running... "),
-        ({"include_timer": True}, "[echo first; echo second] done ✔ (0.0s)"),
+        pytest.param(
+            {},
+            "[echo first; echo second] done ✔",
+            id="no flags yields done command status",
+        ),
+        pytest.param(
+            {"include_progress": False},
+            "[echo first; echo second] running... ",
+            id="don't include progress yields running status",
+        ),
+        pytest.param(
+            {"include_timer": True},
+            "[echo first; echo second] done ✔ (0.0s)",
+            id="include timer yields timer",
+        ),
     ),
 )
 def test_printer_generate_process_output_status(

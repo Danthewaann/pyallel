@@ -70,7 +70,7 @@ class Printer:
         out: list[tuple[bool, str, str]] = []
         line_parts: tuple[bool, str, str]
 
-        if tail_output and output.lines == 0:
+        if tail_output and output.process.lines == 0:
             return out
 
         if include_cmd:
@@ -85,7 +85,7 @@ class Printer:
             lines = output.data.splitlines(keepends=True)
 
             if tail_output:
-                output_lines = output.lines - 1
+                output_lines = output.process.lines - 1
                 if output_lines == 0:
                     lines = []
                 else:
@@ -248,20 +248,39 @@ class Printer:
 def set_process_lines(
     output: ProcessGroupOutput,
     interrupt_count: int = 0,
-    lines: int | None = None,
+    lines: int = 0,
 ) -> None:
     lines = lines or constants.LINES() - 1
     if interrupt_count:
         lines -= 2
 
-    num_processes = len(output.processes)
-    remainder = lines % num_processes
-    tail = lines // num_processes
-
+    # Allocate lines to processes that have a fixed percentage of lines set
+    used_lines = 0
+    other_processes: list[ProcessOutput] = []
     for out in output.processes:
-        out.lines = tail
-    if remainder:
-        output.processes[-1].lines += remainder
+        if not out.process.percentage_lines:
+            other_processes.append(out)
+            continue
+
+        out.process.lines = int(lines * out.process.percentage_lines)
+        used_lines += out.process.lines
+
+    lines -= used_lines
+
+    # Allocate the rest of the available lines to the other processes that don't have fixed lines set
+    num_dynamic_processes = len(other_processes)
+    if num_dynamic_processes:
+        remainder = lines % num_dynamic_processes
+        tail = lines // num_dynamic_processes
+
+        for out in other_processes:
+            out.process.lines = tail
+
+        # If we have lines left to allocate, we give all of them to the last process
+        if remainder:
+            for out in other_processes[-1::-1]:
+                out.process.lines += remainder
+                break
 
 
 def get_num_lines(line: str, columns: int | None = None) -> int:

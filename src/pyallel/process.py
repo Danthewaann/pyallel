@@ -6,26 +6,27 @@ import tempfile
 import time
 from typing import BinaryIO
 
+from pyallel.errors import InvalidLinesModifierError
+
 
 class ProcessOutput:
-    def __init__(
-        self, id: int, process: Process, data: str = "", lines: int = 0
-    ) -> None:
+    def __init__(self, id: int, process: Process, data: str = "") -> None:
         self.id = id
         self.data = data
         self.process = process
-        self.lines = lines
 
     def merge(self, other: ProcessOutput) -> None:
         self.data += other.data
 
 
 class Process:
-    def __init__(self, id: int, command: str) -> None:
+    def __init__(self, id: int, command: str, percentage_lines: float = 0.0) -> None:
         self.id = id
         self.command = command
         self.start = 0.0
         self.end = 0.0
+        self.lines = 0
+        self.percentage_lines = percentage_lines
         self._fd: BinaryIO
         self._process: subprocess.Popen[bytes]
 
@@ -72,3 +73,35 @@ class Process:
 
     def wait(self) -> int:
         return self._process.wait()
+
+    @classmethod
+    def from_command(cls, id: int, command: str) -> Process:
+        cmd = command.split(" :: ", maxsplit=1)
+        if len(cmd) == 1:
+            return cls(id, cmd[0])
+
+        args, *parts = cmd
+
+        percentage_lines = 0.0
+        for arg in args.split(" "):
+            try:
+                arg, value = args.split("=")
+            except ValueError:
+                continue
+
+            if arg == "lines":
+                try:
+                    percentage_lines = int(value) / 100
+                except ValueError:
+                    raise InvalidLinesModifierError(
+                        "lines modifier must be a number between 1 and 100"
+                    )
+
+                if not 0.0 < percentage_lines <= 1.0:
+                    raise InvalidLinesModifierError(
+                        "lines modifier must be a number between 1 and 100"
+                    )
+
+                break
+
+        return cls(id, " ".join(parts), percentage_lines)

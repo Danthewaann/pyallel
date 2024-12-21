@@ -88,6 +88,44 @@ class TestInteractiveMode:
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
+    def test_run_with_lines_modifier(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run("lines=50 :: echo hi")
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+
+    @pytest.mark.parametrize("value", ["110", "-1", "0", "invalid", ""])
+    def test_run_with_lines_modifier_invalid_value(
+        self, capsys: CaptureFixture[str], value: str
+    ) -> None:
+        exit_code = main.run(
+            f"lines={value} :: echo hi",
+            f"lines={value} :: echo bye",
+            "--colour",
+            "no",
+        )
+        captured = capsys.readouterr()
+        assert exit_code == 1, prettify_error(captured.out)
+        assert captured.out.splitlines(keepends=True) == (
+            [
+                "Error: lines modifier must be a number between 1 and 100\n",
+            ]
+        )
+
+    def test_run_with_lines_modifier_exceeds_100(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run(
+            "lines=60 :: echo hi",
+            "lines=80 :: echo bye",
+            "--colour",
+            "no",
+        )
+        captured = capsys.readouterr()
+        assert exit_code == 1, prettify_error(captured.out)
+        assert captured.out.splitlines(keepends=True) == (
+            [
+                "Error: lines modifier must not exceed 100 across all processes within each process group\n",
+            ]
+        )
+
     @pytest.mark.parametrize(
         "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
     )
@@ -174,7 +212,9 @@ class TestNonInteractiveMode:
         )
 
     def test_run_multiple_commands(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.run("sleep 0.1; echo first", "echo hi", "-n", "-t", "--colour", "no")
+        exit_code = main.run(
+            "sleep 0.1; echo first", "echo hi", "-n", "-t", "--colour", "no"
+        )
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
@@ -229,7 +269,9 @@ class TestNonInteractiveMode:
     def test_run_mulitiple_dependant_commands(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.run("echo first", ":::", "echo hi", "-n", "-t", "--colour", "no")
+        exit_code = main.run(
+            "echo first", ":::", "echo hi", "-n", "-t", "--colour", "no"
+        )
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
@@ -280,6 +322,57 @@ class TestNonInteractiveMode:
             is not None
         ), prettify_error(captured.out)
 
+    def test_run_with_lines_modifier(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run("lines=50 :: echo hi", "-n", "-t", "--colour", "no")
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        assert captured.out.splitlines(keepends=True) == (
+            [
+                "[echo hi] running... \n",
+                f"{PREFIX}hi\n",
+                "[echo hi] done ✔\n",
+                "\n",
+                "Done!\n",
+            ]
+        )
+
+    @pytest.mark.parametrize("value", ["110", "-1", "0", "invalid", ""])
+    def test_run_with_lines_modifier_invalid_value(
+        self, capsys: CaptureFixture[str], value: str
+    ) -> None:
+        exit_code = main.run(
+            f"lines={value} :: echo hi",
+            f"lines={value} :: echo bye",
+            "-n",
+            "-t",
+            "--colour",
+            "no",
+        )
+        captured = capsys.readouterr()
+        assert exit_code == 1, prettify_error(captured.out)
+        assert captured.out.splitlines(keepends=True) == (
+            [
+                "Error: lines modifier must be a number between 1 and 100\n",
+            ]
+        )
+
+    def test_run_with_lines_modifier_exceeds_100(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.run(
+            "lines=60 :: echo hi",
+            "lines=80 :: echo bye",
+            "-n",
+            "-t",
+            "--colour",
+            "no",
+        )
+        captured = capsys.readouterr()
+        assert exit_code == 1, prettify_error(captured.out)
+        assert captured.out.splitlines(keepends=True) == (
+            [
+                "Error: lines modifier must not exceed 100 across all processes within each process group\n",
+            ]
+        )
+
     def test_run_with_longer_first_command(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.run("sleep 1", "echo hi", "-n", "--colour", "no")
         captured = capsys.readouterr()
@@ -306,7 +399,9 @@ class TestNonInteractiveMode:
     def test_handles_single_command_output_with_delayed_newlines(
         self, capsys: CaptureFixture[str], wait: str
     ) -> None:
-        exit_code = main.run(f"printf hi; sleep {wait}; echo bye", "-n", "-t", "--colour", "no")
+        exit_code = main.run(
+            f"printf hi; sleep {wait}; echo bye", "-n", "-t", "--colour", "no"
+        )
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
@@ -327,8 +422,8 @@ class TestNonInteractiveMode:
             f"printf hi; sleep {wait}; echo bye",
             f"printf hi; sleep {wait}; echo bye",
             "-n",
-            "-t", 
-            "--colour", 
+            "-t",
+            "--colour",
             "no",
         )
         captured = capsys.readouterr()
@@ -356,7 +451,7 @@ class TestNonInteractiveMode:
                 "./tests/assets/test_handle_multiple_signals.sh",
                 "-n",
                 "-t",
-                "--colour", 
+                "--colour",
                 "no",
             ],
             env=os.environ.copy(),
@@ -385,7 +480,7 @@ class TestNonInteractiveMode:
                 "./tests/assets/test_handle_multiple_signals.sh",
                 "-n",
                 "-t",
-                "--colour", 
+                "--colour",
                 "no",
             ],
             env=os.environ.copy(),

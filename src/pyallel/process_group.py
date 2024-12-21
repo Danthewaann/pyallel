@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from pyallel.errors import InvalidExecutableError, InvalidExecutableErrors
+from pyallel.errors import (
+    InvalidLinesModifierError,
+)
 from pyallel.process import Process, ProcessOutput
 
 
@@ -63,16 +65,17 @@ class ProcessGroup:
     @classmethod
     def from_commands(cls, id: int, process_id: int, *commands: str) -> ProcessGroup:
         processes: list[Process] = []
-        errors: list[InvalidExecutableError] = []
 
+        percentage_lines_sum = 0.0
         for i, command in enumerate(commands):
-            try:
-                processes.append(Process(i + process_id, command))
-            except InvalidExecutableError as e:
-                errors.append(e)
+            process = Process.from_command(i + process_id, command)
+            percentage_lines_sum += process.percentage_lines
+            processes.append(process)
 
-        if errors:
-            raise InvalidExecutableErrors(*errors)
+        if percentage_lines_sum > 1.0:
+            raise InvalidLinesModifierError(
+                "lines modifier must not exceed 100 across all processes within each process group"
+            )
 
         process_group = cls(id=id, processes=processes)
 

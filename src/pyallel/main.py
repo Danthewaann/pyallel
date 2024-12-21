@@ -7,7 +7,7 @@ import time
 
 from pyallel import constants
 from pyallel.colours import Colours
-from pyallel.errors import InvalidExecutableErrors
+from pyallel.errors import InvalidLinesModifierError
 from pyallel.parser import Arguments, create_parser
 from pyallel.printer import Printer
 from pyallel.process_group_manager import ProcessGroupManager
@@ -111,7 +111,7 @@ def run(*args: str) -> int:
             exit_code = run_interactive(process_group_manager, printer)
         else:
             exit_code = run_non_interactive(process_group_manager, printer)
-    except InvalidExecutableErrors as e:
+    except InvalidLinesModifierError as e:
         exit_code = 1
         message = str(e)
     except Exception:
