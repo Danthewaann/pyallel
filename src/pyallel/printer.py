@@ -259,46 +259,52 @@ def set_process_lines(
         lines -= 2
 
     # Allocate lines to processes that have a fixed percentage of lines set
+    allocated_process_lines = lines // len(output.processes)
+    processes_with_dynamic_lines: list[ProcessOutput] = []
     used_lines = 0
-    process_with_most_lines: ProcessOutput | None = None
-    other_processes: list[ProcessOutput] = []
-    for out in output.processes:
-        if not out.process.percentage_lines:
-            other_processes.append(out)
+    for process_output in output.processes:
+        # This process output doesn't have percentage_lines set, so skip it
+        if not process_output.process.percentage_lines:
+            processes_with_dynamic_lines.append(process_output)
             continue
 
-        out.process.lines = int(lines * out.process.percentage_lines)
-        used_lines += out.process.lines
+        process_output.process.lines = int(
+            lines * process_output.process.percentage_lines
+        )
+        used_lines += process_output.process.lines
 
-        if (
-            process_with_most_lines is None
-            or process_with_most_lines.process.lines < out.process.lines
-        ):
-            process_with_most_lines = out
-
+    # Remove the used lines from the total available lines
     lines -= used_lines
 
-    # Allocate the rest of the available lines to the other processes that don't have fixed lines set
-    num_dynamic_processes = len(other_processes)
-    if num_dynamic_processes:
-        remainder = lines % num_dynamic_processes
-        tail = lines // num_dynamic_processes
+    while lines:
+        # Calculate how many lines each process should have based on how many processes and lines are left
+        num_processes = len(processes_with_dynamic_lines) or 1
+        allocated_process_lines = lines // num_processes
+        processes_with_excess_output: list[ProcessOutput] = []
+        recalculate_lines = False
+        for process_output in processes_with_dynamic_lines:
+            # If the number of lines in this process output is less than how many terminal lines we would allocate it,
+            # Set it's allocated terminal lines to the exact number of lines in its output and remove this number from
+            # the total available terminal lines
+            if process_output.lines < allocated_process_lines:
+                process_output.process.lines = process_output.lines
+                lines -= process_output.process.lines
+                recalculate_lines = True
+                continue
 
-        for out in other_processes:
-            out.process.lines = tail
+            processes_with_excess_output.append(process_output)
 
-        # If we have lines left to allocate, we give all of them to the process with the highest 
-        # allocated lines or to the last process
-        if remainder:
-            if process_with_most_lines:
-                process_with_most_lines.process.lines += remainder
-            else:
-                other_processes[-1].process.lines += remainder
-    else:
-        # Otherwise allocate remaining lines to the process with the highest allocated lines
-        remainder = lines
-        if remainder and process_with_most_lines:
-            process_with_most_lines.process.lines += remainder
+        # We need to re-calcuate how many terminal lines we can allocate to each process if the output of at least one process
+        # contains less lines than what we would normally allocate it. This is done so we can allocate these extra lines to the
+        # other processes that contain more lines of output.
+        if recalculate_lines:
+            processes_with_dynamic_lines = processes_with_excess_output
+        else:
+            # All remaining processes exceed the number of terminal lines we will allocate them, so allocate them
+            # their terminal lines as normal and break out of the while loop
+            for process_output in processes_with_excess_output:
+                process_output.process.lines = allocated_process_lines
+            break
 
 
 def get_num_lines(line: str, columns: int | None = None) -> int:
