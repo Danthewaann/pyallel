@@ -53,46 +53,58 @@ def test_get_num_lines_ignores_ansi_chars(chars: str) -> None:
 def test_set_process_lines() -> None:
     output = ProcessGroupOutput(
         id=1,
-        processes=[ProcessOutput(id=1, process=Process(1, "echo first; echo second"))],
+        processes=[
+            ProcessOutput(
+                id=1,
+                process=Process(1, "echo first; echo second"),
+                data="first\nsecond\n",
+            )
+        ],
     )
 
     set_process_lines(output, lines=58)
 
-    assert output.processes[0].process.lines == 58
+    assert output.processes[0].process.lines == 3
 
 
-@pytest.mark.parametrize(
-    "lines,expected_lines1,expected_lines2,expected_lines3",
-    (
-        pytest.param(59, 19, 19, 21, id="59 lines shared between 3 processes"),
-        pytest.param(50, 16, 16, 18, id="50 lines shared between 3 processes"),
-        pytest.param(31, 10, 10, 11, id="31 lines shared between 3 processes"),
-    ),
-)
-def test_set_process_lines_shares_lines_across_processes(
-    lines: int, expected_lines1: int, expected_lines2: int, expected_lines3: int
-) -> None:
+def test_set_process_lines_shares_lines_across_processes() -> None:
     output = ProcessGroupOutput(
         id=1,
         processes=[
-            ProcessOutput(id=1, process=Process(1, "echo first; echo second")),
-            ProcessOutput(id=2, process=Process(2, "echo first; echo second")),
-            ProcessOutput(id=3, process=Process(3, "echo first; echo second")),
+            ProcessOutput(
+                id=1,
+                process=Process(1, "echo first; echo second"),
+                data="first\nsecond\n",
+            ),
+            ProcessOutput(
+                id=2,
+                process=Process(2, "echo first; echo second"),
+                data="first\nsecond\n",
+            ),
+            ProcessOutput(
+                id=3,
+                process=Process(3, "echo first; echo second"),
+                data="first\nsecond\n",
+            ),
         ],
     )
 
-    set_process_lines(output, lines=lines)
+    set_process_lines(output, lines=59)
 
-    assert output.processes[0].process.lines == expected_lines1
-    assert output.processes[1].process.lines == expected_lines2
-    assert output.processes[2].process.lines == expected_lines3
+    assert output.processes[0].process.lines == 3
+    assert output.processes[1].process.lines == 3
+    assert output.processes[2].process.lines == 3
 
 
 def test_set_process_lines_shares_lines_across_many_more_processes() -> None:
     output = ProcessGroupOutput(
         id=1,
         processes=[
-            ProcessOutput(id=i, process=Process(i, "echo first; echo second"))
+            ProcessOutput(
+                id=i,
+                process=Process(i, "echo first; echo second"),
+                data="first\nsecond\n",
+            )
             for i in range(1, 60)
         ],
     )
@@ -107,29 +119,12 @@ def test_set_process_lines_shares_lines_across_many_more_processes() -> None:
     "lines,lines1,lines2,lines3,expected_lines1,expected_lines2,expected_lines3",
     (
         pytest.param(
-            59,
-            0.4,
-            0.2,
-            0.2,
-            37,
-            11,
-            11,
-            id="59 lines shared between 3 processes with remainder given to process with most lines",
+            59, 0.4, 0.2, 0.2, 23, 11, 11, id="59 lines shared between 3 processes"
         ),
         pytest.param(
-            59,
-            0.4,
-            0.2,
-            0.0,
-            23,
-            11,
-            25,
-            id="59 lines shared between 3 processes with remainder given to last process",
+            59, 1.0, 0.0, 0.0, 59, 0, 0, id="All lines given to first process"
         ),
-        pytest.param(59, 1.0, 0.0, 0.0, 59, 0, 0, id="59 lines given to first process"),
-        pytest.param(
-            59, 0.5, 0.0, 0.0, 29, 15, 15, id="59 lines given to first process"
-        ),
+        pytest.param(59, 0.5, 0.0, 0.0, 29, 3, 3, id="29 lines given to first process"),
     ),
 )
 def test_set_process_lines_with_fixed_and_dynamic_lines(
@@ -144,9 +139,21 @@ def test_set_process_lines_with_fixed_and_dynamic_lines(
     output = ProcessGroupOutput(
         id=1,
         processes=[
-            ProcessOutput(id=1, process=Process(1, "echo first; echo second", lines1)),
-            ProcessOutput(id=2, process=Process(2, "echo first; echo second", lines2)),
-            ProcessOutput(id=3, process=Process(3, "echo first; echo second", lines3)),
+            ProcessOutput(
+                id=1,
+                process=Process(1, "echo first; echo second", lines1),
+                data="first\nsecond\n",
+            ),
+            ProcessOutput(
+                id=2,
+                process=Process(2, "echo first; echo second", lines2),
+                data="first\nsecond\n",
+            ),
+            ProcessOutput(
+                id=3,
+                process=Process(3, "echo first; echo second", lines3),
+                data="first\nsecond\n",
+            ),
         ],
     )
 
