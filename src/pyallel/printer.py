@@ -304,6 +304,23 @@ def set_process_lines(
             # their terminal lines as normal and break out of the while loop
             for process_output in processes_with_excess_output:
                 process_output.process.lines = allocated_process_lines
+                lines -= allocated_process_lines
+
+            # If there is any lines left, allocate them to the process that currently contains the most lines in its output, or
+            # allocate them to the first process if no process contains enough lines
+            if lines:
+                process_with_most_lines: ProcessOutput | None = None
+                most_lines = 0
+                for process_output in output.processes:
+                    if process_output.process.lines > most_lines:
+                        process_with_most_lines = process_output
+                        most_lines = process_output.process.lines
+
+                if not process_with_most_lines:
+                    output.processes[0].process.lines += lines
+                else:
+                    process_with_most_lines.process.lines += lines
+
             break
 
 

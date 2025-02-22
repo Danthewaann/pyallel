@@ -64,7 +64,7 @@ def test_set_process_lines() -> None:
 
     set_process_lines(output, lines=58)
 
-    assert output.processes[0].process.lines == 3
+    assert output.processes[0].process.lines == 58
 
 
 def test_set_process_lines_shares_lines_across_processes() -> None:
@@ -91,7 +91,7 @@ def test_set_process_lines_shares_lines_across_processes() -> None:
 
     set_process_lines(output, lines=59)
 
-    assert output.processes[0].process.lines == 3
+    assert output.processes[0].process.lines == 53
     assert output.processes[1].process.lines == 3
     assert output.processes[2].process.lines == 3
 
@@ -119,12 +119,19 @@ def test_set_process_lines_shares_lines_across_many_more_processes() -> None:
     "lines,lines1,lines2,lines3,expected_lines1,expected_lines2,expected_lines3",
     (
         pytest.param(
-            59, 0.4, 0.2, 0.2, 23, 11, 11, id="59 lines shared between 3 processes"
+            59,
+            0.4,
+            0.2,
+            0.2,
+            37,
+            11,
+            11,
+            id="59 lines shared between 3 processes with the remainder going to the process with the most output",
         ),
         pytest.param(
             59, 1.0, 0.0, 0.0, 59, 0, 0, id="All lines given to first process"
         ),
-        pytest.param(59, 0.5, 0.0, 0.0, 29, 3, 3, id="29 lines given to first process"),
+        pytest.param(59, 0.5, 0.0, 0.0, 53, 3, 3, id="29 lines given to first process"),
     ),
 )
 def test_set_process_lines_with_fixed_and_dynamic_lines(
