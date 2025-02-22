@@ -42,7 +42,7 @@ positional arguments:
                         --------------
                         commands can be grouped using the group separator symbol (:::)
 
-                             %(prog)s "echo boil kettle" "sleep 1" ::: "echo make coffee"
+                             pyallel "echo boil kettle" "sleep 1" ::: "echo make coffee"
 
                         the above will print "boil kettle" and sleep for 1 second first before printing "make coffee"
 
@@ -55,8 +55,8 @@ positional arguments:
 
                         lines (only used in interactive mode):
                             the lines modifier allows you to specify how many lines the command output can take up on the screen
-        
-                                %(prog)s "lines=90 :: echo running long command..." "echo running other command..."
+
+                                pyallel "lines=90 :: echo running long command..." "echo running other command..."
 
                             90 is expressed as a percentage value, which must be between 1 and 100 inclusive
 
