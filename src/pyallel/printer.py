@@ -1,20 +1,30 @@
 from __future__ import annotations
 
 import time
+from typing import Protocol
 
 from pyallel import constants
 from pyallel.colours import Colours
-from pyallel.process import ProcessOutput
+from pyallel.process import Process, ProcessOutput
 from pyallel.process_group import ProcessGroupOutput
+from pyallel.process_group_manager import ProcessGroupManager
 
 
-class Printer:
+class Printer(Protocol):
+    def print(self, process_group_manager: ProcessGroupManager) -> None:
+        """Print output obtained from the provided process group manager.
+
+        Args:
+            process_group_manager: manager to obtain output from
+        """
+
+
+class ConsolePrinter:
     def __init__(self, colours: Colours | None = None, timer: bool = False) -> None:
         self._colours = colours or Colours()
         self._timer = timer
         self._prefix = f"{self._colours.dim_on}=>{self._colours.dim_off} "
         self._icon = 0
-        self._last_printed: list[tuple[bool, str, str]] = []
         self._to_print: list[tuple[bool, str, str]] = []
 
     def write(
@@ -36,30 +46,6 @@ class Printer:
             if get_num_lines(line, columns) > 1:
                 line = truncate_line(line, columns)
         print(f"{prefix}{line}", end=end, flush=flush)
-
-    def info(self, msg: str) -> None:
-        self.write(
-            f"{self._colours.white_bold}{msg}{self._colours.reset_colour}",
-            include_prefix=False,
-        )
-
-    def ok(self, msg: str) -> None:
-        self.write(
-            f"{self._colours.green_bold}{msg}{self._colours.reset_colour}",
-            include_prefix=False,
-        )
-
-    def warn(self, msg: str) -> None:
-        self.write(
-            f"{self._colours.yellow_bold}{msg}{self._colours.reset_colour}",
-            include_prefix=False,
-        )
-
-    def error(self, msg: str) -> None:
-        self.write(
-            f"{self._colours.red_bold}{msg}{self._colours.reset_colour}",
-            include_prefix=False,
-        )
 
     def generate_process_output(
         self,
@@ -204,27 +190,24 @@ class Printer:
 
         return self._to_print
 
-    def print_process_output(
-        self,
-        output: ProcessOutput,
-        tail_output: bool = False,
-        include_cmd: bool = True,
-        include_output: bool = True,
-        include_progress: bool = True,
-        include_timer: bool | None = None,
-    ) -> None:
-        for include_prefix, line, end in self.generate_process_output(
-            output,
-            tail_output,
-            include_cmd,
-            include_output,
-            include_progress,
-            include_timer,
-        ):
-            self.write(line, include_prefix, end)
 
-        # Force a flush otherwise lines that don't end in a newline character will not get printed as they are read
-        print("", end="", flush=True)
+class InteractiveConsolePrinter(ConsolePrinter):
+    def __init__(self, colours: Colours | None = None, timer: bool = False) -> None:
+        super().__init__(colours, timer)
+        self._last_printed: list[tuple[bool, str, str]] = []
+
+    def print(self, process_group_manager: ProcessGroupManager) -> None:
+        output = process_group_manager.get_cur_process_group_output()
+        self.print_progress_group_output(output, process_group_manager._interrupt_count)
+
+        poll = process_group_manager.poll()
+        if poll is not None:
+            self.clear_last_printed_lines()
+            self.reset()
+            self.print_progress_group_output(
+                output, process_group_manager._interrupt_count, tail_output=False
+            )
+            self.reset()
 
     def print_progress_group_output(
         self,
@@ -287,6 +270,53 @@ class Printer:
     def reset(self) -> None:
         self._last_printed.clear()
         self._to_print.clear()
+
+
+class NonInteractiveConsolePrinter(ConsolePrinter):
+    def __init__(self, colours: Colours | None = None, timer: bool = False) -> None:
+        super().__init__(colours, timer)
+        self._current_process: Process | None = None
+
+    def print(self, process_group_manager: ProcessGroupManager) -> None:
+        outputs = process_group_manager.cur_output
+        for pg in outputs.process_group_outputs.values():
+            for output in pg.processes:
+                if self._current_process is None:
+                    self._current_process = output.process
+                    output = process_group_manager.get_process(output.id)
+                    self.print_process_output(
+                        output, include_progress=False, include_timer=False
+                    )
+                elif self._current_process is not output.process:
+                    continue
+                else:
+                    self.print_process_output(output, include_cmd=False)
+
+                if output.process.poll() is not None:
+                    self.print_process_output(output, include_output=False)
+                    self._current_process = None
+
+    def print_process_output(
+        self,
+        output: ProcessOutput,
+        tail_output: bool = False,
+        include_cmd: bool = True,
+        include_output: bool = True,
+        include_progress: bool = True,
+        include_timer: bool | None = None,
+    ) -> None:
+        for include_prefix, line, end in self.generate_process_output(
+            output,
+            tail_output,
+            include_cmd,
+            include_output,
+            include_progress,
+            include_timer,
+        ):
+            self.write(line, include_prefix, end)
+
+        # Force a flush otherwise lines that don't end in a newline character will not get printed as they are read
+        print("", end="", flush=True)
 
 
 def set_process_lines(

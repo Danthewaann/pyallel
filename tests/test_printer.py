@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 import pytest
 from pyallel.colours import Colours
-from pyallel.printer import Printer, get_num_lines, set_process_lines
+from pyallel.printer import ConsolePrinter, get_num_lines, set_process_lines
 from pyallel.process import Process, ProcessOutput
 from pyallel.process_group import ProcessGroupOutput
 
@@ -211,7 +211,7 @@ def test_set_process_lines_with_fixed_and_dynamic_lines(
 def test_printer_generate_process_output(
     kwargs: dict[str, Any], lines: int, expected: list[tuple[bool, str, str]]
 ) -> None:
-    printer = Printer(colours=Colours.from_colour("no"))
+    printer = ConsolePrinter(colours=Colours.from_colour("no"))
     process = Process(1, "echo first; echo second")
     process.lines = lines
     process.run()
@@ -248,7 +248,7 @@ def test_printer_generate_process_output(
 def test_printer_generate_process_output_status(
     kwargs: dict[str, Any], expected: str
 ) -> None:
-    printer = Printer(colours=Colours.from_colour("no"))
+    printer = ConsolePrinter(colours=Colours.from_colour("no"))
     process = Process(1, "echo first; echo second")
     process.run()
     process.wait()
@@ -261,7 +261,7 @@ def test_printer_generate_process_output_status(
 
 
 def test_printer_generate_process_group_output() -> None:
-    printer = Printer(colours=Colours.from_colour("no"))
+    printer = ConsolePrinter(colours=Colours.from_colour("no"))
     process1 = Process(1, "echo first; echo second")
     process2 = Process(1, "echo third; echo fourth")
     process1.run()
