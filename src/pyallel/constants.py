@@ -3,8 +3,11 @@ import shutil
 import sys
 
 IN_TTY = sys.stdout.isatty()
+
+# From: https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
 CLEAR_LINE = "\033[2K"
-UP_LINE = "\033[1F"
+UP_LINE = "\033[1A\r"
+DOWN_LINE = "\033[1B\r"
 ANSI_ESCAPE = re.compile(r"(\x9B|\x1B\[|\x1B\()[0-?]*[ -\/]*[@-~]")
 
 if IN_TTY:
