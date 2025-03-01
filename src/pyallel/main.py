@@ -19,7 +19,6 @@ def run_interactive(
     while True:
         process_group_manager.stream()
 
-        printer.clear_printed_lines()
         output = process_group_manager.get_cur_process_group_output()
         printer.print_progress_group_output(
             output, process_group_manager._interrupt_count
@@ -27,7 +26,8 @@ def run_interactive(
 
         poll = process_group_manager.poll()
         if poll is not None:
-            printer.clear_printed_lines()
+            printer.clear_last_printed_lines()
+            printer.reset()
             printer.print_progress_group_output(
                 output, process_group_manager._interrupt_count, tail_output=False
             )
