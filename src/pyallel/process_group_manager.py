@@ -31,7 +31,7 @@ class ProcessGroupManager:
         self._interrupt_count = 0
         self._cur_process_group: ProcessGroup | None = None
         self._process_groups = process_groups
-        self._output = ProcessGroupManagerOutput(
+        self._all_output = ProcessGroupManagerOutput(
             process_group_outputs={
                 pg.id: ProcessGroupOutput(
                     id=pg.id,
@@ -40,6 +40,7 @@ class ProcessGroupManager:
                 for pg in self._process_groups
             }
         )
+        self.cur_output = ProcessGroupManagerOutput()
 
     def run(self) -> None:
         if self._process_groups:
@@ -62,18 +63,19 @@ class ProcessGroupManager:
             },
         )
 
-        self._output.merge(output)
+        self._all_output.merge(output)
+        self.cur_output = output
 
         return output
 
     def get_cur_process_group_output(self) -> ProcessGroupOutput:
         if self._cur_process_group:
-            return self._output.process_group_outputs[self._cur_process_group.id]
+            return self._all_output.process_group_outputs[self._cur_process_group.id]
 
         raise KeyError("no current process group output")
 
     def get_process(self, id: int) -> ProcessOutput:
-        for pg in self._output.process_group_outputs.values():
+        for pg in self._all_output.process_group_outputs.values():
             for process in pg.processes:
                 if process.id == id:
                     return process
