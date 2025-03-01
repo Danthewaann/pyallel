@@ -132,7 +132,7 @@ python -m venv .venv && \
 - [x] Add support to have commands depend on other commands (some commands must complete
       before a given command can start)
 - [x] Add support to state how many lines a command can use for it's output in interactive mode
-- [ ] Improve printing of output performance by only printing lines that have changed
+- [x] Improve printing of output performance by only printing lines that have changed
 - [ ] Add a debug mode that logs debug information to a log file
 - [ ] Maybe add support to allow the user to provide stdin for commands that request it
       (such as a REPL)
