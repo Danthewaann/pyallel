@@ -235,7 +235,6 @@ class Printer:
         columns = constants.COLUMNS()
         self.generate_process_group_output(output, interrupt_count, tail_output)
 
-        num_lines_to_print = len(self._to_print)
         num_last_printed_lines = len(self._last_printed)
 
         # If we don't have any last printed lines or we don't want to tail the output,
@@ -245,24 +244,21 @@ class Printer:
                 self.write(
                     line, include_prefix, end, truncate=tail_output, columns=columns
                 )
-        # If the number of last printed and newly generated lines are different, we just clear all the
-        # last printed lines and print all the new lines
-        elif num_last_printed_lines != num_lines_to_print:
-            self.clear_last_printed_lines()
-            for include_prefix, line, end in self._to_print:
-                self.write(
-                    line, include_prefix, end, truncate=tail_output, columns=columns
-                )
         else:
-            # Since the number of last lines and new lines are the same, we compare
-            # them and only update what has changed.
+            # Compare the number of last lines and new lines and only update what has changed.
             #
             # Move the cursor up the amount the lines that were last printed so we can start
             # comparing the last printed lines with the new lines that were generated
-            print(f"\033[{num_last_printed_lines}A\r", end="")
+            print(f"\033[{num_last_printed_lines}A", end="")
             for i, line_parts in enumerate(self._to_print):
+                # If this is a completely new line, just print it
+                if i >= num_last_printed_lines:
+                    include_prefix, line, end = line_parts
+                    self.write(
+                        line, include_prefix, end, truncate=tail_output, columns=columns
+                    )
                 # If the current line is not the same as it's newly generated version, we update the line
-                if line_parts[1] != self._last_printed[i][1]:
+                elif line_parts[1] != self._last_printed[i][1]:
                     include_prefix, line, end = line_parts
                     # Clear the current line
                     print(f"{constants.CLEAR_LINE}\r", end="")
