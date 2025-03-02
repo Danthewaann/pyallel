@@ -68,6 +68,11 @@ def run(process_group_manager: ProcessGroupManager, printer: Printer) -> int:
 
         poll = process_group_manager.poll()
         if poll is not None:
+            # If we still have new output to print after the process group manager has completed,
+            # make sure to print it here before continuing
+            if process_group_manager.stream().has_output():
+                printer.print(process_group_manager)
+
             if poll > 0:
                 return poll
 

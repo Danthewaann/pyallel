@@ -293,10 +293,6 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
                     self.print_process_output(output, include_cmd=False)
 
                 if output.process.poll() is not None:
-                    # TODO: There is a possible race condition here were we still might have output
-                    # for this process that we haven't printed yet
-                    # A test in CI failed that caught this:
-                    # https://github.com/Danthewaann/pyallel/actions/runs/13609498848/job/38044879474
                     self.print_process_output(output, include_output=False)
                     self._current_process = None
 

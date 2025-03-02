@@ -24,6 +24,14 @@ class ProcessGroupManagerOutput:
             else:
                 self.process_group_outputs[key] = value
 
+    def has_output(self) -> bool:
+        for pg in self.process_group_outputs.values():
+            for process in pg.processes:
+                if process.data:
+                    return True
+
+        return False
+
 
 class ProcessGroupManager:
     def __init__(self, process_groups: list[ProcessGroup]) -> None:
