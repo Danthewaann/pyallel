@@ -298,18 +298,18 @@ class InteractiveConsolePrinter(ConsolePrinter):
 
     def print(self, process_group_manager: ProcessGroupManager) -> None:
         output = process_group_manager.get_cur_process_group_output()
-        self.print_progress_group_output(output, process_group_manager._interrupt_count)
+        self.print_process_group_output(output, process_group_manager._interrupt_count)
 
         poll = process_group_manager.poll()
         if poll is not None:
             self.clear_last_printed_lines()
             self.reset()
-            self.print_progress_group_output(
+            self.print_process_group_output(
                 output, process_group_manager._interrupt_count, tail_output=False
             )
             self.reset()
 
-    def print_progress_group_output(
+    def print_process_group_output(
         self,
         output: ProcessGroupOutput,
         interrupt_count: int = 0,
@@ -318,6 +318,7 @@ class InteractiveConsolePrinter(ConsolePrinter):
         columns = constants.COLUMNS()
         self.generate_process_group_output(output, interrupt_count, tail_output)
 
+        num_lines_to_print = len(self._to_print)
         num_last_printed_lines = len(self._last_printed)
 
         # If we don't have any last printed lines or we don't want to tail the output,
@@ -333,25 +334,42 @@ class InteractiveConsolePrinter(ConsolePrinter):
             # Move the cursor up the amount the lines that were last printed so we can start
             # comparing the last printed lines with the new lines that were generated
             print(f"\033[{num_last_printed_lines}A", end="")
-            for i, line_parts in enumerate(self._to_print):
-                # If this is a completely new line, just print it
-                if i >= num_last_printed_lines:
-                    include_prefix, line, end = line_parts
-                    self.write(
-                        line, include_prefix, end, truncate=tail_output, columns=columns
-                    )
+            cursor_line = 0
+            for cur_line, line_parts in enumerate(self._last_printed):
                 # If the current line is not the same as it's newly generated version, we update the line
-                elif line_parts[1] != self._last_printed[i][1]:
-                    include_prefix, line, end = line_parts
+                if line_parts[1] != self._to_print[cur_line][1]:
+                    include_prefix, line, end = self._to_print[cur_line]
+                    # Jump to the line that needs to be changed
+                    lines_to_jump = cur_line - cursor_line
+                    if lines_to_jump:
+                        print(f"\033[{lines_to_jump}B\r", end="")
                     # Clear the current line
                     print(f"{constants.CLEAR_LINE}\r", end="")
                     # Write the new line, this will move the cursor to the next line automatically
                     self.write(
                         line, include_prefix, end, truncate=tail_output, columns=columns
                     )
-                else:
-                    # Move on to the next line as this one doesn't need to be updated
-                    print(constants.DOWN_LINE, end="")
+                    # Need to set the cursor_line to be the current line + 1 as the above write
+                    # will move the cursor to the next line
+                    cursor_line = cur_line + 1
+
+            if num_lines_to_print > num_last_printed_lines:
+                # Jump to the start of the new lines that needs to be printed
+                lines_to_jump = num_last_printed_lines - cursor_line
+                if lines_to_jump:
+                    print(f"\033[{lines_to_jump}B\r", end="")
+
+                # Just print the new lines as normal
+                for line_parts in self._to_print[num_last_printed_lines:]:
+                    include_prefix, line, end = line_parts
+                    self.write(
+                        line, include_prefix, end, truncate=tail_output, columns=columns
+                    )
+            else:
+                # Jump to the end of the output
+                lines_to_jump = num_lines_to_print - cursor_line
+                if lines_to_jump:
+                    print(f"\033[{lines_to_jump}B\r", end="")
 
             # Force a flush to return the cursor to the bottom immediately
             print("", end="", flush=True)
