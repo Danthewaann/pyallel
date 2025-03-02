@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 import pytest
 from pyallel.colours import Colours
-from pyallel.printer import ConsolePrinter, get_num_lines, set_process_lines
+from pyallel.printer import ConsolePrinter
 from pyallel.process import Process, ProcessOutput
 from pyallel.process_group import ProcessGroupOutput
 
@@ -27,27 +27,27 @@ from pyallel.process_group import ProcessGroupOutput
     ),
 )
 def test_get_num_lines(output: str, columns: int, expected: int) -> None:
-    assert get_num_lines(output, columns) == expected
+    assert ConsolePrinter().get_num_lines(output, columns) == expected
 
 
 @pytest.mark.parametrize("columns,lines", ((8, 3), (5, 4)))
 def test_get_num_lines_with_columns(columns: int, lines: int) -> None:
-    assert get_num_lines("Hello Mr Anderson", columns=columns) == lines
+    assert ConsolePrinter().get_num_lines("Hello Mr Anderson", columns=columns) == lines
 
 
 def test_get_num_lines_with_long_command() -> None:
     # First line is a 800 length string, which divides evenly into `200`
     line = "long" * 200
-    assert get_num_lines(f"{line}\nLong output", columns=200) == 5
+    assert ConsolePrinter().get_num_lines(f"{line}\nLong output", columns=200) == 5
 
 
 def test_get_num_lines_with_long_line() -> None:
-    assert get_num_lines(" " * 250, columns=200) == 2
+    assert ConsolePrinter().get_num_lines(" " * 250, columns=200) == 2
 
 
 @pytest.mark.parametrize("chars", ["\x1B[0m", "\x1B(B"])
 def test_get_num_lines_ignores_ansi_chars(chars: str) -> None:
-    assert get_num_lines(chars * 100, columns=10) == 1
+    assert ConsolePrinter().get_num_lines(chars * 100, columns=10) == 1
 
 
 def test_set_process_lines() -> None:
@@ -62,7 +62,7 @@ def test_set_process_lines() -> None:
         ],
     )
 
-    set_process_lines(output, lines=58)
+    ConsolePrinter().set_process_lines(output, lines=58)
 
     assert output.processes[0].process.lines == 58
 
@@ -89,7 +89,7 @@ def test_set_process_lines_shares_lines_across_processes() -> None:
         ],
     )
 
-    set_process_lines(output, lines=59)
+    ConsolePrinter().set_process_lines(output, lines=59)
 
     assert output.processes[0].process.lines == 53
     assert output.processes[1].process.lines == 3
@@ -109,7 +109,7 @@ def test_set_process_lines_shares_lines_across_many_more_processes() -> None:
         ],
     )
 
-    set_process_lines(output, lines=59)
+    ConsolePrinter().set_process_lines(output, lines=59)
 
     for i in range(59):
         assert output.processes[i].process.lines == 1, f"process index {i}"
@@ -164,7 +164,7 @@ def test_set_process_lines_with_fixed_and_dynamic_lines(
         ],
     )
 
-    set_process_lines(output, lines=lines)
+    ConsolePrinter().set_process_lines(output, lines=lines)
 
     assert output.processes[0].process.lines == expected_lines1
     assert output.processes[1].process.lines == expected_lines2

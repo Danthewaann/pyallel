@@ -43,8 +43,8 @@ class ConsolePrinter:
             truncate_num = 6
         if truncate:
             columns = columns - truncate_num
-            if get_num_lines(line, columns) > 1:
-                line = truncate_line(line, columns)
+            if self.get_num_lines(line, columns) > 1:
+                line = self.truncate_line(line, columns)
         print(f"{prefix}{line}", end=end, flush=flush)
 
     def generate_process_output(
@@ -140,12 +140,12 @@ class ConsolePrinter:
             if not output.process.end:
                 end = time.perf_counter()
             elapsed = end - output.process.start
-            timer = f"({format_time_taken(elapsed)})"
+            timer = f"({self.format_time_taken(elapsed)})"
 
         command = output.process.command
-        if get_num_lines(output.process.command) > 1:
+        if self.get_num_lines(output.process.command) > 1:
             columns = constants.COLUMNS() - (len(msg) + len(timer) + 9)
-            command = truncate_line(command, columns)
+            command = self.truncate_line(command, columns)
 
         out = f"{self._colours.white_bold}[{self._colours.reset_colour}{self._colours.blue_bold}{command}{self._colours.reset_colour}{self._colours.white_bold}]{self._colours.reset_colour}{colour} {msg} {icon}{self._colours.reset_colour}"
 
@@ -160,7 +160,7 @@ class ConsolePrinter:
         interrupt_count: int = 0,
         tail_output: bool = True,
     ) -> list[tuple[bool, str, str]]:
-        set_process_lines(output, interrupt_count)
+        self.set_process_lines(output, interrupt_count)
 
         for out in output.processes:
             self.generate_process_output(out, tail_output, append_newlines=True)
@@ -189,6 +189,106 @@ class ConsolePrinter:
             self._icon = 0
 
         return self._to_print
+
+    def set_process_lines(
+        self,
+        output: ProcessGroupOutput,
+        interrupt_count: int = 0,
+        lines: int = 0,
+    ) -> None:
+        lines = lines or constants.LINES() - 1
+        if interrupt_count:
+            lines -= 2
+
+        # Allocate lines to processes that have a fixed percentage of lines set
+        allocated_process_lines = lines // len(output.processes)
+        processes_with_dynamic_lines: list[ProcessOutput] = []
+        used_lines = 0
+        for process_output in output.processes:
+            # This process output doesn't have percentage_lines set, so skip it
+            if not process_output.process.percentage_lines:
+                processes_with_dynamic_lines.append(process_output)
+                continue
+
+            process_output.process.lines = int(
+                lines * process_output.process.percentage_lines
+            )
+            used_lines += process_output.process.lines
+
+        # Remove the used lines from the total available lines
+        lines -= used_lines
+
+        while lines:
+            # Calculate how many lines each process should have based on how many processes and lines are left
+            num_processes = len(processes_with_dynamic_lines) or 1
+            allocated_process_lines = lines // num_processes
+            processes_with_excess_output: list[ProcessOutput] = []
+            recalculate_lines = False
+            for process_output in processes_with_dynamic_lines:
+                # If the number of lines in this process output is less than how many terminal lines we would allocate it,
+                # Set it's allocated terminal lines to the exact number of lines in its output and remove this number from
+                # the total available terminal lines
+                if process_output.lines < allocated_process_lines:
+                    process_output.process.lines = process_output.lines
+                    lines -= process_output.process.lines
+                    recalculate_lines = True
+                    continue
+
+                processes_with_excess_output.append(process_output)
+
+            # We need to re-calcuate how many terminal lines we can allocate to each process if the output of at least one process
+            # contains less lines than what we would normally allocate it. This is done so we can allocate these extra lines to the
+            # other processes that contain more lines of output.
+            if recalculate_lines:
+                processes_with_dynamic_lines = processes_with_excess_output
+            else:
+                # All remaining processes exceed the number of terminal lines we will allocate them, so allocate them
+                # their terminal lines as normal and break out of the while loop
+                for process_output in processes_with_excess_output:
+                    process_output.process.lines = allocated_process_lines
+                    lines -= allocated_process_lines
+
+                # If there is any lines left, allocate them to the process that currently contains the most lines in its output, or
+                # allocate them to the first process if no process contains enough lines
+                if lines:
+                    process_with_most_lines: ProcessOutput | None = None
+                    most_lines = 0
+                    for process_output in output.processes:
+                        if process_output.process.lines > most_lines:
+                            process_with_most_lines = process_output
+                            most_lines = process_output.process.lines
+
+                    if not process_with_most_lines:
+                        output.processes[0].process.lines += lines
+                    else:
+                        process_with_most_lines.process.lines += lines
+
+                break
+
+    def get_num_lines(self, line: str, columns: int | None = None) -> int:
+        lines = 0
+        columns = columns or constants.COLUMNS()
+        line = constants.ANSI_ESCAPE.sub("", line)
+        length = len(line)
+        line_lines = 1
+        if length > columns:
+            line_lines = length // columns
+            remainder = length % columns
+            if remainder:
+                line_lines += 1
+        lines += 1 * line_lines
+        return lines
+
+    def truncate_line(self, line: str, columns: int | None = None) -> str:
+        columns = columns or constants.COLUMNS()
+        escaped_line = constants.ANSI_ESCAPE.sub("", line)
+        return "".join(escaped_line[:columns]) + "..."
+
+    def format_time_taken(self, time_taken: float) -> str:
+        time_taken = round(time_taken, 1)
+        seconds = time_taken % (24 * 3600)
+
+        return f"{seconds}s"
 
 
 class InteractiveConsolePrinter(ConsolePrinter):
@@ -317,106 +417,3 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
 
         # Force a flush otherwise lines that don't end in a newline character will not get printed as they are read
         print("", end="", flush=True)
-
-
-def set_process_lines(
-    output: ProcessGroupOutput,
-    interrupt_count: int = 0,
-    lines: int = 0,
-) -> None:
-    lines = lines or constants.LINES() - 1
-    if interrupt_count:
-        lines -= 2
-
-    # Allocate lines to processes that have a fixed percentage of lines set
-    allocated_process_lines = lines // len(output.processes)
-    processes_with_dynamic_lines: list[ProcessOutput] = []
-    used_lines = 0
-    for process_output in output.processes:
-        # This process output doesn't have percentage_lines set, so skip it
-        if not process_output.process.percentage_lines:
-            processes_with_dynamic_lines.append(process_output)
-            continue
-
-        process_output.process.lines = int(
-            lines * process_output.process.percentage_lines
-        )
-        used_lines += process_output.process.lines
-
-    # Remove the used lines from the total available lines
-    lines -= used_lines
-
-    while lines:
-        # Calculate how many lines each process should have based on how many processes and lines are left
-        num_processes = len(processes_with_dynamic_lines) or 1
-        allocated_process_lines = lines // num_processes
-        processes_with_excess_output: list[ProcessOutput] = []
-        recalculate_lines = False
-        for process_output in processes_with_dynamic_lines:
-            # If the number of lines in this process output is less than how many terminal lines we would allocate it,
-            # Set it's allocated terminal lines to the exact number of lines in its output and remove this number from
-            # the total available terminal lines
-            if process_output.lines < allocated_process_lines:
-                process_output.process.lines = process_output.lines
-                lines -= process_output.process.lines
-                recalculate_lines = True
-                continue
-
-            processes_with_excess_output.append(process_output)
-
-        # We need to re-calcuate how many terminal lines we can allocate to each process if the output of at least one process
-        # contains less lines than what we would normally allocate it. This is done so we can allocate these extra lines to the
-        # other processes that contain more lines of output.
-        if recalculate_lines:
-            processes_with_dynamic_lines = processes_with_excess_output
-        else:
-            # All remaining processes exceed the number of terminal lines we will allocate them, so allocate them
-            # their terminal lines as normal and break out of the while loop
-            for process_output in processes_with_excess_output:
-                process_output.process.lines = allocated_process_lines
-                lines -= allocated_process_lines
-
-            # If there is any lines left, allocate them to the process that currently contains the most lines in its output, or
-            # allocate them to the first process if no process contains enough lines
-            if lines:
-                process_with_most_lines: ProcessOutput | None = None
-                most_lines = 0
-                for process_output in output.processes:
-                    if process_output.process.lines > most_lines:
-                        process_with_most_lines = process_output
-                        most_lines = process_output.process.lines
-
-                if not process_with_most_lines:
-                    output.processes[0].process.lines += lines
-                else:
-                    process_with_most_lines.process.lines += lines
-
-            break
-
-
-def get_num_lines(line: str, columns: int | None = None) -> int:
-    lines = 0
-    columns = columns or constants.COLUMNS()
-    line = constants.ANSI_ESCAPE.sub("", line)
-    length = len(line)
-    line_lines = 1
-    if length > columns:
-        line_lines = length // columns
-        remainder = length % columns
-        if remainder:
-            line_lines += 1
-    lines += 1 * line_lines
-    return lines
-
-
-def truncate_line(line: str, columns: int | None = None) -> str:
-    columns = columns or constants.COLUMNS()
-    escaped_line = constants.ANSI_ESCAPE.sub("", line)
-    return "".join(escaped_line[:columns]) + "..."
-
-
-def format_time_taken(time_taken: float) -> str:
-    time_taken = round(time_taken, 1)
-    seconds = time_taken % (24 * 3600)
-
-    return f"{seconds}s"
