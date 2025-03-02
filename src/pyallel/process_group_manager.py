@@ -112,7 +112,7 @@ class ProcessGroupManager:
         self._interrupt_count += 1
 
     @classmethod
-    def from_args(cls, *args: str) -> ProcessGroupManager:
+    def from_args(cls, *args: str, use_unbuffer: bool = False) -> ProcessGroupManager:
         last_separator_index = 0
         commands: list[str] = []
         process_groups: list[ProcessGroup] = []
@@ -123,11 +123,17 @@ class ProcessGroupManager:
             if arg == ":::":
                 if i - 1 == 0:
                     pg = ProcessGroup.from_commands(
-                        progress_group_id, process_id, args[0]
+                        progress_group_id,
+                        process_id,
+                        args[0],
+                        use_unbuffer=use_unbuffer,
                     )
                 else:
                     pg = ProcessGroup.from_commands(
-                        progress_group_id, process_id, *commands[last_separator_index:]
+                        progress_group_id,
+                        process_id,
+                        *commands[last_separator_index:],
+                        use_unbuffer=use_unbuffer,
                     )
 
                 process_groups.append(pg)
@@ -143,7 +149,10 @@ class ProcessGroupManager:
 
         process_groups.append(
             ProcessGroup.from_commands(
-                progress_group_id, process_id, *commands[last_separator_index:]
+                progress_group_id,
+                process_id,
+                *commands[last_separator_index:],
+                use_unbuffer=use_unbuffer,
             )
         )
 

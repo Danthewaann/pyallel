@@ -22,13 +22,14 @@ class ProcessOutput:
 
 
 class Process:
-    def __init__(self, id: int, command: str, percentage_lines: float = 0.0) -> None:
+    def __init__(self, id: int, command: str, percentage_lines: float = 0.0, use_unbuffer: bool = False) -> None:
         self.id = id
         self.command = command
         self.start = 0.0
         self.end = 0.0
         self.lines = 0
         self.percentage_lines = percentage_lines
+        self.use_unbuffer = use_unbuffer
         self._fd: BinaryIO
         self._process: subprocess.Popen[bytes]
 
@@ -36,8 +37,14 @@ class Process:
         self.start = time.perf_counter()
         fd, fd_name = tempfile.mkstemp()
         self._fd = open(fd_name, "rb")
+        command = ""
+        # for part in self.command.split():
+        #     if len(part.split("=")) == 2:
+        #         continue
+        #
+        #     command += part + " "
         self._process = subprocess.Popen(
-            self.command,
+            f"{"unbuffer " if self.use_unbuffer else ""}{self.command}",
             stdin=subprocess.DEVNULL,
             stdout=fd,
             stderr=subprocess.STDOUT,
@@ -77,10 +84,10 @@ class Process:
         return self._process.wait()
 
     @classmethod
-    def from_command(cls, id: int, command: str) -> Process:
+    def from_command(cls, id: int, command: str, use_unbuffer: bool = False) -> Process:
         cmd = command.split(" :: ", maxsplit=1)
         if len(cmd) == 1:
-            return cls(id, cmd[0])
+            return cls(id, cmd[0], use_unbuffer=use_unbuffer)
 
         args, *parts = cmd
 
@@ -106,4 +113,4 @@ class Process:
 
                 break
 
-        return cls(id, " ".join(parts), round(percentage_lines / 100, 2))
+        return cls(id, " ".join(parts), round(percentage_lines / 100, 2), use_unbuffer=use_unbuffer)

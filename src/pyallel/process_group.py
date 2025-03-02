@@ -63,12 +63,12 @@ class ProcessGroup:
         self._interrupt_count += 1
 
     @classmethod
-    def from_commands(cls, id: int, process_id: int, *commands: str) -> ProcessGroup:
+    def from_commands(cls, id: int, process_id: int, *commands: str, use_unbuffer: bool = False) -> ProcessGroup:
         processes: list[Process] = []
 
         percentage_lines_sum = 0.0
         for i, command in enumerate(commands):
-            process = Process.from_command(i + process_id, command)
+            process = Process.from_command(i + process_id, command, use_unbuffer=use_unbuffer)
             percentage_lines_sum += process.percentage_lines
             processes.append(process)
 

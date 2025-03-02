@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.metadata
+import shutil
 import sys
 import time
 import traceback
@@ -31,15 +32,25 @@ def entry_point(*args: str) -> int:
         parser.print_help()
         return 2
 
+    use_unbuffer = False
+    if (
+        parsed_args.colour == "yes"
+        or (parsed_args.colour == "auto" and constants.IN_TTY)
+    ) and shutil.which("unbuffer"):
+        use_unbuffer = True
+
     colours = Colours.from_colour(parsed_args.colour)
     printer: Printer
     if not parsed_args.interactive or not constants.IN_TTY:
         printer = NonInteractiveConsolePrinter(colours, timer=parsed_args.timer)
+        use_unbuffer = False
     else:
         printer = InteractiveConsolePrinter(colours, timer=parsed_args.timer)
 
     try:
-        process_group_manager = ProcessGroupManager.from_args(*parsed_args.commands)
+        process_group_manager = ProcessGroupManager.from_args(
+            *parsed_args.commands, use_unbuffer=use_unbuffer
+        )
     except InvalidLinesModifierError as e:
         print(f"{colours.red_bold}Error: {str(e)}{colours.reset_colour}")
         return 1

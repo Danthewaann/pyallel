@@ -23,7 +23,7 @@ class ConsolePrinter:
     def __init__(self, colours: Colours | None = None, timer: bool = False) -> None:
         self._colours = colours or Colours()
         self._timer = timer
-        self._prefix = f"{self._colours.dim_on}=>{self._colours.dim_off} "
+        self._prefix = f"{self._colours.reset_colour}{self._colours.dim_on}=>{self._colours.dim_off} "
         self._icon = 0
         self._to_print: list[tuple[bool, str, str]] = []
 
@@ -40,7 +40,7 @@ class ConsolePrinter:
         prefix = self._prefix if include_prefix else ""
         columns = columns or constants.COLUMNS()
         if prefix:
-            truncate_num = 6
+            truncate_num = 3
         if truncate:
             columns = columns - truncate_num
             if self.get_num_lines(line, columns) > 1:
@@ -282,7 +282,7 @@ class ConsolePrinter:
     def truncate_line(self, line: str, columns: int | None = None) -> str:
         columns = columns or constants.COLUMNS()
         escaped_line = constants.ANSI_ESCAPE.sub("", line)
-        return "".join(escaped_line[:columns]) + "..."
+        return "".join(escaped_line[:columns])
 
     def format_time_taken(self, time_taken: float) -> str:
         time_taken = round(time_taken, 1)
