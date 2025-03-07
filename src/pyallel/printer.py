@@ -335,7 +335,9 @@ class InteractiveConsolePrinter(ConsolePrinter):
             # comparing the last printed lines with the new lines that were generated
             print(f"\033[{num_last_printed_lines}A", end="")
             cursor_line = 0
-            for cur_line, line_parts in enumerate(self._last_printed):
+            for cur_line, line_parts in enumerate(
+                self._last_printed[:num_lines_to_print]
+            ):
                 # If the current line is not the same as it's newly generated version, we update the line
                 if line_parts[1] != self._to_print[cur_line][1]:
                     include_prefix, line, end = self._to_print[cur_line]
