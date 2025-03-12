@@ -3,6 +3,7 @@ import time
 
 
 import pytest
+from pyallel.errors import NoCommandsForProcessGroupError
 from pyallel.process import Process
 from pyallel.process_group import ProcessGroup
 from pyallel.process_group_manager import ProcessGroupManager
@@ -62,6 +63,12 @@ def test_from_args() -> None:
         expected_process_group_manager._process_groups
     )
 
+    for pg1, pg2 in zip(
+        expected_process_group_manager._process_groups,
+        process_group_manager._process_groups,
+    ):
+        assert len(pg1.processes) == len(pg2.processes)
+
 
 @pytest.mark.parametrize(
     "args, expected_process_group_manager",
@@ -85,6 +92,37 @@ def test_from_args() -> None:
                     ),
                     ProcessGroup(
                         id=3,
+                        processes=[
+                            Process(id=4, command="sleep 0.4"),
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        (
+            ["sleep 0.1", ":::", "sleep 0.2", ":::", "sleep 0.3", ":::", "sleep 0.4"],
+            ProcessGroupManager(
+                process_groups=[
+                    ProcessGroup(
+                        id=1,
+                        processes=[
+                            Process(id=1, command="sleep 0.1"),
+                        ],
+                    ),
+                    ProcessGroup(
+                        id=2,
+                        processes=[
+                            Process(id=2, command="sleep 0.2"),
+                        ],
+                    ),
+                    ProcessGroup(
+                        id=3,
+                        processes=[
+                            Process(id=3, command="sleep 0.3"),
+                        ],
+                    ),
+                    ProcessGroup(
+                        id=4,
                         processes=[
                             Process(id=4, command="sleep 0.4"),
                         ],
@@ -138,3 +176,17 @@ def test_from_args_with_separators(
     assert len(process_group_manager._process_groups) == len(
         expected_process_group_manager._process_groups
     )
+
+    for pg1, pg2 in zip(
+        expected_process_group_manager._process_groups,
+        process_group_manager._process_groups,
+    ):
+        assert len(pg1.processes) == len(pg2.processes)
+
+
+def test_from_args_with_bad_separator() -> None:
+    with pytest.raises(
+        NoCommandsForProcessGroupError,
+        match="no commands provided for process group 1, did you forgot to provide them before the ::: symbol?",
+    ):
+        ProcessGroupManager.from_args(":::", "echo hi")

@@ -7,7 +7,7 @@ import traceback
 
 from pyallel import constants
 from pyallel.colours import Colours
-from pyallel.errors import InvalidLinesModifierError
+from pyallel.errors import PyallelError
 from pyallel.parser import Arguments, create_parser
 from pyallel.printer import (
     InteractiveConsolePrinter,
@@ -40,7 +40,7 @@ def entry_point(*args: str) -> int:
 
     try:
         process_group_manager = ProcessGroupManager.from_args(*parsed_args.commands)
-    except InvalidLinesModifierError as e:
+    except PyallelError as e:
         print(f"{colours.red_bold}Error: {str(e)}{colours.reset_colour}")
         return 1
 

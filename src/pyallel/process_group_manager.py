@@ -3,6 +3,7 @@ from __future__ import annotations
 import signal
 from typing import Any
 
+from pyallel.errors import NoCommandsForProcessGroupError
 from pyallel.process import ProcessOutput
 from pyallel.process_group import ProcessGroupOutput, ProcessGroup
 
@@ -113,39 +114,31 @@ class ProcessGroupManager:
 
     @classmethod
     def from_args(cls, *args: str) -> ProcessGroupManager:
-        last_separator_index = 0
         commands: list[str] = []
         process_groups: list[ProcessGroup] = []
         progress_group_id = 1
         process_id = 1
 
-        for i, arg in enumerate(args):
-            if arg == ":::":
-                if i - 1 == 0:
-                    pg = ProcessGroup.from_commands(
-                        progress_group_id, process_id, args[0]
-                    )
-                else:
-                    pg = ProcessGroup.from_commands(
-                        progress_group_id, process_id, *commands[last_separator_index:]
-                    )
-
-                process_groups.append(pg)
-                process_id += len(pg.processes)
-                last_separator_index = i
-                progress_group_id += 1
+        for arg in args:
+            if arg != ":::":
+                commands.append(arg)
                 continue
 
-            commands.append(arg)
+            if not commands:
+                raise NoCommandsForProcessGroupError(
+                    f"no commands provided for process group {progress_group_id}, did you forgot to provide them before the ::: symbol?"
+                )
 
-        if len(process_groups) > 1:
-            last_separator_index -= 1
+            pg = ProcessGroup.from_commands(progress_group_id, process_id, *commands)
+            process_groups.append(pg)
+            process_id += len(pg.processes)
+            progress_group_id += 1
+            commands.clear()
 
-        process_groups.append(
-            ProcessGroup.from_commands(
-                progress_group_id, process_id, *commands[last_separator_index:]
+        if commands:
+            process_groups.append(
+                ProcessGroup.from_commands(progress_group_id, process_id, *commands)
             )
-        )
 
         process_group_manager = cls(process_groups=process_groups)
 
