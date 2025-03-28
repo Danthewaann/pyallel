@@ -45,4 +45,4 @@ jobs:
       - name: Run pyallel
         run: |
           source .venv/bin/activate && \
-            pyallel --colour yes MYPY_FORCE_COLOR=1 mypy . :: pytest --color=yes -s .
+            pyallel --colour yes -- MYPY_FORCE_COLOR=1 mypy . :: pytest --color=yes -s .
