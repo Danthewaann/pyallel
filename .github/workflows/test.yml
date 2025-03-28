@@ -45,5 +45,5 @@ jobs:
 
       - name: Run pyallel
         run: |
-          echo "Running pyallel $(pyallel --version)"
+          echo "Running pyallel $(PYTHONPATH=./src pyallel --version)"
           PYTHONPATH=./src pyallel "MYPY_FORCE_COLOR=1 mypy ." "pytest --color=yes -s ." --colour yes
