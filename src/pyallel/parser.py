@@ -27,6 +27,11 @@ to run multiple commands you must separate them using the command separator symb
     
   %(prog)s mypy . :: black .
 
+if you want to provide options to a command you need to use the double dash symbol (--) to indicate that 
+any options provided after this symbol should not be interpreted by %(prog)s 
+
+  %(prog)s -n -- mypy -V :: black --version
+
 commands can also be grouped using the group separator symbol (:::)
 
   %(prog)s echo boil kettle :: sleep 1 ::: echo make coffee
@@ -34,6 +39,7 @@ commands can also be grouped using the group separator symbol (:::)
 the above will print 'boil kettle' and sleep for 1 second first before printing 'make coffee'.
 command groups are ran in the sequence you provide them, and if a command within a command group fails,
 the rest of the command groups in the sequence are not run
+
 
 modifiers can also be set for commands to augment their behaviour using the command modifier symbol (::::)
 
@@ -59,15 +65,6 @@ some examples of using shell syntax are below (single quotes are used only if re
   %(prog)s 'mypy .; pytest .'                   <- run commands one at a time in sequence
   %(prog)s 'echo $SHELL; $(echo mypy .)'        <- expand variables and commands to evaluate
   %(prog)s 'pytest . && mypy . || echo failed!' <- use AND (&&) and OR (||) to run commands conditionally
-
-CONFLICTING OPTIONS
-===================
-If you want to provide options to a command that conflict with %(prog)s options,
-you can use the double dash symbol (--) to indicate that the options provided after
-this symbol should not be interpreted by %(prog)s 
-
-  %(prog)s -n -- echo -n hello
-
 """
 
 

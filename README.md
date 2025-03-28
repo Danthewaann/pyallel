@@ -31,6 +31,11 @@ to run multiple commands you must separate them using the command separator symb
 
   pyallel mypy . :: black .
 
+if you want to provide options to a command you need to use the double dash symbol (--) to indicate that
+any options provided after this symbol should not be interpreted by pyallel
+
+  pyallel -n -- mypy -V :: black --version
+
 commands can also be grouped using the group separator symbol (:::)
 
   pyallel echo boil kettle :: sleep 1 ::: echo make coffee
@@ -63,14 +68,6 @@ some examples of using shell syntax are below (single quotes are used only if re
   pyallel 'mypy .; pytest .'                   <- run commands one at a time in sequence
   pyallel 'echo $SHELL; $(echo mypy .)'        <- expand variables and commands to evaluate
   pyallel 'pytest . && mypy . || echo failed!' <- use AND (&&) and OR (||) to run commands conditionally
-
-CONFLICTING OPTIONS
-===================
-If you want to provide options to a command that conflict with pyallel options,
-you can use the double dash symbol (--) to indicate that the options provided after
-this symbol should not be interpreted by pyallel
-
-  pyallel -n -- echo -n hello
 
 positional arguments:
   commands              list of commands and their arguments to run in parallel
