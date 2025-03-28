@@ -78,7 +78,7 @@ class Process:
 
     @classmethod
     def from_command(cls, id: int, command: str) -> Process:
-        cmd = command.split(" :: ", maxsplit=1)
+        cmd = command.split(" :::: ", maxsplit=1)
         if len(cmd) == 1:
             return cls(id, cmd[0])
 

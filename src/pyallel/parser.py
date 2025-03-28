@@ -19,51 +19,67 @@ class Arguments:
         return msg
 
 
-COMMANDS_HELP = r"""list of quoted commands to run in parallel e.g "mypy ." "black ."
+DESCRIPTION = r"""run and handle the output of multiple executables in %(prog)s (as in parallel)
 
-each command is executed inside a shell, so shell syntax is supported as
-if you were running the command directly in a shell, some examples are below
+RUNNING COMMANDS
+================
+to run multiple commands you must separate them using the command separator symbol (::)
+    
+  %(prog)s mypy . :: black .
 
-     "MYPY_FORCE_COLOR=1 mypy ."          <- provide environment variables
-     "mypy | tee -a mypy.log"             <- use pipes to redirect output
-     "cat > test.log < other.log"         <- use input and output redirection
-     "mypy .; pytest ."                   <- run commands one at a time in sequence
-     "echo \$SHELL" or "\$(echo mypy .)"  <- expand variables and commands to evaluate (must be escaped)
-     "pytest . && mypy . || echo failed!" <- use AND (&&) and OR (||) to run commands conditionally
+commands can also be grouped using the group separator symbol (:::)
 
-PROCESS GROUPS
---------------
-commands can be grouped using the group separator symbol (:::)
+  %(prog)s echo boil kettle :: sleep 1 ::: echo make coffee
 
-     %(prog)s "echo boil kettle" "sleep 1" ::: "echo make coffee"
+the above will print 'boil kettle' and sleep for 1 second first before printing 'make coffee'.
+command groups are ran in the sequence you provide them, and if a command within a command group fails,
+the rest of the command groups in the sequence are not run
 
-the above will print "boil kettle" and sleep for 1 second first before printing "make coffee"
-
-command groups are ran in the sequence you provide them, and if a command group fails
-(if a command fails inside the command group) the rest of the command groups in the sequence are not run
-
-COMMAND MODIFIERS
------------------
-modifiers can be set for commands to augment their behaviour using the command modifier symbol (::)
+modifiers can also be set for commands to augment their behaviour using the command modifier symbol (::::)
 
 lines (only used in interactive mode):
-    the lines modifier allows you to specify how many lines the command output can take up on the screen
+  the lines modifier allows you to specify how many lines the command output can take up on the screen
         
-        %(prog)s "lines=90 :: echo running long command..." "echo running other command..."
+    %(prog)s lines=90 :::: echo running long command... :: echo running other command...
 
-    90 is expressed as a percentage value, which must be between 1 and 100 inclusive
+  90 is expressed as a percentage value, which must be between 1 and 100 inclusive
+
+SHELL SYNTAX
+============
+each command is executed inside its own shell, this means shell syntax is supported.
+it is important to note that certain shell syntax must be escaped using backslashes (\)
+or wrapped in single quotes (''), otherwise it will be evaluated in your current 
+shell immediately instead of the shell that your command will run within.
+
+some examples of using shell syntax are below (single quotes are used only if required)
+
+  %(prog)s MYPY_FORCE_COLOR=1 mypy .            <- provide environment variables
+  %(prog)s 'mypy . | tee -a mypy.log'           <- use pipes to redirect output
+  %(prog)s 'cat > test.log <<< hello!'          <- use input and output redirection
+  %(prog)s 'mypy .; pytest .'                   <- run commands one at a time in sequence
+  %(prog)s 'echo $SHELL; $(echo mypy .)'        <- expand variables and commands to evaluate
+  %(prog)s 'pytest . && mypy . || echo failed!' <- use AND (&&) and OR (||) to run commands conditionally
+
+CONFLICTING OPTIONS
+===================
+If you want to provide options to a command that conflict with %(prog)s options,
+you can use the double dash symbol (--) to indicate that the options provided after
+this symbol should not be interpreted by %(prog)s 
+
+  %(prog)s -n -- echo -n hello
+
 """
 
 
 def create_parser() -> ArgumentParser:
     parser = ArgumentParser(
         prog="pyallel",
-        description="Run and handle the output of multiple executables in pyallel (as in parallel)",
+        description=DESCRIPTION,
         formatter_class=RawTextHelpFormatter,
     )
     parser.add_argument(
         "commands",
-        help=COMMANDS_HELP,
+        help="list of commands and their arguments to run in parallel",
         nargs="*",
     )
     parser.add_argument(

@@ -64,11 +64,22 @@ class ProcessGroup:
 
     @classmethod
     def from_commands(cls, id: int, process_id: int, *commands: str) -> ProcessGroup:
+        cmds: list[str] = []
         processes: list[Process] = []
 
         percentage_lines_sum = 0.0
         for i, command in enumerate(commands):
-            process = Process.from_command(i + process_id, command)
+            if command != "::":
+                cmds.append(command)
+                continue
+
+            process = Process.from_command(i + process_id, " ".join(cmds))
+            percentage_lines_sum += process.percentage_lines
+            processes.append(process)
+            cmds.clear()
+
+        if cmds:
+            process = Process.from_command(i + process_id, " ".join(cmds))
             percentage_lines_sum += process.percentage_lines
             processes.append(process)
 

@@ -23,42 +23,57 @@ Once installed, you can run `pyallel` to see usage information, like so:
 ```
 usage: pyallel [-h] [-t] [-n] [-V] [--colour {yes,no,auto}] [commands ...]
 
-Run and handle the output of multiple executables in pyallel (as in parallel)
+run and handle the output of multiple executables in pyallel (as in parallel)
+
+RUNNING COMMANDS
+================
+to run multiple commands you must separate them using the command separator symbol (::)
+
+  pyallel mypy . :: black .
+
+commands can also be grouped using the group separator symbol (:::)
+
+  pyallel echo boil kettle :: sleep 1 ::: echo make coffee
+
+the above will print 'boil kettle' and sleep for 1 second first before printing 'make coffee'.
+command groups are ran in the sequence you provide them, and if a command within a command group fails,
+the rest of the command groups in the sequence are not run
+
+modifiers can also be set for commands to augment their behaviour using the command modifier symbol (::::)
+
+lines (only used in interactive mode):
+  the lines modifier allows you to specify how many lines the command output can take up on the screen
+
+    pyallel lines=90 :::: echo running long command... :: echo running other command...
+
+  90 is expressed as a percentage value, which must be between 1 and 100 inclusive
+
+SHELL SYNTAX
+============
+each command is executed inside its own shell, this means shell syntax is supported.
+it is important to note that certain shell syntax must be escaped using backslashes (\)
+or wrapped in single quotes (''), otherwise it will be evaluated in your current
+shell immediately instead of the shell that your command will run within.
+
+some examples of using shell syntax are below (single quotes are used only if required)
+
+  pyallel MYPY_FORCE_COLOR=1 mypy .            <- provide environment variables
+  pyallel 'mypy . | tee -a mypy.log'           <- use pipes to redirect output
+  pyallel 'cat > test.log <<< hello!'          <- use input and output redirection
+  pyallel 'mypy .; pytest .'                   <- run commands one at a time in sequence
+  pyallel 'echo $SHELL; $(echo mypy .)'        <- expand variables and commands to evaluate
+  pyallel 'pytest . && mypy . || echo failed!' <- use AND (&&) and OR (||) to run commands conditionally
+
+CONFLICTING OPTIONS
+===================
+If you want to provide options to a command that conflict with pyallel options,
+you can use the double dash symbol (--) to indicate that the options provided after
+this symbol should not be interpreted by pyallel
+
+  pyallel -n -- echo -n hello
 
 positional arguments:
-  commands              list of quoted commands to run in parallel e.g "mypy ." "black ."
-
-                        each command is executed inside a shell, so shell syntax is supported as
-                        if you were running the command directly in a shell, some examples are below
-
-                             "MYPY_FORCE_COLOR=1 mypy ."          <- provide environment variables
-                             "mypy | tee -a mypy.log"             <- use pipes to redirect output
-                             "cat > test.log < other.log"         <- use input and output redirection
-                             "mypy .; pytest ."                   <- run commands one at a time in sequence
-                             "echo \$SHELL" or "\$(echo mypy .)"  <- expand variables and commands to evaluate (must be escaped)
-                             "pytest . && mypy . || echo failed!" <- use AND (&&) and OR (||) to run commands conditionally
-
-                        PROCESS GROUPS
-                        --------------
-                        commands can be grouped using the group separator symbol (:::)
-
-                             pyallel "echo boil kettle" "sleep 1" ::: "echo make coffee"
-
-                        the above will print "boil kettle" and sleep for 1 second first before printing "make coffee"
-
-                        command groups are ran in the sequence you provide them, and if a command group fails
-                        (if a command fails inside the command group) the rest of the command groups in the sequence are not run
-
-                        COMMAND MODIFIERS
-                        -----------------
-                        modifiers can be set for commands to augment their behaviour using the command modifier symbol (::)
-
-                        lines (only used in interactive mode):
-                            the lines modifier allows you to specify how many lines the command output can take up on the screen
-
-                                pyallel "lines=90 :: echo running long command..." "echo running other command..."
-
-                            90 is expressed as a percentage value, which must be between 1 and 100 inclusive
+  commands              list of commands and their arguments to run in parallel
 
 options:
   -h, --help            show this help message and exit
@@ -72,13 +87,8 @@ options:
 
 Currently you can provide a variable number of `commands` to run to `pyallel`, like so:
 
-> [!IMPORTANT]
-> If you need to provide arguments to a command, you must surround the command and it's arguments in quotes!
-
 ```bash
-pyallel "MYPY_FORCE_COLOR=1 mypy ." \
-        "black --check --diff ." \
-        "pytest ."
+pyallel MYPY_FORCE_COLOR=1 mypy . :: black --check --diff . :: pytest .
 ```
 
 # Build

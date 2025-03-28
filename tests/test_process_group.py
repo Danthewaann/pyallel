@@ -18,7 +18,7 @@ def test_from_commands() -> None:
         ],
     )
     process_group = ProcessGroup.from_commands(
-        1, 1, "sleep 0.1", "sleep 0.2", "sleep 0.3"
+        1, 1, "sleep 0.1", "::", "sleep 0.2", "::", "sleep 0.3"
     )
     assert process_group.id == expected_process_group.id
     assert len(process_group.processes) == len(expected_process_group.processes)
@@ -34,7 +34,13 @@ def test_from_commands_with_lines_modifier() -> None:
         ],
     )
     process_group = ProcessGroup.from_commands(
-        1, 1, "lines=20 :: sleep 0.1", "lines=20 :: sleep 0.2", "lines=20 :: sleep 0.3"
+        1,
+        1,
+        "lines=20 :::: sleep 0.1",
+        "::",
+        "lines=20 :::: sleep 0.2",
+        "::",
+        "lines=20 :::: sleep 0.3",
     )
     assert process_group.id == expected_process_group.id
     assert len(process_group.processes) == len(expected_process_group.processes)
@@ -51,9 +57,11 @@ def test_from_commands_with_lines_modifier_exceeds_100() -> None:
         ProcessGroup.from_commands(
             1,
             1,
-            "lines=40 :: sleep 0.1",
-            "lines=40 :: sleep 0.2",
-            "lines=30 :: sleep 0.3",
+            "lines=40 :::: sleep 0.1",
+            "::",
+            "lines=40 :::: sleep 0.2",
+            "::",
+            "lines=30 :::: sleep 0.3",
         )
 
 

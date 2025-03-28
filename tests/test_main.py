@@ -34,6 +34,11 @@ class TestInteractiveMode:
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
+    def test_run_single_command_no_quotes(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.entry_point("echo", "hi", "-t")
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+
     def test_run_single_command_with_output(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.entry_point("echo hi", "-t")
         captured = capsys.readouterr()
@@ -51,6 +56,11 @@ class TestInteractiveMode:
 
     def test_run_multiple_commands(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.entry_point("sleep 0.1; echo first", "echo hi", "-t")
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+
+    def test_run_multiple_commands_no_quotes(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.entry_point("echo", "first", "echo", "hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
@@ -89,7 +99,7 @@ class TestInteractiveMode:
         assert exit_code == 0, prettify_error(captured.out)
 
     def test_run_with_lines_modifier(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.entry_point("lines=50 :: echo hi")
+        exit_code = main.entry_point("lines=50 :::: echo hi")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
@@ -97,7 +107,7 @@ class TestInteractiveMode:
     def test_run_with_lines_modifier_invalid_value(
         self, capsys: CaptureFixture[str], value: str
     ) -> None:
-        exit_code = main.entry_point(f"lines={value} :: echo hi", "--colour", "no")
+        exit_code = main.entry_point(f"lines={value} :::: echo hi", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
@@ -110,8 +120,9 @@ class TestInteractiveMode:
         self, capsys: CaptureFixture[str]
     ) -> None:
         exit_code = main.entry_point(
-            "lines=60 :: echo hi",
-            "lines=80 :: echo bye",
+            "lines=60 :::: echo hi",
+            "::",
+            "lines=80 :::: echo bye",
             "--colour",
             "no",
         )
@@ -181,6 +192,20 @@ class TestNonInteractiveMode:
             ]
         )
 
+    def test_run_single_command_no_quotes(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.entry_point("echo", "hi", "-n", "-t", "--colour", "no")
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        assert captured.out.splitlines(keepends=True) == (
+            [
+                "[echo hi] running... \n",
+                f"{PREFIX}hi\n",
+                "[echo hi] done ✔\n",
+                "\n",
+                "Done!\n",
+            ]
+        )
+
     def test_run_single_command_failure(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.entry_point("exit 1", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
@@ -210,7 +235,7 @@ class TestNonInteractiveMode:
 
     def test_run_multiple_commands(self, capsys: CaptureFixture[str]) -> None:
         exit_code = main.entry_point(
-            "sleep 0.1; echo first", "echo hi", "-n", "-t", "--colour", "no"
+            "sleep 0.1; echo first", "::", "echo hi", "-n", "-t", "--colour", "no"
         )
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
@@ -227,10 +252,31 @@ class TestNonInteractiveMode:
             ]
         )
 
+    def test_run_multiple_commands_no_quotes(self, capsys: CaptureFixture[str]) -> None:
+        exit_code = main.entry_point(
+            "echo", "first", "::", "echo", "hi", "-n", "-t", "--colour", "no"
+        )
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        assert captured.out.splitlines(keepends=True) == (
+            [
+                "[echo first] running... \n",
+                f"{PREFIX}first\n",
+                "[echo first] done ✔\n",
+                "[echo hi] running... \n",
+                f"{PREFIX}hi\n",
+                "[echo hi] done ✔\n",
+                "\n",
+                "Done!\n",
+            ]
+        )
+
     def test_run_multiple_commands_single_failure(
         self, capsys: CaptureFixture[str]
     ) -> None:
-        exit_code = main.entry_point("exit 1", "echo hi", "-n", "-t", "--colour", "no")
+        exit_code = main.entry_point(
+            "exit 1", "::", "echo hi", "-n", "-t", "--colour", "no"
+        )
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
@@ -249,7 +295,9 @@ class TestNonInteractiveMode:
         self,
         capsys: CaptureFixture[str],
     ) -> None:
-        exit_code = main.entry_point("exit 1", "exit 1", "-n", "-t", "--colour", "no")
+        exit_code = main.entry_point(
+            "exit 1", "::", "exit 1", "-n", "-t", "--colour", "no"
+        )
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         assert captured.out.splitlines(keepends=True) == (
@@ -322,7 +370,7 @@ class TestNonInteractiveMode:
         ), prettify_error(captured.out)
 
     def test_run_with_longer_first_command(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.entry_point("sleep 1", "echo hi", "-n", "--colour", "no")
+        exit_code = main.entry_point("sleep 1", "::", "echo hi", "-n", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         assert (
@@ -368,6 +416,7 @@ class TestNonInteractiveMode:
     ) -> None:
         exit_code = main.entry_point(
             f"printf hi; sleep {wait}; echo bye",
+            "::",
             f"printf hi; sleep {wait}; echo bye",
             "-n",
             "-t",

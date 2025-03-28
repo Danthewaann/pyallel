@@ -58,7 +58,9 @@ def test_from_args() -> None:
             )
         ]
     )
-    process_group_manager = ProcessGroupManager.from_args("sleep 0.1", "sleep 0.2")
+    process_group_manager = ProcessGroupManager.from_args(
+        "sleep 0.1", "::", "sleep 0.2"
+    )
     assert len(process_group_manager._process_groups) == len(
         expected_process_group_manager._process_groups
     )
@@ -74,7 +76,7 @@ def test_from_args() -> None:
     "args, expected_process_group_manager",
     (
         (
-            ["sleep 0.1", ":::", "sleep 0.2", "sleep 0.3", ":::", "sleep 0.4"],
+            ["sleep 0.1", ":::", "sleep 0.2", "::", "sleep 0.3", ":::", "sleep 0.4"],
             ProcessGroupManager(
                 process_groups=[
                     ProcessGroup(
@@ -133,12 +135,15 @@ def test_from_args() -> None:
         (
             [
                 "sleep 0.1",
+                "::",
                 "sleep 0.2",
                 ":::",
                 "sleep 0.3",
+                "::",
                 "sleep 0.4",
                 ":::",
                 "sleep 0.5",
+                "::",
                 "sleep 0.6",
             ],
             ProcessGroupManager(

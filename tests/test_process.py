@@ -21,7 +21,7 @@ def test_from_command() -> None:
 )
 def test_from_command_with_lines_modifier(value: str, expected: float) -> None:
     expected_process = Process(id=1, command="sleep 0.1")
-    process = Process.from_command(1, f"lines={value} :: sleep 0.1")
+    process = Process.from_command(1, f"lines={value} :::: sleep 0.1")
     assert process.id == expected_process.id
     assert process.command == "sleep 0.1"
     assert process.percentage_lines == expected
@@ -33,30 +33,30 @@ def test_from_command_with_invalid_lines_modifier(value: str) -> None:
         InvalidLinesModifierError,
         match="lines modifier must be a number between 1 and 100",
     ):
-        Process.from_command(1, f"lines={value} :: sleep 0.1")
+        Process.from_command(1, f"lines={value} :::: sleep 0.1")
 
 
 def test_from_command_handles_invalid_args_syntax() -> None:
     expected_process = Process(id=1, command="sleep 0.1")
-    process = Process.from_command(1, " :: sleep 0.1 :: echo hi")
+    process = Process.from_command(1, " :::: sleep 0.1 :::: echo hi")
     assert process.id == expected_process.id
-    assert process.command == "sleep 0.1 :: echo hi"
+    assert process.command == "sleep 0.1 :::: echo hi"
     assert process.percentage_lines == 0.0
 
 
 def test_from_command_ignores_invalid_arg() -> None:
     expected_process = Process(id=1, command="sleep 0.1")
-    process = Process.from_command(1, "bad=value :: sleep 0.1 :: echo hi")
+    process = Process.from_command(1, "bad=value :::: sleep 0.1 :::: echo hi")
     assert process.id == expected_process.id
-    assert process.command == "sleep 0.1 :: echo hi"
+    assert process.command == "sleep 0.1 :::: echo hi"
     assert process.percentage_lines == 0.0
 
 
 def test_from_command_with_lines_modifier_handles_multiple_separators() -> None:
     expected_process = Process(id=1, command="sleep 0.1")
-    process = Process.from_command(1, "lines=50 :: sleep 0.1 :: echo hi")
+    process = Process.from_command(1, "lines=50 :::: sleep 0.1 :::: echo hi")
     assert process.id == expected_process.id
-    assert process.command == "sleep 0.1 :: echo hi"
+    assert process.command == "sleep 0.1 :::: echo hi"
     assert process.percentage_lines == 0.5
 
 
