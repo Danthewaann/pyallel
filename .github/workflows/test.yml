@@ -35,15 +35,14 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Install pyallel
-        run: |
-          pip install pyallel==1.2.8
-
       - name: Install dev dependencies
         run: |
-          pip install -r requirements_dev.txt
+          python -m venv .venv && \
+            source .venv/bin/activate && \
+            pip install . && \
+            pip install . -r requirements_dev.txt
 
       - name: Run pyallel
         run: |
-          echo "Running pyallel $(PYTHONPATH=./src pyallel --version)"
-          PYTHONPATH=./src pyallel "MYPY_FORCE_COLOR=1 mypy ." "pytest --color=yes -s ." --colour yes
+          source .venv/bin/activate && \
+            pyallel --colour yes MYPY_FORCE_COLOR=1 mypy . :: pytest --color=yes -s .
