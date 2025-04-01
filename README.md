@@ -2,7 +2,7 @@
 
 Run and handle the output of multiple executables in `pyallel` (as in parallel)
 
-https://github.com/Danthewaann/pyallel/assets/22531177/8685eb92-aac5-440a-9170-30fd1460c53f
+![demo](https://github.com/user-attachments/assets/a5b316f9-88a1-4223-b39e-ae2c9573897b)
 
 Tested on Linux and MacOS only
 
