@@ -53,9 +53,16 @@ def entry_point(*args: str) -> int:
         return 1
 
     if exit_code == 1:
-        print(f"{colours.red_bold}\nFailed!{colours.reset_colour}")
-    elif exit_code == 0:
-        print(f"{colours.green_bold}\nDone!{colours.reset_colour}")
+        process_group = process_group_manager.get_cur_process_group_output()
+        print(
+            f"\n{colours.red_bold}ERROR: the following commands failed{colours.reset_colour}"
+        )
+        for process_output in process_group.processes:
+            process_poll = process_output.process.poll()
+            if process_poll and process_poll > 0:
+                print(
+                    f"   {colours.red_bold}{process_output.process.command}{colours.reset_colour}"
+                )
 
     return exit_code
 

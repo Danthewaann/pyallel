@@ -187,8 +187,6 @@ class TestNonInteractiveMode:
                 "[echo hi] running... \n",
                 f"{PREFIX}hi\n",
                 "[echo hi] done ✔\n",
-                "\n",
-                "Done!\n",
             ]
         )
 
@@ -201,8 +199,6 @@ class TestNonInteractiveMode:
                 "[echo hi] running... \n",
                 f"{PREFIX}hi\n",
                 "[echo hi] done ✔\n",
-                "\n",
-                "Done!\n",
             ]
         )
 
@@ -215,7 +211,8 @@ class TestNonInteractiveMode:
                 "[exit 1] running... \n",
                 "[exit 1] failed ✘\n",
                 "\n",
-                "Failed!\n",
+                "ERROR: the following commands failed\n",
+                "   exit 1\n",
             ]
         )
 
@@ -228,8 +225,6 @@ class TestNonInteractiveMode:
                 "[TEST_VAR=1 echo hi] running... \n",
                 f"{PREFIX}hi\n",
                 "[TEST_VAR=1 echo hi] done ✔\n",
-                "\n",
-                "Done!\n",
             ]
         )
 
@@ -247,8 +242,6 @@ class TestNonInteractiveMode:
                 "[echo hi] running... \n",
                 f"{PREFIX}hi\n",
                 "[echo hi] done ✔\n",
-                "\n",
-                "Done!\n",
             ]
         )
 
@@ -266,8 +259,6 @@ class TestNonInteractiveMode:
                 "[echo hi] running... \n",
                 f"{PREFIX}hi\n",
                 "[echo hi] done ✔\n",
-                "\n",
-                "Done!\n",
             ]
         )
 
@@ -287,7 +278,8 @@ class TestNonInteractiveMode:
                 f"{PREFIX}hi\n",
                 "[echo hi] done ✔\n",
                 "\n",
-                "Failed!\n",
+                "ERROR: the following commands failed\n",
+                "   exit 1\n",
             ]
         )
 
@@ -307,7 +299,9 @@ class TestNonInteractiveMode:
                 "[exit 1] running... \n",
                 "[exit 1] failed ✘\n",
                 "\n",
-                "Failed!\n",
+                "ERROR: the following commands failed\n",
+                "   exit 1\n",
+                "   exit 1\n",
             ]
         )
 
@@ -327,8 +321,6 @@ class TestNonInteractiveMode:
                 "[echo hi] running... \n",
                 f"{PREFIX}hi\n",
                 "[echo hi] done ✔\n",
-                "\n",
-                "Done!\n",
             ]
         )
 
@@ -345,7 +337,8 @@ class TestNonInteractiveMode:
                 "[exit 1] running... \n",
                 "[exit 1] failed ✘\n",
                 "\n",
-                "Failed!\n",
+                "ERROR: the following commands failed\n",
+                "   exit 1\n",
             ]
         )
 
@@ -360,8 +353,6 @@ class TestNonInteractiveMode:
                         r"\[echo hi\] running... \n",
                         f"{PREFIX}hi\n",
                         r"\[echo hi\] done ✔ \(0\..*\)\n",
-                        "\n",
-                        "Done!\n",
                     ]
                 ),
                 captured.out,
@@ -382,8 +373,6 @@ class TestNonInteractiveMode:
                         r"\[echo hi\] running... \n",
                         f"{PREFIX}hi\n",
                         r"\[echo hi\] done ✔ \(0\..*s\)\n",
-                        "\n",
-                        "Done!\n",
                     ]
                 ),
                 captured.out,
@@ -405,8 +394,6 @@ class TestNonInteractiveMode:
                 f"[printf hi; sleep {wait}; echo bye] running... \n",
                 f"{PREFIX}hibye\n",
                 f"[printf hi; sleep {wait}; echo bye] done ✔\n",
-                "\n",
-                "Done!\n",
             ]
         )
 
@@ -433,8 +420,6 @@ class TestNonInteractiveMode:
                 f"[printf hi; sleep {wait}; echo bye] running... \n",
                 f"{PREFIX}hibye\n",
                 f"[printf hi; sleep {wait}; echo bye] done ✔\n",
-                "\n",
-                "Done!\n",
             ]
         )
 
