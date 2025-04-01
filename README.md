@@ -85,7 +85,7 @@ options:
 Currently you can provide a variable number of `commands` to run to `pyallel`, like so:
 
 ```bash
-pyallel MYPY_FORCE_COLOR=1 mypy . :: black --check --diff . :: pytest .
+pyallel -- MYPY_FORCE_COLOR=1 mypy . :: black --check --diff . :: pytest .
 ```
 
 # Build
