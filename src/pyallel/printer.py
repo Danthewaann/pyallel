@@ -45,7 +45,7 @@ class ConsolePrinter:
             columns = columns - truncate_num
             if self.get_num_lines(line, columns) > 1:
                 line = self.truncate_line(line, columns)
-        print(f"{prefix}{line}", end=end, flush=flush)
+        print(f"{self._colours.reset_colour}{prefix}{line}", end=end, flush=flush)
 
     def generate_process_output(
         self,
