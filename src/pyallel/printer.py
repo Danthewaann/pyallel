@@ -41,7 +41,7 @@ class ConsolePrinter:
         columns = columns or constants.COLUMNS()
         if prefix:
             truncate_num = 6
-        if truncate:
+        if prefix and truncate:
             columns = columns - truncate_num
             if self.get_num_lines(line, columns) > 1:
                 line = self.truncate_line(line, columns)
@@ -108,8 +108,10 @@ class ConsolePrinter:
         output: ProcessOutput,
         include_progress: bool = True,
         include_timer: bool | None = None,
+        columns: int | None = None,
     ) -> str:
         include_timer = include_timer if include_timer is not None else self._timer
+        columns = columns or constants.COLUMNS()
 
         passed = None
         icon = ""
@@ -143,11 +145,11 @@ class ConsolePrinter:
             timer = f"({self.format_time_taken(elapsed)})"
 
         command = output.process.command
-        if self.get_num_lines(output.process.command) > 1:
-            columns = constants.COLUMNS() - (len(msg) + len(timer) + 9)
-            command = self.truncate_line(command, columns)
-
         out = f"{self._colours.white_bold}[{self._colours.reset_colour}{self._colours.blue_bold}{command}{self._colours.reset_colour}{self._colours.white_bold}]{self._colours.reset_colour}{colour} {msg} {icon}{self._colours.reset_colour}"
+        if self.get_num_lines(out, columns) > 1:
+            columns = columns - (len(msg) + len(timer) + 9)
+            command = self.truncate_line(command, columns)
+            out = f"{self._colours.white_bold}[{self._colours.reset_colour}{self._colours.blue_bold}{command}{self._colours.reset_colour}{self._colours.white_bold}]{self._colours.reset_colour}{colour} {msg} {icon}{self._colours.reset_colour}"
 
         if timer:
             out += f" {self._colours.dim_on}{timer}{self._colours.dim_off}"

@@ -45,7 +45,7 @@ def test_get_num_lines_with_long_line() -> None:
     assert ConsolePrinter().get_num_lines(" " * 250, columns=200) == 2
 
 
-@pytest.mark.parametrize("chars", ["\x1B[0m", "\x1B(B"])
+@pytest.mark.parametrize("chars", ["\x1b[0m", "\x1b(B"])
 def test_get_num_lines_ignores_ansi_chars(chars: str) -> None:
     assert ConsolePrinter().get_num_lines(chars * 100, columns=10) == 1
 
@@ -258,6 +258,19 @@ def test_printer_generate_process_output_status(
     )
 
     assert output == expected
+
+
+def test_printer_generate_process_output_status_handles_long_command() -> None:
+    printer = ConsolePrinter(colours=Colours.from_colour("no"))
+    process = Process(1, "echo first; echo second")
+    process.run()
+    process.wait()
+
+    output = printer.generate_process_output_status(
+        ProcessOutput(id=1, process=process, data="first\nsecond\n"), columns=5
+    )
+
+    assert output == "[echo first; ech...] done ✔"
 
 
 def test_printer_generate_process_group_output() -> None:
