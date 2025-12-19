@@ -30,17 +30,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: 📦 Install uv
+        run: |
+          pipx install uv
+
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: 'pip'
 
-      - name: Install dev dependencies
-        run: |
-          python -m venv .venv && \
-            source .venv/bin/activate && \
-            pip install . && \
-            pip install . -r requirements_dev.txt
+      - name: Install dependencies
+        run: uv sync
 
       - name: Run pyallel
         run: |

@@ -18,10 +18,10 @@ else
     arch=unknown
 fi
 
-poetry install
+uv sync
 
-poetry run pyallel "docker build --tag pyallel-x86_64 --build-arg 'arch=x86_64' --build-arg 'uid=$user_id' --build-arg 'gid=$group_id' . && docker run -e 'arch=x86_64' --rm --volume '$cur_dir:/src' pyallel-x86_64" :: \
+uv run pyallel "docker build --tag pyallel-x86_64 --build-arg 'arch=x86_64' --build-arg 'uid=$user_id' --build-arg 'gid=$group_id' . && docker run -e 'arch=x86_64' --rm --volume '$cur_dir:/src' pyallel-x86_64" :: \
         "docker build --tag pyallel-aarch64 --build-arg 'arch=aarch64' --build-arg 'uid=$user_id' --build-arg 'gid=$group_id' . && docker run -e 'arch=aarch64' --rm --volume '$cur_dir:/src' pyallel-aarch64" :: \
         "docker build --tag pyallel-x86_64-alpine --build-arg 'arch=x86_64' --build-arg 'uid=$user_id' --build-arg 'gid=$group_id' --file Dockerfile.alpine . && docker run -e 'arch=x86_64' --rm --volume '$cur_dir:/src' pyallel-x86_64-alpine" :: \
         "docker build --tag pyallel-aarch64-alpine --build-arg 'arch=aarch64' --build-arg 'uid=$user_id' --build-arg 'gid=$group_id' --file Dockerfile.alpine . && docker run -e 'arch=aarch64' --rm --volume '$cur_dir:/src' pyallel-aarch64-alpine" :: \
-        "source .venv/bin/activate && pip install . -r requirements_build.txt && ./build.sh $distro $arch"
+        "source .venv/bin/activate && ./build.sh $distro $arch"

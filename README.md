@@ -10,10 +10,10 @@ Tested on Linux and MacOS only
 
 Pre-built executables are available on the [Releases](https://github.com/Danthewaann/pyallel/releases) page.
 
-`pyallel` can also be installed using pip (requires Python >=3.8):
+`pyallel` can also be installed using pipx (requires Python >=3.8):
 
 ```bash
-pip install pyallel
+pipx install pyallel
 ```
 
 # Quick start
@@ -122,9 +122,9 @@ docker build --tag pyallel-alpine --build-arg 'arch=x86_64' --build-arg "uid=$(i
 #### Build locally
 
 ```bash
-python -m venv .venv && \
+pipx install uv && \
+  uv sync && \
   source .venv/bin/activate && \
-  pip install . -r requirements_build.txt && \
   ./build.sh
 ```
 

@@ -17,16 +17,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: 📦 Install uv
+        run: |
+          pipx install uv
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.12
+          cache: 'pip'
 
-      - name: Install pyinstaller
-        run: pip install . -r requirements_build.txt
+      - name: Install dependencies
+        run: uv sync
 
       - name: Run pyinstaller
-        run: ./build.sh
+        run: |
+          source .venv/bin/activate && \
+            ./build.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3

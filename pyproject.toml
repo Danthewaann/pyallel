@@ -1,30 +1,44 @@
-[tool.poetry]
+[project]
 name = "pyallel"
 version = "2.0.4"
 description = "Run and handle the output of multiple executables in pyallel (as in parallel)"
-authors = ["Daniel Black <danielcrblack@gmail.com>"]
-license = "MIT"
+authors = [{ name = "Daniel Black", email = "danielcrblack@gmail.com" }]
+requires-python = ">=3.8"
 readme = "README.md"
-homepage = "https://github.com/Danthewaann/pyallel"
-repository = "https://github.com/Danthewaann/pyallel"
-keywords = ["parallel", "command", "runner", "executable", "shell", "terminal"]
+license = "MIT"
+keywords = [
+    "parallel",
+    "command",
+    "runner",
+    "executable",
+    "shell",
+    "terminal",
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: MacOS :: MacOS X",
-    "Operating System :: POSIX :: Linux"
+    "Operating System :: POSIX :: Linux",
 ]
 
-[tool.poetry.scripts]
+[project.urls]
+Homepage = "https://github.com/Danthewaann/pyallel"
+Repository = "https://github.com/Danthewaann/pyallel"
+
+[project.scripts]
 pyallel = "pyallel.main:entry_point"
 
-[tool.poetry.dependencies]
-python = ">=3.8"
+[dependency-groups]
+dev = [
+    "pytest>=7.4.3,<8",
+    "mypy>=1.7.0,<2",
+    "pyinstaller==6.11.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.4.3"
-mypy = "^1.7.0"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.mypy]
 strict = true
@@ -32,7 +46,3 @@ show_error_codes = true
 
 [tool.pytest.ini_options]
 addopts = "-vvv"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

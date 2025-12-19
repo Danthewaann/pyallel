@@ -1,5 +1,5 @@
 ARG arch
-FROM --platform=linux/${arch} python:3.12.2-bullseye
+FROM --platform=linux/${arch} python:3.13-bullseye
 
 ARG uid=
 ARG gid=
@@ -13,10 +13,9 @@ RUN addgroup --system build --gid 1000 && adduser --system build --uid ${uid} --
 COPY src src
 COPY pyproject.toml pyproject.toml
 COPY README.md README.md
-COPY requirements_build.txt requirements_build.txt
 
 # Also install pyallel so we can copy it's metadata when running pyinstaller
-RUN pip install . -r requirements_build.txt
+RUN pip install . --group dev
 
 # Switch to the build user before running the build scripts
 USER build
