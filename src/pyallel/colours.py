@@ -26,3 +26,6 @@ class Colours:
                 setattr(colours, field.name, "")
 
         return colours
+
+    def enabled(self) -> bool:
+        return all(getattr(self, field.name) for field in fields(self))

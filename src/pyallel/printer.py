@@ -144,7 +144,7 @@ class ConsolePrinter:
             elapsed = end - output.process.start
             timer = f"({self.format_time_taken(elapsed)})"
 
-        command = output.process.command
+        command = output.process.display_command
         out = f"{self._colours.white_bold}[{self._colours.reset_colour}{self._colours.blue_bold}{command}{self._colours.reset_colour}{self._colours.white_bold}]{self._colours.reset_colour}{colour} {msg} {icon}{self._colours.reset_colour}"
         if self.get_num_lines(out, columns) > 1:
             columns = columns - (len(msg) + len(timer) + 9)

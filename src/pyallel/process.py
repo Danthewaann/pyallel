@@ -6,6 +6,7 @@ import tempfile
 import time
 from typing import BinaryIO
 
+from pyallel.colours import Colours
 from pyallel.errors import InvalidLinesModifierError
 
 
@@ -22,9 +23,16 @@ class ProcessOutput:
 
 
 class Process:
-    def __init__(self, id: int, command: str, percentage_lines: float = 0.0) -> None:
+    def __init__(
+        self,
+        id: int,
+        command: str,
+        display_command: str | None = None,
+        percentage_lines: float = 0.0,
+    ) -> None:
         self.id = id
         self.command = command
+        self.display_command = display_command or command
         self.start = 0.0
         self.end = 0.0
         self.lines = 0
@@ -77,10 +85,12 @@ class Process:
         return self._process.wait()
 
     @classmethod
-    def from_command(cls, id: int, command: str) -> Process:
+    def from_command(
+        cls, id: int, command: str, colours: Colours | None = None
+    ) -> Process:
         cmd = command.split(" :::: ", maxsplit=1)
         if len(cmd) == 1:
-            return cls(id, cmd[0])
+            return cls(id, cls._convert_cmd(cmd[0], colours), display_command=cmd[0])
 
         args, *parts = cmd
 
@@ -106,4 +116,24 @@ class Process:
 
                 break
 
-        return cls(id, " ".join(parts), round(percentage_lines / 100, 2))
+        command = " ".join(parts)
+        return cls(
+            id,
+            cls._convert_cmd(command, colours),
+            display_command=command,
+            percentage_lines=round(percentage_lines / 100, 2),
+        )
+
+    @classmethod
+    def _convert_cmd(cls, command: str, colours: Colours | None = None) -> str:
+        if colours and colours.enabled():
+            if "mypy" in command and "MYPY_FORCE_COLOR" not in command:
+                return f"MYPY_FORCE_COLOR=1 {command}"
+            if "black" in command and "--color" not in command:
+                parts = command.split(" ")
+                return f"{parts[0]} --color {' '.join(parts[1:])}"
+            if "codespell" in command and "--enable-colors" not in command:
+                parts = command.split(" ")
+                return f"{parts[0]} --enable-colors {' '.join(parts[1:])}"
+
+        return command

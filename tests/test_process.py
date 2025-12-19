@@ -4,6 +4,7 @@ import time
 
 import pytest
 
+from pyallel.colours import Colours
 from pyallel.errors import InvalidLinesModifierError
 from pyallel.process import Process
 
@@ -58,6 +59,32 @@ def test_from_command_with_lines_modifier_handles_multiple_separators() -> None:
     assert process.id == expected_process.id
     assert process.command == "sleep 0.1 :::: echo hi"
     assert process.percentage_lines == 0.5
+
+
+def test_from_command_with_env_variable() -> None:
+    expected_process = Process(id=1, command="SPECIAL_VAR=yes echo hi")
+    process = Process.from_command(1, "SPECIAL_VAR=yes echo hi")
+    assert process.id == expected_process.id
+    assert process.command == "SPECIAL_VAR=yes echo hi"
+
+
+@pytest.mark.parametrize(
+    "command, expected",
+    [
+        ("mypy .", "MYPY_FORCE_COLOR=1 mypy ."),
+        ("MYPY_FORCE_COLOR=1 mypy .", "MYPY_FORCE_COLOR=1 mypy ."),
+        ("MYPY_FORCE_COLOR=0 mypy .", "MYPY_FORCE_COLOR=0 mypy ."),
+        ("black --check .", "black --color --check ."),
+        ("black --color --check .", "black --color --check ."),
+        ("codespell .", "codespell --enable-colors ."),
+        ("codespell --enable-colors .", "codespell --enable-colors ."),
+    ],
+)
+def test_from_command_with_colours(command: str, expected: str) -> None:
+    process = Process.from_command(1, command, colours=Colours.from_colour("yes"))
+    assert process.id == 1
+    assert process.command == expected
+    assert process.display_command == command
 
 
 def test_read() -> None:

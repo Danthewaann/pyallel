@@ -148,17 +148,17 @@ def test_set_process_lines_with_fixed_and_dynamic_lines(
         processes=[
             ProcessOutput(
                 id=1,
-                process=Process(1, "echo first; echo second", lines1),
+                process=Process(1, "echo first; echo second", percentage_lines=lines1),
                 data="first\nsecond\n",
             ),
             ProcessOutput(
                 id=2,
-                process=Process(2, "echo first; echo second", lines2),
+                process=Process(2, "echo first; echo second", percentage_lines=lines2),
                 data="first\nsecond\n",
             ),
             ProcessOutput(
                 id=3,
-                process=Process(3, "echo first; echo second", lines3),
+                process=Process(3, "echo first; echo second", percentage_lines=lines3),
                 data="first\nsecond\n",
             ),
         ],

@@ -3,6 +3,7 @@ from __future__ import annotations
 import signal
 from typing import Any
 
+from pyallel.colours import Colours
 from pyallel.errors import NoCommandsForProcessGroupError
 from pyallel.process import ProcessOutput
 from pyallel.process_group import ProcessGroupOutput, ProcessGroup
@@ -113,7 +114,9 @@ class ProcessGroupManager:
         self._interrupt_count += 1
 
     @classmethod
-    def from_args(cls, *args: str) -> ProcessGroupManager:
+    def from_args(
+        cls, *args: str, colours: Colours | None = None
+    ) -> ProcessGroupManager:
         commands: list[str] = []
         process_groups: list[ProcessGroup] = []
         progress_group_id = 1
@@ -129,7 +132,9 @@ class ProcessGroupManager:
                     f"no commands provided for process group {progress_group_id}, did you forgot to provide them before the ::: symbol?"
                 )
 
-            pg = ProcessGroup.from_commands(progress_group_id, process_id, *commands)
+            pg = ProcessGroup.from_commands(
+                progress_group_id, process_id, *commands, colours=colours
+            )
             process_groups.append(pg)
             process_id += len(pg.processes)
             progress_group_id += 1
@@ -137,7 +142,9 @@ class ProcessGroupManager:
 
         if commands:
             process_groups.append(
-                ProcessGroup.from_commands(progress_group_id, process_id, *commands)
+                ProcessGroup.from_commands(
+                    progress_group_id, process_id, *commands, colours=colours
+                )
             )
 
         process_group_manager = cls(process_groups=process_groups)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from pyallel.colours import Colours
 from pyallel.errors import (
     InvalidLinesModifierError,
 )
@@ -63,7 +64,9 @@ class ProcessGroup:
         self._interrupt_count += 1
 
     @classmethod
-    def from_commands(cls, id: int, process_id: int, *commands: str) -> ProcessGroup:
+    def from_commands(
+        cls, id: int, process_id: int, *commands: str, colours: Colours | None = None
+    ) -> ProcessGroup:
         cmds: list[str] = []
         processes: list[Process] = []
 
@@ -73,13 +76,13 @@ class ProcessGroup:
                 cmds.append(command)
                 continue
 
-            process = Process.from_command(i + process_id, " ".join(cmds))
+            process = Process.from_command(i + process_id, " ".join(cmds), colours)
             percentage_lines_sum += process.percentage_lines
             processes.append(process)
             cmds.clear()
 
         if cmds:
-            process = Process.from_command(i + process_id, " ".join(cmds))
+            process = Process.from_command(i + process_id, " ".join(cmds), colours)
             percentage_lines_sum += process.percentage_lines
             processes.append(process)
 

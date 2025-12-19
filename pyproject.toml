@@ -34,6 +34,7 @@ dev = [
     "pytest>=7.4.3,<8",
     "mypy>=1.7.0,<2",
     "pyinstaller==6.11.0",
+    "debugpy>=1.8.19",
 ]
 
 [build-system]
