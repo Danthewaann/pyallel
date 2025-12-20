@@ -11,7 +11,7 @@ from pyallel.process import Process
 
 def test_from_command() -> None:
     expected_process = Process(id=1, command="sleep 0.1")
-    process = Process.from_command(1, "sleep 0.1")
+    process = Process.from_command(1, ["sleep", "0.1"])
     assert process.id == expected_process.id
     assert process.command == "sleep 0.1"
     assert process.percentage_lines == 0.0
@@ -22,7 +22,7 @@ def test_from_command() -> None:
 )
 def test_from_command_with_lines_modifier(value: str, expected: float) -> None:
     expected_process = Process(id=1, command="sleep 0.1")
-    process = Process.from_command(1, f"lines={value} :::: sleep 0.1")
+    process = Process.from_command(1, [f"lines={value}", "::::", "sleep", "0.1"])
     assert process.id == expected_process.id
     assert process.command == "sleep 0.1"
     assert process.percentage_lines == expected
@@ -34,12 +34,12 @@ def test_from_command_with_invalid_lines_modifier(value: str) -> None:
         InvalidLinesModifierError,
         match="lines modifier must be a number between 1 and 100",
     ):
-        Process.from_command(1, f"lines={value} :::: sleep 0.1")
+        Process.from_command(1, [f"lines={value}", "::::", "sleep", "0.1"])
 
 
 def test_from_command_handles_invalid_args_syntax() -> None:
     expected_process = Process(id=1, command="sleep 0.1")
-    process = Process.from_command(1, " :::: sleep 0.1 :::: echo hi")
+    process = Process.from_command(1, ["::::", "sleep", "0.1", "::::", "echo", "hi"])
     assert process.id == expected_process.id
     assert process.command == "sleep 0.1 :::: echo hi"
     assert process.percentage_lines == 0.0
@@ -47,7 +47,9 @@ def test_from_command_handles_invalid_args_syntax() -> None:
 
 def test_from_command_ignores_invalid_arg() -> None:
     expected_process = Process(id=1, command="sleep 0.1")
-    process = Process.from_command(1, "bad=value :::: sleep 0.1 :::: echo hi")
+    process = Process.from_command(
+        1, ["bad=value", "::::", "sleep", "0.1", "::::", "echo", "hi"]
+    )
     assert process.id == expected_process.id
     assert process.command == "sleep 0.1 :::: echo hi"
     assert process.percentage_lines == 0.0
@@ -55,7 +57,7 @@ def test_from_command_ignores_invalid_arg() -> None:
 
 def test_from_command_with_lines_modifier_handles_multiple_separators() -> None:
     expected_process = Process(id=1, command="sleep 0.1")
-    process = Process.from_command(1, "lines=50 :::: sleep 0.1 :::: echo hi")
+    process = Process.from_command(1, ["lines=50", "::::", "sleep", "0.1", "::::", "echo", "hi"])
     assert process.id == expected_process.id
     assert process.command == "sleep 0.1 :::: echo hi"
     assert process.percentage_lines == 0.5
@@ -63,7 +65,7 @@ def test_from_command_with_lines_modifier_handles_multiple_separators() -> None:
 
 def test_from_command_with_env_variable() -> None:
     expected_process = Process(id=1, command="SPECIAL_VAR=yes echo hi")
-    process = Process.from_command(1, "SPECIAL_VAR=yes echo hi")
+    process = Process.from_command(1, ["SPECIAL_VAR=yes", "echo", "hi"])
     assert process.id == expected_process.id
     assert process.command == "SPECIAL_VAR=yes echo hi"
 
@@ -71,20 +73,35 @@ def test_from_command_with_env_variable() -> None:
 @pytest.mark.parametrize(
     "command, expected",
     [
-        ("mypy .", "MYPY_FORCE_COLOR=1 mypy ."),
-        ("MYPY_FORCE_COLOR=1 mypy .", "MYPY_FORCE_COLOR=1 mypy ."),
-        ("MYPY_FORCE_COLOR=0 mypy .", "MYPY_FORCE_COLOR=0 mypy ."),
-        ("black --check .", "black --color --check ."),
-        ("black --color --check .", "black --color --check ."),
-        ("codespell .", "codespell --enable-colors ."),
-        ("codespell --enable-colors .", "codespell --enable-colors ."),
+        (["mypy", "."], "unbuffer -nottycopy mypy ."),
+        (
+            ["MYPY_FORCE_COLOR=1", "mypy", "."],
+            "MYPY_FORCE_COLOR=1 unbuffer -nottycopy mypy .",
+        ),
+        (
+            ["ENV_VAR=1", "MYPY_FORCE_COLOR=1", "mypy", "."],
+            "ENV_VAR=1 MYPY_FORCE_COLOR=1 unbuffer -nottycopy mypy .",
+        ),
+        (
+            ["MYPY_FORCE_COLOR=0", "mypy", "."],
+            "MYPY_FORCE_COLOR=0 unbuffer -nottycopy mypy .",
+        ),
+        # ("black --check .", "black --color --check ."),
+        (
+            ["ENV_VAR=1", "black", "--check", "."],
+            "ENV_VAR=1 unbuffer -nottycopy black --check .",
+        ),
+        # ("black --color --check .", "black --color --check ."),
+        # ("codespell .", "codespell --enable-colors ."),
+        # ("ENV_VAR=1 codespell .", "ENV_VAR=1 codespell --enable-colors ."),
+        # ("codespell --enable-colors .", "codespell --enable-colors ."),
     ],
 )
-def test_from_command_with_colours(command: str, expected: str) -> None:
+def test_from_command_with_colours(command: list[str], expected: str) -> None:
     process = Process.from_command(1, command, colours=Colours.from_colour("yes"))
     assert process.id == 1
     assert process.command == expected
-    assert process.display_command == command
+    assert process.display_command == " ".join(command)
 
 
 def test_read() -> None:

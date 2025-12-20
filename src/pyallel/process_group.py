@@ -76,13 +76,13 @@ class ProcessGroup:
                 cmds.append(command)
                 continue
 
-            process = Process.from_command(i + process_id, " ".join(cmds), colours)
+            process = Process.from_command(i + process_id, cmds, colours)
             percentage_lines_sum += process.percentage_lines
             processes.append(process)
             cmds.clear()
 
         if cmds:
-            process = Process.from_command(i + process_id, " ".join(cmds), colours)
+            process = Process.from_command(i + process_id, cmds, colours)
             percentage_lines_sum += process.percentage_lines
             processes.append(process)
 

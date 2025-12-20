@@ -86,18 +86,24 @@ class Process:
 
     @classmethod
     def from_command(
-        cls, id: int, command: str, colours: Colours | None = None
+        cls, id: int, command: list[str], colours: Colours | None = None
     ) -> Process:
-        cmd = command.split(" :::: ", maxsplit=1)
-        if len(cmd) == 1:
-            return cls(id, cls._convert_cmd(cmd[0], colours), display_command=cmd[0])
+        try:
+            split_index = command.index("::::")
+        except ValueError:
+            return cls(
+                id,
+                command=cls._convert_cmd(command, colours),
+                display_command=" ".join(command),
+            )
 
-        args, *parts = cmd
+        args = command[:split_index]
+        parts = command[split_index + 1 :]
 
         percentage_lines = 0
-        for arg in args.split(" "):
+        for arg in args:
             try:
-                arg, value = args.split("=")
+                arg, value = arg.split("=")
             except ValueError:
                 continue
 
@@ -116,24 +122,31 @@ class Process:
 
                 break
 
-        command = " ".join(parts)
         return cls(
             id,
-            cls._convert_cmd(command, colours),
-            display_command=command,
+            command=cls._convert_cmd(parts[0].split(), colours),
+            display_command=" ".join(command),
             percentage_lines=round(percentage_lines / 100, 2),
         )
 
     @classmethod
-    def _convert_cmd(cls, command: str, colours: Colours | None = None) -> str:
+    def _convert_cmd(cls, command: list[str], colours: Colours | None = None) -> str:
         if colours and colours.enabled():
-            if "mypy" in command and "MYPY_FORCE_COLOR" not in command:
-                return f"MYPY_FORCE_COLOR=1 {command}"
-            if "black" in command and "--color" not in command:
-                parts = command.split(" ")
-                return f"{parts[0]} --color {' '.join(parts[1:])}"
-            if "codespell" in command and "--enable-colors" not in command:
-                parts = command.split(" ")
-                return f"{parts[0]} --enable-colors {' '.join(parts[1:])}"
+            converted_cmd: list[str] = []
+            added_unbuffer = False
+            for part in command:
+                if not added_unbuffer:
+                    is_env_var = len(part.split("=")) > 1
+                    if is_env_var:
+                        converted_cmd.append(part)
+                        converted_cmd.extend(("unbuffer", "-nottycopy"))
+                        added_unbuffer = True
+                    else:
+                        converted_cmd.extend(("unbuffer", "-nottycopy"))
+                        converted_cmd.append(part)
+                        added_unbuffer = True
+                else:
+                    converted_cmd.append(part)
+            command = converted_cmd
 
-        return command
+        return " ".join(command)
