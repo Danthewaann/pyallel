@@ -16,13 +16,14 @@ def prettify_error(out: str) -> str:
 
 
 def compare_output(actual: Sequence[str], expected: Sequence[str]) -> None:
+    __tracebackhide__ = True
     diff = list(
         difflib.unified_diff(
-            actual, expected, fromfile="expected", tofile="actual", lineterm=""
+            expected, actual, fromfile="expected", tofile="actual", lineterm=""
         )
     )
     if diff:
-        pytest.fail("\n".join(diff))
+        pytest.fail("\n" + "\n".join(diff))
 
 
 PREFIX = "=> "
