@@ -63,8 +63,6 @@ def test_from_command_with_lines_modifier_handles_multiple_separators() -> None:
 def test_read() -> None:
     process = Process(1, "echo first; echo second")
     process.run()
-    output = process.read()
-    assert output == b""
     time.sleep(0.01)
     output = process.read()
     assert output == b"first\nsecond\n"
@@ -73,8 +71,6 @@ def test_read() -> None:
 def test_readline() -> None:
     process = Process(1, "echo first; echo second")
     process.run()
-    output = process.readline()
-    assert output == b""
     time.sleep(0.01)
     output = process.readline()
     assert output == b"first\n"

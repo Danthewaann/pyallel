@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-import signal
+import threading
 import subprocess
-import tempfile
+
+import signal
 import time
-from typing import BinaryIO
+import typing
 
 from pyallel.errors import InvalidLinesModifierError
+
+if typing.TYPE_CHECKING:
+    from io import BufferedReader
 
 
 class ProcessOutput:
@@ -29,26 +33,32 @@ class Process:
         self.end = 0.0
         self.lines = 0
         self.percentage_lines = percentage_lines
-        self._fd: BinaryIO
         self._process: subprocess.Popen[bytes]
+        self._buffer: bytes = b""
+        self._lock = threading.Lock()
 
     def run(self) -> None:
         self.start = time.perf_counter()
-        fd, fd_name = tempfile.mkstemp()
-        self._fd = open(fd_name, "rb")
         self._process = subprocess.Popen(
             self.command,
             stdin=subprocess.DEVNULL,
-            stdout=fd,
+            stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             shell=True,
         )
 
-    def __del__(self) -> None:
-        try:
-            self._fd.close()
-        except AttributeError:
-            pass
+        def _read_stdout() -> None:
+            if self._process.stdout:
+                stdout = typing.cast("BufferedReader", self._process.stdout)
+                while True:
+                    data = stdout.read1(65536)
+                    if not data:
+                        break
+                    with self._lock:
+                        self._buffer += data
+
+        read_thread = threading.Thread(target=_read_stdout, daemon=True)
+        read_thread.start()
 
     def poll(self) -> int | None:
         poll = self._process.poll()
@@ -57,10 +67,25 @@ class Process:
         return poll
 
     def read(self) -> bytes:
-        return self._fd.read()
+        with self._lock:
+            buffer = self._buffer
+            self._buffer = b""
+
+        return buffer
 
     def readline(self) -> bytes:
-        return self._fd.readline()
+        with self._lock:
+            buffer = self._buffer
+            if not buffer:
+                return b""
+
+            newline_index = buffer.find(b"\n")
+            if newline_index == -1:
+                self._buffer = b""
+                return buffer
+
+            self._buffer = buffer[newline_index + 1 :]
+            return buffer[: newline_index + 1]
 
     def return_code(self) -> int | None:
         return self._process.returncode
