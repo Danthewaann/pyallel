@@ -363,8 +363,11 @@ class InteractiveConsolePrinter(ConsolePrinter):
                 for line_parts in self._to_print[num_last_printed_lines:]:
                     include_prefix, line, end = line_parts
                     self.write(line, include_prefix=include_prefix, end=end, truncate=tail_output, columns=columns)
+            elif num_last_printed_lines > num_lines_to_print:
+                # Make sure to clear the remaining last printed lines at the end of the screen so they don't get left behind
+                print("\033[0J", end="")
             else:
-                # Jump to the end of the output
+                # Jump to the end of the output since the num of lines printed hasn't changed
                 lines_to_jump = num_lines_to_print - cursor_line
                 if lines_to_jump:
                     print(f"\033[{lines_to_jump}B\r", end="")
