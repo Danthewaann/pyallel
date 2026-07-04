@@ -9,7 +9,7 @@ from pyallel.process import Process, ProcessOutput
 
 
 class ProcessGroupOutput:
-    def __init__(self, id: int, processes: Sequence[ProcessOutput]) -> None:
+    def __init__(self, id: int, processes: Sequence[ProcessOutput]) -> None:  # noqa: A002
         self.id = id
         self.processes = processes
 
@@ -19,7 +19,7 @@ class ProcessGroupOutput:
 
 
 class ProcessGroup:
-    def __init__(self, id: int, processes: list[Process]) -> None:
+    def __init__(self, id: int, processes: list[Process]) -> None:  # noqa: A002
         self.id = id
         self.processes = processes
         self._exit_code: int = 0
@@ -37,18 +37,15 @@ class ProcessGroup:
 
         if running:
             return None
-        elif failed:
+        if failed:
             return 1
-        else:
-            return 0
+        return 0
 
     def stream(self) -> ProcessGroupOutput:
         return ProcessGroupOutput(
             id=self.id,
             processes=[
-                ProcessOutput(
-                    id=process.id, process=process, data=process.read().decode()
-                )
+                ProcessOutput(id=process.id, process=process, data=process.read().decode())
                 for process in self.processes
             ],
         )
@@ -63,7 +60,7 @@ class ProcessGroup:
         self._interrupt_count += 1
 
     @classmethod
-    def from_commands(cls, id: int, process_id: int, *commands: str) -> ProcessGroup:
+    def from_commands(cls, id: int, process_id: int, *commands: str) -> ProcessGroup:  # noqa: A002
         cmds: list[str] = []
         processes: list[Process] = []
 
@@ -88,6 +85,4 @@ class ProcessGroup:
                 "lines modifier must not exceed 100 across all processes within each process group"
             )
 
-        process_group = cls(id=id, processes=processes)
-
-        return process_group
+        return cls(id=id, processes=processes)

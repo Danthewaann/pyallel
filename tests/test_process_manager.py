@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 import time
 
-
 import pytest
+
 from pyallel.errors import NoCommandsForProcessGroupError
 from pyallel.process import Process
 from pyallel.process_group import ProcessGroup
@@ -58,12 +59,8 @@ def test_from_args() -> None:
             )
         ]
     )
-    process_group_manager = ProcessGroupManager.from_args(
-        "sleep 0.1", "::", "sleep 0.2"
-    )
-    assert len(process_group_manager._process_groups) == len(
-        expected_process_group_manager._process_groups
-    )
+    process_group_manager = ProcessGroupManager.from_args("sleep 0.1", "::", "sleep 0.2")
+    assert len(process_group_manager._process_groups) == len(expected_process_group_manager._process_groups)
 
     for pg1, pg2 in zip(
         expected_process_group_manager._process_groups,
@@ -73,8 +70,8 @@ def test_from_args() -> None:
 
 
 @pytest.mark.parametrize(
-    "args, expected_process_group_manager",
-    (
+    ("args", "expected_process_group_manager"),
+    [
         (
             ["sleep 0.1", ":::", "sleep 0.2", "::", "sleep 0.3", ":::", "sleep 0.4"],
             ProcessGroupManager(
@@ -172,15 +169,11 @@ def test_from_args() -> None:
                 ],
             ),
         ),
-    ),
+    ],
 )
-def test_from_args_with_separators(
-    args: list[str], expected_process_group_manager: ProcessGroupManager
-) -> None:
+def test_from_args_with_separators(args: list[str], expected_process_group_manager: ProcessGroupManager) -> None:
     process_group_manager = ProcessGroupManager.from_args(*args)
-    assert len(process_group_manager._process_groups) == len(
-        expected_process_group_manager._process_groups
-    )
+    assert len(process_group_manager._process_groups) == len(expected_process_group_manager._process_groups)
 
     for pg1, pg2 in zip(
         expected_process_group_manager._process_groups,
@@ -192,6 +185,6 @@ def test_from_args_with_separators(
 def test_from_args_with_bad_separator() -> None:
     with pytest.raises(
         NoCommandsForProcessGroupError,
-        match="no commands provided for process group 1, did you forgot to provide them before the ::: symbol?",
+        match=r"no commands provided for process group 1, did you forgot to provide them before the ::: symbol?",
     ):
         ProcessGroupManager.from_args(":::", "echo hi")

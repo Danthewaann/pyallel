@@ -12,18 +12,18 @@ ANSI_ESCAPE = re.compile(r"(\x9B|\x1B\[|\x1B\()[0-?]*[ -\/]*[@-~]")
 
 if IN_TTY:
 
-    def COLUMNS() -> int:
+    def columns() -> int:
         return shutil.get_terminal_size().columns
 
-    def LINES() -> int:
+    def lines() -> int:
         return shutil.get_terminal_size().lines
 
 else:
 
-    def COLUMNS() -> int:
+    def columns() -> int:
         return sys.maxsize
 
-    def LINES() -> int:
+    def lines() -> int:
         return sys.maxsize
 
 

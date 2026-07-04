@@ -1,6 +1,4 @@
-"""
-Ad-hoc benchmark comparing Process's stdout reading approach against two
-scenarios:
+"""Ad-hoc benchmark comparing Process's stdout reading approach against two scenarios.
 
 1. A chatty command that produces a lot of output while it's running.
 2. A quick command that exits almost immediately, followed by a period of
@@ -26,9 +24,7 @@ def cpu_time() -> float:
     return usage.ru_utime + usage.ru_stime
 
 
-def run_scenario(
-    name: str, command: str, poll_seconds: float, extra_idle_seconds: float
-) -> None:
+def run_scenario(name: str, command: str, poll_seconds: float, extra_idle_seconds: float) -> None:
     process = Process(1, command)
 
     start_wall = time.perf_counter()
@@ -49,10 +45,7 @@ def run_scenario(
     end_wall = time.perf_counter()
     end_cpu = cpu_time()
 
-    print(
-        f"{name:12} wall={end_wall - start_wall:6.3f}s  "
-        f"cpu={end_cpu - start_cpu:6.3f}s  bytes={total_bytes}"
-    )
+    print(f"{name:12} wall={end_wall - start_wall:6.3f}s  cpu={end_cpu - start_cpu:6.3f}s  bytes={total_bytes}")
 
 
 def main() -> None:

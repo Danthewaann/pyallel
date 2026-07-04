@@ -16,9 +16,7 @@ def test_from_command() -> None:
     assert process.percentage_lines == 0.0
 
 
-@pytest.mark.parametrize(
-    "value,expected", [("1", 0.01), ("100", 1.0), ("50", 0.5), ("10", 0.1)]
-)
+@pytest.mark.parametrize(("value", "expected"), [("1", 0.01), ("100", 1.0), ("50", 0.5), ("10", 0.1)])
 def test_from_command_with_lines_modifier(value: str, expected: float) -> None:
     expected_process = Process(id=1, command="sleep 0.1")
     process = Process.from_command(1, f"lines={value} :::: sleep 0.1")

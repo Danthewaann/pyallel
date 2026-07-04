@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from typing import Any
+
 import pytest
+
 from pyallel.colours import Colours
 from pyallel.printer import ConsolePrinter
 from pyallel.process import Process, ProcessOutput
@@ -9,8 +11,8 @@ from pyallel.process_group import ProcessGroupOutput
 
 
 @pytest.mark.parametrize(
-    "output,columns,expected",
-    (
+    ("output", "columns", "expected"),
+    [
         pytest.param("Hello Mr Anderson", 20, 1, id="output fits within 20 columns"),
         pytest.param(
             "Hello Mr Anderson\nIt is inevitable",
@@ -24,13 +26,13 @@ from pyallel.process_group import ProcessGroupOutput
             3,
             id="output wraps over 3 lines with 20 columns",
         ),
-    ),
+    ],
 )
 def test_get_num_lines(output: str, columns: int, expected: int) -> None:
     assert ConsolePrinter().get_num_lines(output, columns) == expected
 
 
-@pytest.mark.parametrize("columns,lines", ((8, 3), (5, 4)))
+@pytest.mark.parametrize(("columns", "lines"), [(8, 3), (5, 4)])
 def test_get_num_lines_with_columns(columns: int, lines: int) -> None:
     assert ConsolePrinter().get_num_lines("Hello Mr Anderson", columns=columns) == lines
 
@@ -116,8 +118,8 @@ def test_set_process_lines_shares_lines_across_many_more_processes() -> None:
 
 
 @pytest.mark.parametrize(
-    "lines,lines1,lines2,lines3,expected_lines1,expected_lines2,expected_lines3",
-    (
+    ("lines", "lines1", "lines2", "lines3", "expected_lines1", "expected_lines2", "expected_lines3"),
+    [
         pytest.param(
             59,
             0.4,
@@ -128,11 +130,9 @@ def test_set_process_lines_shares_lines_across_many_more_processes() -> None:
             11,
             id="59 lines shared between 3 processes with the remainder going to the process with the most output",
         ),
-        pytest.param(
-            59, 1.0, 0.0, 0.0, 59, 0, 0, id="All lines given to first process"
-        ),
+        pytest.param(59, 1.0, 0.0, 0.0, 59, 0, 0, id="All lines given to first process"),
         pytest.param(59, 0.5, 0.0, 0.0, 53, 3, 3, id="29 lines given to first process"),
-    ),
+    ],
 )
 def test_set_process_lines_with_fixed_and_dynamic_lines(
     lines: int,
@@ -172,8 +172,8 @@ def test_set_process_lines_with_fixed_and_dynamic_lines(
 
 
 @pytest.mark.parametrize(
-    "kwargs,lines,expected",
-    (
+    ("kwargs", "lines", "expected"),
+    [
         pytest.param(
             {},
             0,
@@ -206,7 +206,7 @@ def test_set_process_lines_with_fixed_and_dynamic_lines(
             ],
             id="tail output with 3 lines yields command status line plus 2 output lines",
         ),
-    ),
+    ],
 )
 def test_printer_generate_process_output(
     kwargs: dict[str, Any], lines: int, expected: list[tuple[bool, str, str]]
@@ -226,8 +226,8 @@ def test_printer_generate_process_output(
 
 
 @pytest.mark.parametrize(
-    "kwargs,expected",
-    (
+    ("kwargs", "expected"),
+    [
         pytest.param(
             {},
             "[echo first; echo second] done ✔",
@@ -243,11 +243,9 @@ def test_printer_generate_process_output(
             "[echo first; echo second] done ✔ (0.0s)",
             id="include timer yields timer",
         ),
-    ),
+    ],
 )
-def test_printer_generate_process_output_status(
-    kwargs: dict[str, Any], expected: str
-) -> None:
+def test_printer_generate_process_output_status(kwargs: dict[str, Any], expected: str) -> None:
     printer = ConsolePrinter(colours=Colours.from_colour("no"))
     process = Process(1, "echo first; echo second")
     process.run()

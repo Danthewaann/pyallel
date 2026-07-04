@@ -41,28 +41,22 @@ def entry_point(*args: str) -> int:
     try:
         process_group_manager = ProcessGroupManager.from_args(*parsed_args.commands)
     except PyallelError as e:
-        print(f"{colours.red_bold}Error: {str(e)}{colours.reset_colour}")
+        print(f"{colours.red_bold}Error: {e!s}{colours.reset_colour}")
         return 1
 
     try:
         exit_code = run(process_group_manager, printer)
     except Exception:
-        print(
-            f"{colours.red_bold}Error: {traceback.format_exc()}{colours.reset_colour}"
-        )
+        print(f"{colours.red_bold}Error: {traceback.format_exc()}{colours.reset_colour}")
         return 1
 
     if exit_code == 1:
         process_group = process_group_manager.get_cur_process_group_output()
-        print(
-            f"\n{colours.red_bold}ERROR: the following commands failed{colours.reset_colour}"
-        )
+        print(f"\n{colours.red_bold}ERROR: the following commands failed{colours.reset_colour}")
         for process_output in process_group.processes:
             process_poll = process_output.process.poll()
             if process_poll and process_poll > 0:
-                print(
-                    f"   {colours.red_bold}{process_output.process.command}{colours.reset_colour}"
-                )
+                print(f"   {colours.red_bold}{process_output.process.command}{colours.reset_colour}")
 
     return exit_code
 

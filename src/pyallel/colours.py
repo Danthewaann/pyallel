@@ -21,7 +21,7 @@ class Colours:
     def from_colour(cls, colour: Literal["yes", "no", "auto"]) -> Colours:
         colours = cls()
 
-        if colour == "no" or colour == "auto" and not constants.IN_TTY:
+        if colour == "no" or (colour == "auto" and not constants.IN_TTY):
             for field in fields(colours):
                 setattr(colours, field.name, "")
 

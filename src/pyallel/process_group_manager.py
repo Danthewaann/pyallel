@@ -5,7 +5,7 @@ from typing import Any
 
 from pyallel.errors import NoCommandsForProcessGroupError
 from pyallel.process import ProcessOutput
-from pyallel.process_group import ProcessGroupOutput, ProcessGroup
+from pyallel.process_group import ProcessGroup, ProcessGroupOutput
 
 
 class ProcessGroupManagerOutput:
@@ -51,6 +51,10 @@ class ProcessGroupManager:
         )
         self.cur_output = ProcessGroupManagerOutput()
 
+    @property
+    def interrupt_count(self) -> int:
+        return self._interrupt_count
+
     def run(self) -> None:
         if self._process_groups:
             self._cur_process_group = self._process_groups.pop(0)
@@ -59,7 +63,7 @@ class ProcessGroupManager:
             self._cur_process_group = None
 
     def next(self) -> bool:
-        return True if self._cur_process_group or self._process_groups else False
+        return bool(self._cur_process_group or self._process_groups)
 
     def stream(self) -> ProcessGroupManagerOutput:
         if self._cur_process_group is None:
@@ -67,9 +71,7 @@ class ProcessGroupManager:
 
         output = ProcessGroupManagerOutput(
             cur_process_group_id=self._cur_process_group.id,
-            process_group_outputs={
-                self._cur_process_group.id: self._cur_process_group.stream()
-            },
+            process_group_outputs={self._cur_process_group.id: self._cur_process_group.stream()},
         )
 
         self._all_output.merge(output)
@@ -83,13 +85,13 @@ class ProcessGroupManager:
 
         raise KeyError("no current process group output")
 
-    def get_process(self, id: int) -> ProcessOutput:
+    def get_process(self, process_id: int) -> ProcessOutput:
         for pg in self._all_output.process_group_outputs.values():
             for process in pg.processes:
-                if process.id == id:
+                if process.id == process_id:
                     return process
 
-        raise KeyError(f"process with id '{id}' not found")
+        raise KeyError(f"process with id '{process_id}' not found")
 
     def poll(self) -> int | None:
         if self._cur_process_group is None:
@@ -136,9 +138,7 @@ class ProcessGroupManager:
             commands.clear()
 
         if commands:
-            process_groups.append(
-                ProcessGroup.from_commands(progress_group_id, process_id, *commands)
-            )
+            process_groups.append(ProcessGroup.from_commands(progress_group_id, process_id, *commands))
 
         process_group_manager = cls(process_groups=process_groups)
 

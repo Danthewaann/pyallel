@@ -34,6 +34,7 @@ dev = [
     "pytest>=7.4.3,<8",
     "mypy>=1.7.0,<2",
     "pyinstaller==6.11.0",
+    "ruff>=0.15.20",
 ]
 
 [build-system]
@@ -46,3 +47,87 @@ show_error_codes = true
 
 [tool.pytest.ini_options]
 addopts = "-vvv"
+
+[tool.ruff]
+# Allow lines to be as long as 120 columns
+line-length = 120
+
+[tool.ruff.lint]
+# Ruff linting rules are listed within: https://beta.ruff.rs/docs/rules
+#
+# Globally enable all rules by default. We ignore ones we don't want below
+select = [
+    "ALL"
+]
+# Rules to ignore globally
+ignore = [
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
+    "BLE001",  # Do not catch blind exceptions
+    "B904",    # Within an except* clause, raise exceptions with raise ... from err or raise ... from None
+    "COM812",  # Trailing comma missing
+    "COM819",  # Trailing comma prohibited
+    "D1",      # pydocstyle: undocumented code
+    "D203",    # pydocstyle: 1 blank line required before class docstring
+    "D213",    # pydocstyle: Multi-line docstring summary should start at the second line
+    "D401",    # pydocstyle: First line of docstring should be in imperative mood
+    "D413",    # pydocstyle: Missing blank line after last section
+    "E501",    # Line too long
+    "EM",      # flake8-errmsg: https://docs.astral.sh/ruff/rules/#flake8-errmsg-em
+    "FIX002",  # Line contains TODO, consider resolving the issue
+    "PLR0912", # Too many branches
+    "S106",    # Possible hardcoded password assigned to argument
+    "S603",    # subprocess call: check for execution of untrusted input
+    "S604",    # Function call with shell=True parameter identified, security issue
+    "T20",     # flake8-print: https://docs.astral.sh/ruff/rules/#flake8-print-t20
+    "TD002",   # Missing author in TODO
+    "TRY003",  # Avoid specifying long messages outside the exception class
+    "TRY201",  # Use raise without specifying exception name
+    "TRY400",  # Use logging.exception instead of logging.error
+    "PLR0913", # Too many arguments in function definition (> 5)
+]
+
+# Rules to ignore on a per file basis
+[tool.ruff.lint.per-file-ignores]
+"**/{tests}/*" = [
+    "D",       # ignore pydocstyle docstring rules in tests
+    "FBT",     # flake8-boolean-trap: https://docs.astral.sh/ruff/rules/#flake8-boolean-trap-fbt
+    "INP001",  # File is part of an implicit namespace package. Add an __init__.py
+    "N801",    # Class name should use CapWords convention
+    "PLR0913", # Too many arguments in function definition
+    "PLR2004", # Magic value used in comparison, consider replacing with a constant variable
+    "PT019",   # Fixture without value is injected as parameter, use @pytest.mark.usefixtures instead
+    "S101",    # Use of assert detected
+    "S104",    # Possible binding to all interfaces
+    "SLF001",  # Private member accessed
+    "S108",    # Probable insecure usage of temporary file or directory
+    "S607",    # Starting a process with a partial executable path
+]
+
+# Linter plugin configurations
+#
+# From: https://docs.astral.sh/ruff/settings
+[tool.ruff.lint.flake8-tidy-imports]
+# Disallow all relative imports.
+ban-relative-imports = "all"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-wrap-aliases = true
+known-first-party = ["pizzabox", "tests"]
+
+[tool.ruff.lint.mccabe]
+# The maximum function complexity to allow before triggering C901 errors
+max-complexity = 20
+
+# Configure the ruff formatter
+[tool.ruff.format]
+# Like Black, use double quotes for strings
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs
+indent-style = "space"
+# Like Black, respect magic trailing commas
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending
+line-ending = "auto"
+# Enable reformatting of code snippets in docstrings
+docstring-code-format = true

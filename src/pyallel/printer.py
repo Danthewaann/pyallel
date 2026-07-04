@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import time
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from pyallel import constants
 from pyallel.colours import Colours
-from pyallel.process import Process, ProcessOutput
-from pyallel.process_group import ProcessGroupOutput
-from pyallel.process_group_manager import ProcessGroupManager
+
+if TYPE_CHECKING:
+    from pyallel.process import Process, ProcessOutput
+    from pyallel.process_group import ProcessGroupOutput
+    from pyallel.process_group_manager import ProcessGroupManager
 
 
 class Printer(Protocol):
@@ -20,7 +22,7 @@ class Printer(Protocol):
 
 
 class ConsolePrinter:
-    def __init__(self, colours: Colours | None = None, timer: bool = False) -> None:
+    def __init__(self, colours: Colours | None = None, *, timer: bool = False) -> None:
         self._colours = colours or Colours()
         self._timer = timer
         self._prefix = f"{self._colours.dim_on}=>{self._colours.dim_off} "
@@ -30,6 +32,7 @@ class ConsolePrinter:
     def write(
         self,
         line: str,
+        *,
         include_prefix: bool = False,
         end: str = "\n",
         flush: bool = False,
@@ -38,7 +41,7 @@ class ConsolePrinter:
     ) -> None:
         truncate_num = 0
         prefix = self._prefix if include_prefix else ""
-        columns = columns or constants.COLUMNS()
+        columns = columns or constants.columns()
         if prefix:
             truncate_num = 6
         if prefix and truncate:
@@ -50,6 +53,7 @@ class ConsolePrinter:
     def generate_process_output(
         self,
         output: ProcessOutput,
+        *,
         tail_output: bool = False,
         include_cmd: bool = True,
         include_output: bool = True,
@@ -65,7 +69,7 @@ class ConsolePrinter:
 
         if include_cmd:
             status = self.generate_process_output_status(
-                output, include_progress, include_timer
+                output, include_progress=include_progress, include_timer=include_timer
             )
             line_parts = (False, status, "\n")
             out.append(line_parts)
@@ -76,10 +80,7 @@ class ConsolePrinter:
 
             if tail_output:
                 output_lines = output.process.lines - 1
-                if output_lines == 0:
-                    lines = []
-                else:
-                    lines = lines[-output_lines:]
+                lines = [] if output_lines == 0 else lines[-output_lines:]
 
             for line in lines:
                 prefix = True
@@ -87,7 +88,7 @@ class ConsolePrinter:
                 if append_newlines and end != "\n":
                     end = "\n"
                 else:
-                    line = line[:-1]
+                    line = line[:-1]  # noqa: PLW2901
 
                 try:
                     prev_line = self._to_print[-1]
@@ -106,12 +107,13 @@ class ConsolePrinter:
     def generate_process_output_status(
         self,
         output: ProcessOutput,
+        *,
         include_progress: bool = True,
         include_timer: bool | None = None,
         columns: int | None = None,
     ) -> str:
         include_timer = include_timer if include_timer is not None else self._timer
-        columns = columns or constants.COLUMNS()
+        columns = columns or constants.columns()
 
         passed = None
         icon = ""
@@ -159,13 +161,14 @@ class ConsolePrinter:
     def generate_process_group_output(
         self,
         output: ProcessGroupOutput,
+        *,
         interrupt_count: int = 0,
         tail_output: bool = True,
     ) -> list[tuple[bool, str, str]]:
         self.set_process_lines(output, interrupt_count)
 
         for out in output.processes:
-            self.generate_process_output(out, tail_output, append_newlines=True)
+            self.generate_process_output(out, tail_output=tail_output, append_newlines=True)
 
         if interrupt_count == 1:
             self._to_print.append((False, "", "\n"))
@@ -176,7 +179,7 @@ class ConsolePrinter:
                     "\n",
                 )
             )
-        elif interrupt_count == 2:
+        elif interrupt_count == 2:  # noqa: PLR2004
             self._to_print.append((False, "", "\n"))
             self._to_print.append(
                 (
@@ -198,7 +201,7 @@ class ConsolePrinter:
         interrupt_count: int = 0,
         lines: int = 0,
     ) -> None:
-        lines = lines or constants.LINES() - 1
+        lines = lines or constants.lines() - 1
         if interrupt_count:
             lines -= 2
 
@@ -212,9 +215,7 @@ class ConsolePrinter:
                 processes_with_dynamic_lines.append(process_output)
                 continue
 
-            process_output.process.lines = int(
-                lines * process_output.process.percentage_lines
-            )
+            process_output.process.lines = int(lines * process_output.process.percentage_lines)
             used_lines += process_output.process.lines
 
         # Remove the used lines from the total available lines
@@ -269,7 +270,7 @@ class ConsolePrinter:
 
     def get_num_lines(self, line: str, columns: int | None = None) -> int:
         lines = 0
-        columns = columns or constants.COLUMNS()
+        columns = columns or constants.columns()
         line = constants.ANSI_ESCAPE.sub("", line)
         length = len(line)
         line_lines = 1
@@ -282,7 +283,7 @@ class ConsolePrinter:
         return lines
 
     def truncate_line(self, line: str, columns: int | None = None) -> str:
-        columns = columns or constants.COLUMNS()
+        columns = columns or constants.columns()
         escaped_line = constants.ANSI_ESCAPE.sub("", line)
         return "".join(escaped_line[:columns]) + "..."
 
@@ -294,31 +295,32 @@ class ConsolePrinter:
 
 
 class InteractiveConsolePrinter(ConsolePrinter):
-    def __init__(self, colours: Colours | None = None, timer: bool = False) -> None:
-        super().__init__(colours, timer)
+    def __init__(self, colours: Colours | None = None, *, timer: bool = False) -> None:
+        super().__init__(colours, timer=timer)
         self._last_printed: list[tuple[bool, str, str]] = []
 
     def print(self, process_group_manager: ProcessGroupManager) -> None:
         output = process_group_manager.get_cur_process_group_output()
-        self.print_process_group_output(output, process_group_manager._interrupt_count)
+        self.print_process_group_output(output, interrupt_count=process_group_manager.interrupt_count)
 
         poll = process_group_manager.poll()
         if poll is not None:
             self.clear_last_printed_lines()
             self.reset()
             self.print_process_group_output(
-                output, process_group_manager._interrupt_count, tail_output=False
+                output, interrupt_count=process_group_manager.interrupt_count, tail_output=False
             )
             self.reset()
 
     def print_process_group_output(
         self,
         output: ProcessGroupOutput,
+        *,
         interrupt_count: int = 0,
         tail_output: bool = True,
     ) -> None:
-        columns = constants.COLUMNS()
-        self.generate_process_group_output(output, interrupt_count, tail_output)
+        columns = constants.columns()
+        self.generate_process_group_output(output, interrupt_count=interrupt_count, tail_output=tail_output)
 
         num_lines_to_print = len(self._to_print)
         num_last_printed_lines = len(self._last_printed)
@@ -327,9 +329,7 @@ class InteractiveConsolePrinter(ConsolePrinter):
         # we just print all the new lines
         if not num_last_printed_lines or not tail_output:
             for include_prefix, line, end in self._to_print:
-                self.write(
-                    line, include_prefix, end, truncate=tail_output, columns=columns
-                )
+                self.write(line, include_prefix=include_prefix, end=end, truncate=tail_output, columns=columns)
         else:
             # Compare the number of last lines and new lines and only update what has changed.
             #
@@ -337,9 +337,7 @@ class InteractiveConsolePrinter(ConsolePrinter):
             # comparing the last printed lines with the new lines that were generated
             print(f"\033[{num_last_printed_lines}A", end="")
             cursor_line = 0
-            for cur_line, line_parts in enumerate(
-                self._last_printed[:num_lines_to_print]
-            ):
+            for cur_line, line_parts in enumerate(self._last_printed[:num_lines_to_print]):
                 # If the current line is not the same as it's newly generated version, we update the line
                 if line_parts[1] != self._to_print[cur_line][1]:
                     include_prefix, line, end = self._to_print[cur_line]
@@ -350,9 +348,7 @@ class InteractiveConsolePrinter(ConsolePrinter):
                     # Clear the current line
                     print(f"{constants.CLEAR_LINE}\r", end="")
                     # Write the new line, this will move the cursor to the next line automatically
-                    self.write(
-                        line, include_prefix, end, truncate=tail_output, columns=columns
-                    )
+                    self.write(line, include_prefix=include_prefix, end=end, truncate=tail_output, columns=columns)
                     # Need to set the cursor_line to be the current line + 1 as the above write
                     # will move the cursor to the next line
                     cursor_line = cur_line + 1
@@ -366,9 +362,7 @@ class InteractiveConsolePrinter(ConsolePrinter):
                 # Just print the new lines as normal
                 for line_parts in self._to_print[num_last_printed_lines:]:
                     include_prefix, line, end = line_parts
-                    self.write(
-                        line, include_prefix, end, truncate=tail_output, columns=columns
-                    )
+                    self.write(line, include_prefix=include_prefix, end=end, truncate=tail_output, columns=columns)
             else:
                 # Jump to the end of the output
                 lines_to_jump = num_lines_to_print - cursor_line
@@ -376,7 +370,7 @@ class InteractiveConsolePrinter(ConsolePrinter):
                     print(f"\033[{lines_to_jump}B\r", end="")
 
             # Force a flush to return the cursor to the bottom immediately
-            print("", end="", flush=True)
+            print(end="", flush=True)
 
         self._last_printed = self._to_print.copy()
         self._to_print.clear()
@@ -384,8 +378,7 @@ class InteractiveConsolePrinter(ConsolePrinter):
     def clear_last_printed_lines(self) -> None:
         # Clear all the lines that were just printed
         print(
-            f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}"
-            * len(self._last_printed),
+            f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}" * len(self._last_printed),
             end="",
         )
 
@@ -395,8 +388,8 @@ class InteractiveConsolePrinter(ConsolePrinter):
 
 
 class NonInteractiveConsolePrinter(ConsolePrinter):
-    def __init__(self, colours: Colours | None = None, timer: bool = False) -> None:
-        super().__init__(colours, timer)
+    def __init__(self, colours: Colours | None = None, *, timer: bool = False) -> None:
+        super().__init__(colours, timer=timer)
         self._current_process: Process | None = None
 
     def print(self, process_group_manager: ProcessGroupManager) -> None:
@@ -405,10 +398,8 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
             for output in pg.processes:
                 if self._current_process is None:
                     self._current_process = output.process
-                    output = process_group_manager.get_process(output.id)
-                    self.print_process_output(
-                        output, include_progress=False, include_timer=False
-                    )
+                    process_output = process_group_manager.get_process(output.id)
+                    self.print_process_output(process_output, include_progress=False, include_timer=False)
                 elif self._current_process is not output.process:
                     continue
                 else:
@@ -421,6 +412,7 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
     def print_process_output(
         self,
         output: ProcessOutput,
+        *,
         tail_output: bool = False,
         include_cmd: bool = True,
         include_output: bool = True,
@@ -429,13 +421,13 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
     ) -> None:
         for include_prefix, line, end in self.generate_process_output(
             output,
-            tail_output,
-            include_cmd,
-            include_output,
-            include_progress,
-            include_timer,
+            tail_output=tail_output,
+            include_cmd=include_cmd,
+            include_output=include_output,
+            include_progress=include_progress,
+            include_timer=include_timer,
         ):
-            self.write(line, include_prefix, end)
+            self.write(line, include_prefix=include_prefix, end=end)
 
         # Force a flush otherwise lines that don't end in a newline character will not get printed as they are read
-        print("", end="", flush=True)
+        print(end="", flush=True)

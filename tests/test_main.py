@@ -7,8 +7,8 @@ import time
 from typing import Sequence
 
 import pytest
+
 from pyallel import main
-from pytest import CaptureFixture, MonkeyPatch
 
 
 def prettify_error(out: str) -> str:
@@ -17,11 +17,7 @@ def prettify_error(out: str) -> str:
 
 def compare_output(actual: Sequence[str], expected: Sequence[str]) -> None:
     __tracebackhide__ = True
-    diff = list(
-        difflib.unified_diff(
-            expected, actual, fromfile="expected", tofile="actual", lineterm=""
-        )
-    )
+    diff = list(difflib.unified_diff(expected, actual, fromfile="expected", tofile="actual", lineterm=""))
     if diff:
         pytest.fail("\n" + "\n".join(diff))
 
@@ -37,89 +33,81 @@ class TestInteractiveMode:
     """
 
     @pytest.fixture(autouse=True)
-    def in_tty(self, monkeypatch: MonkeyPatch) -> None:
+    def in_tty(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Trick pyallel into thinking we are in an interactive terminal
         # so we can test the interactive mode
         monkeypatch.setattr(main.constants, "IN_TTY", True)  # type: ignore[attr-defined]
 
-    def test_run_single_command(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_single_command(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("echo hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_run_single_command_no_quotes(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_single_command_no_quotes(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("echo", "hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_run_single_command_with_output(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_single_command_with_output(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("echo hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_run_single_command_failure(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_single_command_failure(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("exit 1", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
 
-    def test_run_single_command_with_env(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_single_command_with_env(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("TEST_VAR=1 echo hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_run_multiple_commands(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_multiple_commands(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("sleep 0.1; echo first", "echo hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_run_multiple_commands_no_quotes(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_multiple_commands_no_quotes(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("echo", "first", "echo", "hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_run_multiple_commands_single_failure(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
+    def test_run_multiple_commands_single_failure(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("exit 1", "echo hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
 
     def test_run_multiple_commands_multiple_failures(
         self,
-        capsys: CaptureFixture[str],
+        capsys: pytest.CaptureFixture[str],
     ) -> None:
         exit_code = main.entry_point("exit 1", "exit 1", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
 
-    def test_run_mulitiple_dependant_commands(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
+    def test_run_mulitiple_dependant_commands(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("echo first", ":::", "echo hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_run_mulitiple_dependant_commands_single_failure(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
+    def test_run_mulitiple_dependant_commands_single_failure(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("exit 1", ":::", "echo hi", "-t")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
 
-    def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_timer_mode(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("echo hi")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
-    def test_run_with_lines_modifier(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_with_lines_modifier(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("lines=50 :::: echo hi")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
 
     @pytest.mark.parametrize("value", ["110", "-1", "0", "invalid", ""])
-    def test_run_with_lines_modifier_invalid_value(
-        self, capsys: CaptureFixture[str], value: str
-    ) -> None:
+    def test_run_with_lines_modifier_invalid_value(self, capsys: pytest.CaptureFixture[str], value: str) -> None:
         exit_code = main.entry_point(f"lines={value} :::: echo hi", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
@@ -130,9 +118,7 @@ class TestInteractiveMode:
             ],
         )
 
-    def test_run_with_lines_modifier_exceeds_100(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
+    def test_run_with_lines_modifier_exceeds_100(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point(
             "lines=60 :::: echo hi",
             "::",
@@ -149,9 +135,7 @@ class TestInteractiveMode:
             ],
         )
 
-    @pytest.mark.parametrize(
-        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
-    )
+    @pytest.mark.parametrize(("signal", "exit_code"), [(signal.SIGINT, 130), (signal.SIGTERM, 143)])
     def test_handles_multiple_signals(self, signal: int, exit_code: int) -> None:
         process = subprocess.Popen(
             [
@@ -168,12 +152,8 @@ class TestInteractiveMode:
         process.send_signal(signal)
         assert process.wait() == exit_code
 
-    @pytest.mark.parametrize(
-        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
-    )
-    def test_handles_multiple_signals_with_dependant_commands(
-        self, signal: int, exit_code: int
-    ) -> None:
+    @pytest.mark.parametrize(("signal", "exit_code"), [(signal.SIGINT, 130), (signal.SIGTERM, 143)])
+    def test_handles_multiple_signals_with_dependant_commands(self, signal: int, exit_code: int) -> None:
         process = subprocess.Popen(
             [
                 "pyallel",
@@ -193,7 +173,7 @@ class TestInteractiveMode:
 
 
 class TestNonInteractiveMode:
-    def test_run_single_command(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_single_command(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("echo hi", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
@@ -206,7 +186,7 @@ class TestNonInteractiveMode:
             ],
         )
 
-    def test_run_single_command_no_quotes(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_single_command_no_quotes(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("echo", "hi", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
@@ -219,7 +199,7 @@ class TestNonInteractiveMode:
             ],
         )
 
-    def test_run_single_command_failure(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_single_command_failure(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("exit 1", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
@@ -234,7 +214,7 @@ class TestNonInteractiveMode:
             ],
         )
 
-    def test_run_single_command_with_env(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_single_command_with_env(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("TEST_VAR=1 echo hi", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
@@ -247,10 +227,8 @@ class TestNonInteractiveMode:
             ],
         )
 
-    def test_run_multiple_commands(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.entry_point(
-            "sleep 0.1; echo first", "::", "echo hi", "-n", "-t", "--colour", "no"
-        )
+    def test_run_multiple_commands(self, capsys: pytest.CaptureFixture[str]) -> None:
+        exit_code = main.entry_point("sleep 0.1; echo first", "::", "echo hi", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         compare_output(
@@ -265,10 +243,8 @@ class TestNonInteractiveMode:
             ],
         )
 
-    def test_run_multiple_commands_no_quotes(self, capsys: CaptureFixture[str]) -> None:
-        exit_code = main.entry_point(
-            "echo", "first", "::", "echo", "hi", "-n", "-t", "--colour", "no"
-        )
+    def test_run_multiple_commands_no_quotes(self, capsys: pytest.CaptureFixture[str]) -> None:
+        exit_code = main.entry_point("echo", "first", "::", "echo", "hi", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         compare_output(
@@ -283,12 +259,8 @@ class TestNonInteractiveMode:
             ],
         )
 
-    def test_run_multiple_commands_single_failure(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.entry_point(
-            "exit 1", "::", "echo hi", "-n", "-t", "--colour", "no"
-        )
+    def test_run_multiple_commands_single_failure(self, capsys: pytest.CaptureFixture[str]) -> None:
+        exit_code = main.entry_point("exit 1", "::", "echo hi", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         compare_output(
@@ -307,11 +279,9 @@ class TestNonInteractiveMode:
 
     def test_run_multiple_commands_multiple_failures(
         self,
-        capsys: CaptureFixture[str],
+        capsys: pytest.CaptureFixture[str],
     ) -> None:
-        exit_code = main.entry_point(
-            "exit 1", "::", "exit 1", "-n", "-t", "--colour", "no"
-        )
+        exit_code = main.entry_point("exit 1", "::", "exit 1", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         compare_output(
@@ -328,12 +298,8 @@ class TestNonInteractiveMode:
             ],
         )
 
-    def test_run_mulitiple_dependant_commands(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.entry_point(
-            "echo first", ":::", "echo hi", "-n", "-t", "--colour", "no"
-        )
+    def test_run_mulitiple_dependant_commands(self, capsys: pytest.CaptureFixture[str]) -> None:
+        exit_code = main.entry_point("echo first", ":::", "echo hi", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         compare_output(
@@ -348,12 +314,8 @@ class TestNonInteractiveMode:
             ],
         )
 
-    def test_run_mulitiple_dependant_commands_single_failure(
-        self, capsys: CaptureFixture[str]
-    ) -> None:
-        exit_code = main.entry_point(
-            "exit 1", ":::", "echo hi", "-n", "-t", "--colour", "no"
-        )
+    def test_run_mulitiple_dependant_commands_single_failure(self, capsys: pytest.CaptureFixture[str]) -> None:
+        exit_code = main.entry_point("exit 1", ":::", "echo hi", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 1, prettify_error(captured.out)
         compare_output(
@@ -367,7 +329,7 @@ class TestNonInteractiveMode:
             ],
         )
 
-    def test_run_timer_mode(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_timer_mode(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("echo hi", "-n", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
@@ -385,7 +347,7 @@ class TestNonInteractiveMode:
             is not None
         ), prettify_error(captured.out)
 
-    def test_run_with_longer_first_command(self, capsys: CaptureFixture[str]) -> None:
+    def test_run_with_longer_first_command(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("sleep 1", "::", "echo hi", "-n", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
@@ -407,11 +369,9 @@ class TestNonInteractiveMode:
 
     @pytest.mark.parametrize("wait", ["0.1", "0.5"])
     def test_handles_single_command_output_with_delayed_newlines(
-        self, capsys: CaptureFixture[str], wait: str
+        self, capsys: pytest.CaptureFixture[str], wait: str
     ) -> None:
-        exit_code = main.entry_point(
-            f"printf hi; sleep {wait}; echo bye", "-n", "-t", "--colour", "no"
-        )
+        exit_code = main.entry_point(f"printf hi; sleep {wait}; echo bye", "-n", "-t", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
         compare_output(
@@ -425,7 +385,7 @@ class TestNonInteractiveMode:
 
     @pytest.mark.parametrize("wait", ["0.1", "0.5"])
     def test_handles_multiple_command_output_with_delayed_newlines(
-        self, capsys: CaptureFixture[str], wait: str
+        self, capsys: pytest.CaptureFixture[str], wait: str
     ) -> None:
         exit_code = main.entry_point(
             f"printf hi; sleep {wait}; echo bye",
@@ -450,9 +410,7 @@ class TestNonInteractiveMode:
             ],
         )
 
-    @pytest.mark.parametrize(
-        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
-    )
+    @pytest.mark.parametrize(("signal", "exit_code"), [(signal.SIGINT, 130), (signal.SIGTERM, 143)])
     def test_handles_multiple_signals(self, signal: int, exit_code: int) -> None:
         process = subprocess.Popen(
             [
@@ -475,12 +433,8 @@ class TestNonInteractiveMode:
         out = process.stdout.read()
         assert process.wait() == exit_code, prettify_error(out.decode())
 
-    @pytest.mark.parametrize(
-        "signal,exit_code", ((signal.SIGINT, 130), (signal.SIGTERM, 143))
-    )
-    def test_handles_multiple_signals_with_dependant_commands(
-        self, signal: int, exit_code: int
-    ) -> None:
+    @pytest.mark.parametrize(("signal", "exit_code"), [(signal.SIGINT, 130), (signal.SIGTERM, 143)])
+    def test_handles_multiple_signals_with_dependant_commands(self, signal: int, exit_code: int) -> None:
         process = subprocess.Popen(
             [
                 "pyallel",

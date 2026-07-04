@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import threading
-import subprocess
-
 import signal
+import subprocess
+import threading
 import time
 import typing
 
@@ -14,7 +13,7 @@ if typing.TYPE_CHECKING:
 
 
 class ProcessOutput:
-    def __init__(self, id: int, process: Process, data: str = "") -> None:
+    def __init__(self, id: int, process: Process, data: str = "") -> None:  # noqa: A002
         self.id = id
         self.data = data
         self.lines = len(data.splitlines()) + 1
@@ -26,7 +25,7 @@ class ProcessOutput:
 
 
 class Process:
-    def __init__(self, id: int, command: str, percentage_lines: float = 0.0) -> None:
+    def __init__(self, id: int, command: str, percentage_lines: float = 0.0) -> None:  # noqa: A002
         self.id = id
         self.command = command
         self.start = 0.0
@@ -39,7 +38,7 @@ class Process:
 
     def run(self) -> None:
         self.start = time.perf_counter()
-        self._process = subprocess.Popen(
+        self._process = subprocess.Popen(  # noqa: S602
             self.command,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
@@ -102,7 +101,7 @@ class Process:
         return self._process.wait()
 
     @classmethod
-    def from_command(cls, id: int, command: str) -> Process:
+    def from_command(cls, id: int, command: str) -> Process:  # noqa: A002
         cmd = command.split(" :::: ", maxsplit=1)
         if len(cmd) == 1:
             return cls(id, cmd[0])
@@ -112,22 +111,18 @@ class Process:
         percentage_lines = 0
         for arg in args.split(" "):
             try:
-                arg, value = args.split("=")
+                name, value = arg.split("=")
             except ValueError:
                 continue
 
-            if arg == "lines":
+            if name == "lines":
                 try:
                     percentage_lines = int(value)
                 except ValueError:
-                    raise InvalidLinesModifierError(
-                        "lines modifier must be a number between 1 and 100"
-                    )
+                    raise InvalidLinesModifierError("lines modifier must be a number between 1 and 100")
 
-                if not 0 < percentage_lines <= 100:
-                    raise InvalidLinesModifierError(
-                        "lines modifier must be a number between 1 and 100"
-                    )
+                if not 0 < percentage_lines <= 100:  # noqa: PLR2004
+                    raise InvalidLinesModifierError("lines modifier must be a number between 1 and 100")
 
                 break
 
