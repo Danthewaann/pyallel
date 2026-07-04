@@ -21,7 +21,7 @@ pipx install pyallel
 Once installed, you can run `pyallel` to see usage information, like so:
 
 ```
-usage: pyallel [-h] [-t] [-n] [-V] [--colour {yes,no,auto}] [commands ...]
+usage: pyallel [-h] [-t] [-n] [-V] [--colour {yes,no,auto}] [--debug] [commands ...]
 
 run and handle the output of multiple executables in pyallel (as in parallel)
 
@@ -80,6 +80,7 @@ options:
   -V, --version         print version and exit
   --colour {yes,no,auto}
                         colour terminal output, defaults to "auto"
+  --debug               enable debug mode, which logs debug info to a "pyallel.log" file in the current directory
 ```
 
 Currently you can provide a variable number of `commands` to run to `pyallel`, like so:
@@ -140,7 +141,7 @@ pipx install uv && \
       before a given command can start)
 - [x] Add support to state how many lines a command can use for it's output in interactive mode
 - [x] Improve printing of output performance by only printing lines that have changed
-- [ ] Add a debug mode that logs debug information to a log file
+- [x] Add a debug mode that logs debug information to a log file
 - [ ] Maybe add support to allow the user to provide stdin for commands that request it
       (such as a REPL)
 - [ ] Add custom parsing of command output to support filtering for errors (like vim's

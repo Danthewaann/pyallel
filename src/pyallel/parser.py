@@ -10,13 +10,16 @@ class Arguments:
     interactive: bool
     timer: bool
     version: bool
+    debug: bool
 
     def __repr__(self) -> str:
-        msg = "Arguments:\n"
+        msg = ""
         padding = len(sorted(self.__dict__.keys(), key=len, reverse=True)[0]) + 1
         for field, value in self.__dict__.items():
-            msg += f"    {field: <{padding}}: {value}\n"
-        return msg
+            if field == "commands":
+                value = " ".join(value)
+            msg += f"{field: <{padding}}: {value}\n"
+        return msg.strip()
 
 
 DESCRIPTION = r"""run and handle the output of multiple executables in %(prog)s (as in parallel)
@@ -107,6 +110,12 @@ def create_parser() -> ArgumentParser:
         help='colour terminal output, defaults to "%(default)s"',
         choices=("yes", "no", "auto"),
         default="auto",
+    )
+    parser.add_argument(
+        "--debug",
+        help='enable debug mode, which logs debug info to a "pyallel.log" file in the current directory',
+        action="store_true",
+        default=False,
     )
 
     return parser

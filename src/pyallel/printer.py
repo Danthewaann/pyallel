@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 from typing import TYPE_CHECKING, Protocol
 
@@ -10,6 +11,9 @@ if TYPE_CHECKING:
     from pyallel.process import Process, ProcessOutput
     from pyallel.process_group import ProcessGroupOutput
     from pyallel.process_group_manager import ProcessGroupManager
+
+
+logger = logging.getLogger(__name__)
 
 
 class Printer(Protocol):
@@ -195,7 +199,7 @@ class ConsolePrinter:
 
         return self._to_print
 
-    def set_process_lines(
+    def set_process_lines(  # noqa: PLR0915
         self,
         output: ProcessGroupOutput,
         interrupt_count: int = 0,
@@ -205,8 +209,10 @@ class ConsolePrinter:
         if interrupt_count:
             lines -= 2
 
+        logger.debug("initial available lines in screen = %d", lines)
         # Allocate lines to processes that have a fixed percentage of lines set
         allocated_process_lines = lines // len(output.processes)
+        logger.debug("initial allocated_process_lines = %d", allocated_process_lines)
         processes_with_dynamic_lines: list[ProcessOutput] = []
         used_lines = 0
         for process_output in output.processes:
@@ -220,6 +226,7 @@ class ConsolePrinter:
 
         # Remove the used lines from the total available lines
         lines -= used_lines
+        logger.debug("available lines after allocating percentage lines = %d", lines)
 
         while lines:
             # Calculate how many lines each process should have based on how many processes and lines are left
@@ -231,9 +238,21 @@ class ConsolePrinter:
                 # If the number of lines in this process output is less than how many terminal lines we would allocate it,
                 # Set it's allocated terminal lines to the exact number of lines in its output and remove this number from
                 # the total available terminal lines
+                logger.debug(
+                    "process [%s] lines = %d, allocated = %d",
+                    process_output.process.command,
+                    process_output.lines,
+                    allocated_process_lines,
+                )
                 if process_output.lines < allocated_process_lines:
+                    logger.debug(
+                        "process [%s] lines less than allocated, reducing allocated lines to %s",
+                        process_output.process.command,
+                        process_output.lines,
+                    )
                     process_output.process.lines = process_output.lines
                     lines -= process_output.process.lines
+                    logger.debug("new available screen lines = %d", lines)
                     recalculate_lines = True
                     continue
 
@@ -243,17 +262,23 @@ class ConsolePrinter:
             # contains less lines than what we would normally allocate it. This is done so we can allocate these extra lines to the
             # other processes that contain more lines of output.
             if recalculate_lines:
+                logger.debug("recalcuting available screen lines")
                 processes_with_dynamic_lines = processes_with_excess_output
             else:
                 # All remaining processes exceed the number of terminal lines we will allocate them, so allocate them
                 # their terminal lines as normal and break out of the while loop
                 for process_output in processes_with_excess_output:
+                    logger.debug(
+                        "allocating %d lines to process [%s]", allocated_process_lines, process_output.process.command
+                    )
                     process_output.process.lines = allocated_process_lines
                     lines -= allocated_process_lines
+                    logger.debug("new available screen lines = %d", lines)
 
                 # If there is any lines left, allocate them to the process that currently contains the most lines in its output, or
                 # allocate them to the first process if no process contains enough lines
                 if lines:
+                    logger.debug("remaining lines after allocation to all processes = %d", lines)
                     process_with_most_lines: ProcessOutput | None = None
                     most_lines = 0
                     for process_output in output.processes:
@@ -262,11 +287,25 @@ class ConsolePrinter:
                             most_lines = process_output.process.lines
 
                     if not process_with_most_lines:
-                        output.processes[0].process.lines += lines
+                        logger.debug(
+                            "no process found with most output, allocating remaining lines to first process [%s]",
+                            process_output.process.command,
+                        )
+                        process = output.processes[0].process
+                        process.lines += lines
+                        logger.debug("process [%s] allocated lines = %d", process.command, process.lines)
                     else:
-                        process_with_most_lines.process.lines += lines
+                        logger.debug(
+                            "found process [%s] with most output, allocating remaining lines",
+                            process_output.process.command,
+                        )
+                        process = process_with_most_lines.process
+                        process.lines += lines
+                        logger.debug("process [%s] allocated lines = %d", process.command, process.lines)
 
                 break
+
+        logger.debug("all screen lines have been allocated")
 
     def get_num_lines(self, line: str, columns: int | None = None) -> int:
         lines = 0
