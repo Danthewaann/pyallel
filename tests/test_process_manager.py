@@ -51,8 +51,7 @@ def test_stream(popen_mock: MagicMock) -> None:
     assert pg_manager.poll() == 0
 
 
-@patch.object(signal, "signal")
-def test_from_args(signal_mock: MagicMock) -> None:
+def test_from_args(mock_signal: MagicMock) -> None:
     expected_pg_manager = ProcessGroupManager(
         process_groups=[
             ProcessGroup(
@@ -73,8 +72,8 @@ def test_from_args(signal_mock: MagicMock) -> None:
     ):
         assert len(pg1.processes) == len(pg2.processes)
 
-    assert signal_mock.call_count == 2
-    signal_mock.assert_has_calls(
+    assert mock_signal.call_count == 2
+    mock_signal.assert_has_calls(
         [
             call(signal.SIGINT, pg_manager.handle_signal),
             call(signal.SIGTERM, pg_manager.handle_signal),
