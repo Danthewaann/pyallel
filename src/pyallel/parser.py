@@ -17,7 +17,7 @@ class Arguments:
         padding = len(sorted(self.__dict__.keys(), key=len, reverse=True)[0]) + 1
         for field, value in self.__dict__.items():
             if field == "commands":
-                value = " ".join(value)
+                value = " ".join(value)  # noqa: PLW2901
             msg += f"{field: <{padding}}: {value}\n"
         return msg.strip()
 
