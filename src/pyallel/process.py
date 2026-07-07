@@ -72,20 +72,6 @@ class Process:
 
         return buffer
 
-    def readline(self) -> bytes:
-        with self._lock:
-            buffer = self._buffer
-            if not buffer:
-                return b""
-
-            newline_index = buffer.find(b"\n")
-            if newline_index == -1:
-                self._buffer = b""
-                return buffer
-
-            self._buffer = buffer[newline_index + 1 :]
-            return buffer[: newline_index + 1]
-
     def return_code(self) -> int | None:
         return self._process.returncode
 
