@@ -108,8 +108,8 @@ class ProcessGroupManager:
         return poll
 
     def handle_signal(self, signum: int, _frame: Any) -> None:
-        for process_group in self._process_groups:
-            process_group.handle_signal(signum)
+        if self._cur_process_group is not None:
+            self._cur_process_group.handle_signal(signum)
 
         self._exit_code = 128 + signum
         self._interrupt_count += 1

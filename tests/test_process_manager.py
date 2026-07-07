@@ -201,3 +201,37 @@ def test_from_args_with_bad_separator() -> None:
         match=r"no commands provided for process group 1, did you forgot to provide them before the ::: symbol?",
     ):
         ProcessGroupManager.from_args(":::", "echo hi")
+
+
+@patch.object(subprocess, "Popen")
+def test_handle_signal(popen_mock: MagicMock) -> None:
+    popen_mock.return_value.stdout.read1.side_effect = lambda _: time.sleep(1)
+    pg_manager = ProcessGroupManager.from_args("sleep 0.1", "::", "sleep 0.2")
+    pg_manager.run()
+
+    pg_manager.handle_signal(signum=signal.SIGINT, _frame=MagicMock())
+
+    send_signal_mock: MagicMock = popen_mock.return_value.send_signal
+    assert send_signal_mock.call_count == 2
+    send_signal_mock.assert_has_calls([call(signal.SIGINT), call(signal.SIGINT)])
+
+
+@patch.object(subprocess, "Popen")
+def test_handle_signal_multiple(popen_mock: MagicMock) -> None:
+    popen_mock.return_value.stdout.read1.side_effect = lambda _: time.sleep(1)
+    pg_manager = ProcessGroupManager.from_args("sleep 0.1", "::", "sleep 0.2")
+    pg_manager.run()
+
+    pg_manager.handle_signal(signum=signal.SIGINT, _frame=MagicMock())
+    pg_manager.handle_signal(signum=signal.SIGINT, _frame=MagicMock())
+
+    send_signal_mock: MagicMock = popen_mock.return_value.send_signal
+    assert send_signal_mock.call_count == 4
+    send_signal_mock.assert_has_calls(
+        [
+            call(signal.SIGINT),
+            call(signal.SIGINT),
+            call(signal.SIGKILL),
+            call(signal.SIGKILL),
+        ]
+    )
