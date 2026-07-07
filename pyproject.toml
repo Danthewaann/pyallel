@@ -1,6 +1,6 @@
 [project]
 name = "pyallel"
-version = "2.0.6"
+version = "2.1.0"
 description = "Run and handle the output of multiple executables in pyallel (as in parallel)"
 authors = [{ name = "Daniel Black", email = "danielcrblack@gmail.com" }]
 requires-python = ">=3.8"
