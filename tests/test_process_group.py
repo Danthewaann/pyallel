@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import time
+import subprocess
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -64,7 +65,9 @@ def test_from_commands_with_lines_modifier_exceeds_100() -> None:
         )
 
 
-def test_stream() -> None:
+@patch.object(subprocess, "Popen")
+def test_stream(popen_mock: MagicMock) -> None:
+    popen_mock.return_value.stdout.read1.return_value = b""
     process_group = ProcessGroup(
         id=1,
         processes=[
@@ -74,7 +77,6 @@ def test_stream() -> None:
         ],
     )
     process_group.run()
-    time.sleep(0.1)
     output = process_group.stream()
     assert len(output.processes) == 3
 

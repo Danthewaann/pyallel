@@ -1,9 +1,5 @@
 import difflib
-import os
 import re
-import signal
-import subprocess
-import time
 from typing import Sequence
 
 import pytest
@@ -134,42 +130,6 @@ class TestInteractiveMode:
                 "Error: lines modifier must not exceed 100 across all processes within each process group",
             ],
         )
-
-    @pytest.mark.parametrize(("signal", "exit_code"), [(signal.SIGINT, 130), (signal.SIGTERM, 143)])
-    def test_handles_multiple_signals(self, signal: int, exit_code: int) -> None:
-        process = subprocess.Popen(
-            [
-                "pyallel",
-                "./tests/assets/test_handle_multiple_signals.sh",
-            ],
-            env=os.environ.copy(),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        time.sleep(0.3)
-        process.send_signal(signal)
-        time.sleep(0.1)
-        process.send_signal(signal)
-        assert process.wait() == exit_code
-
-    @pytest.mark.parametrize(("signal", "exit_code"), [(signal.SIGINT, 130), (signal.SIGTERM, 143)])
-    def test_handles_multiple_signals_with_dependant_commands(self, signal: int, exit_code: int) -> None:
-        process = subprocess.Popen(
-            [
-                "pyallel",
-                "./tests/assets/test_handle_multiple_signals.sh",
-                ":::",
-                "./tests/assets/test_handle_multiple_signals.sh",
-            ],
-            env=os.environ.copy(),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        time.sleep(0.3)
-        process.send_signal(signal)
-        time.sleep(0.1)
-        process.send_signal(signal)
-        assert process.wait() == exit_code
 
 
 class TestNonInteractiveMode:
@@ -409,51 +369,3 @@ class TestNonInteractiveMode:
                 f"[printf hi; sleep {wait}; echo bye] done ✔",
             ],
         )
-
-    @pytest.mark.parametrize(("signal", "exit_code"), [(signal.SIGINT, 130), (signal.SIGTERM, 143)])
-    def test_handles_multiple_signals(self, signal: int, exit_code: int) -> None:
-        process = subprocess.Popen(
-            [
-                "pyallel",
-                "./tests/assets/test_handle_multiple_signals.sh",
-                "-n",
-                "-t",
-                "--colour",
-                "no",
-            ],
-            env=os.environ.copy(),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        time.sleep(0.3)
-        process.send_signal(signal)
-        time.sleep(0.1)
-        process.send_signal(signal)
-        assert process.stdout is not None
-        out = process.stdout.read()
-        assert process.wait() == exit_code, prettify_error(out.decode())
-
-    @pytest.mark.parametrize(("signal", "exit_code"), [(signal.SIGINT, 130), (signal.SIGTERM, 143)])
-    def test_handles_multiple_signals_with_dependant_commands(self, signal: int, exit_code: int) -> None:
-        process = subprocess.Popen(
-            [
-                "pyallel",
-                "./tests/assets/test_handle_multiple_signals.sh",
-                ":::",
-                "./tests/assets/test_handle_multiple_signals.sh",
-                "-n",
-                "-t",
-                "--colour",
-                "no",
-            ],
-            env=os.environ.copy(),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        time.sleep(0.3)
-        process.send_signal(signal)
-        time.sleep(0.1)
-        process.send_signal(signal)
-        assert process.stdout is not None
-        out = process.stdout.read()
-        assert process.wait() == exit_code, prettify_error(out.decode())

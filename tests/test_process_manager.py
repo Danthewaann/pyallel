@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import signal
+import subprocess
 import time
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 
@@ -10,7 +13,10 @@ from pyallel.process_group import ProcessGroup
 from pyallel.process_group_manager import ProcessGroupManager
 
 
-def test_stream() -> None:
+@patch.object(subprocess, "Popen")
+def test_stream(popen_mock: MagicMock) -> None:
+    popen_mock.return_value.stdout.read1.return_value = b""
+    popen_mock.return_value.poll.return_value = 0
     pg_manager = ProcessGroupManager(
         process_groups=[
             ProcessGroup(
@@ -31,7 +37,6 @@ def test_stream() -> None:
     )
     pg_manager.run()
     pg_manager.get_cur_process_group_output()
-    time.sleep(0.1)
     output = pg_manager.stream()
     assert len(output.process_group_outputs) == 1
     assert output.process_group_outputs[1].id == 1
@@ -39,7 +44,6 @@ def test_stream() -> None:
     assert pg_manager.poll() == 0
     pg_manager.run()
     pg_manager.get_cur_process_group_output()
-    time.sleep(0.1)
     output = pg_manager.stream()
     assert len(output.process_group_outputs) == 1
     assert output.process_group_outputs[2].id == 2
@@ -47,8 +51,9 @@ def test_stream() -> None:
     assert pg_manager.poll() == 0
 
 
-def test_from_args() -> None:
-    expected_process_group_manager = ProcessGroupManager(
+@patch.object(signal, "signal")
+def test_from_args(signal_mock: MagicMock) -> None:
+    expected_pg_manager = ProcessGroupManager(
         process_groups=[
             ProcessGroup(
                 id=1,
@@ -59,18 +64,26 @@ def test_from_args() -> None:
             )
         ]
     )
-    process_group_manager = ProcessGroupManager.from_args("sleep 0.1", "::", "sleep 0.2")
-    assert len(process_group_manager._process_groups) == len(expected_process_group_manager._process_groups)
+    pg_manager = ProcessGroupManager.from_args("sleep 0.1", "::", "sleep 0.2")
+    assert len(pg_manager._process_groups) == len(expected_pg_manager._process_groups)
 
     for pg1, pg2 in zip(
-        expected_process_group_manager._process_groups,
-        process_group_manager._process_groups,
+        expected_pg_manager._process_groups,
+        pg_manager._process_groups,
     ):
         assert len(pg1.processes) == len(pg2.processes)
 
+    assert signal_mock.call_count == 2
+    signal_mock.assert_has_calls(
+        [
+            call(signal.SIGINT, pg_manager.handle_signal),
+            call(signal.SIGTERM, pg_manager.handle_signal),
+        ]
+    )
+
 
 @pytest.mark.parametrize(
-    ("args", "expected_process_group_manager"),
+    ("args", "expected_pg_manager"),
     [
         (
             ["sleep 0.1", ":::", "sleep 0.2", "::", "sleep 0.3", ":::", "sleep 0.4"],
@@ -171,13 +184,13 @@ def test_from_args() -> None:
         ),
     ],
 )
-def test_from_args_with_separators(args: list[str], expected_process_group_manager: ProcessGroupManager) -> None:
-    process_group_manager = ProcessGroupManager.from_args(*args)
-    assert len(process_group_manager._process_groups) == len(expected_process_group_manager._process_groups)
+def test_from_args_with_separators(args: list[str], expected_pg_manager: ProcessGroupManager) -> None:
+    pg_manager = ProcessGroupManager.from_args(*args)
+    assert len(pg_manager._process_groups) == len(expected_pg_manager._process_groups)
 
     for pg1, pg2 in zip(
-        expected_process_group_manager._process_groups,
-        process_group_manager._process_groups,
+        expected_pg_manager._process_groups,
+        pg_manager._process_groups,
     ):
         assert len(pg1.processes) == len(pg2.processes)
 

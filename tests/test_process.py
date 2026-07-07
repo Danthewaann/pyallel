@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import time
+import subprocess
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -58,9 +59,10 @@ def test_from_command_with_lines_modifier_handles_multiple_separators() -> None:
     assert process.percentage_lines == 0.5
 
 
-def test_read() -> None:
+@patch.object(subprocess, "Popen")
+def test_read(popen_mock: MagicMock) -> None:
+    popen_mock.return_value.stdout.read1.side_effect = [b"first\nsecond\n", b""]
     process = Process(1, "echo first; echo second")
     process.run()
-    time.sleep(0.01)
     output = process.read()
     assert output == b"first\nsecond\n"
