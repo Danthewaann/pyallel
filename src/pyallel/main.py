@@ -52,11 +52,15 @@ def entry_point(*args: str) -> int:
 
     logger.debug("starting run with arguments:\n%s", parsed_args)
     try:
-        exit_code = run(process_group_manager, printer)
-    except Exception:
-        logger.exception("failed run with arguments:\n%s", parsed_args)
-        print(f"{colours.red_bold}Error: {traceback.format_exc()}{colours.reset_colour}")
-        return 1
+        try:
+            exit_code = run(process_group_manager, printer)
+        except Exception:
+            logger.exception("failed run with arguments:\n%s", parsed_args)
+            print(f"{colours.red_bold}Error: {traceback.format_exc()}{colours.reset_colour}")
+            return 1
+    finally:
+        if isinstance(printer, InteractiveConsolePrinter):
+            printer.show_cursor()
 
     if exit_code == 1:
         logger.error("failed run with arguments:\n%s", parsed_args)

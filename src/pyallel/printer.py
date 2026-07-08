@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Protocol
 
 from pyallel import constants
 from pyallel.colours import Colours
+from pyallel.constants import HIDE_CURSOR, SHOW_CURSOR
 
 if TYPE_CHECKING:
     from pyallel.process import Process, ProcessOutput
@@ -52,7 +53,10 @@ class ConsolePrinter:
             columns = columns - truncate_num
             if self.get_num_lines(line, columns) > 1:
                 line = self.truncate_line(line, columns)
-        print(f"{self._colours.reset_colour}{prefix}{line}", end=end, flush=flush)
+        self._output(f"{self._colours.reset_colour}{prefix}{line}", end=end, flush=flush)
+
+    def _output(self, s: str, *, end: str = "", flush: bool = False) -> None:
+        print(s, end=end, flush=flush)
 
     def generate_process_output(
         self,
@@ -337,6 +341,33 @@ class InteractiveConsolePrinter(ConsolePrinter):
     def __init__(self, colours: Colours | None = None, *, timer: bool = False) -> None:
         super().__init__(colours, timer=timer)
         self._last_printed: list[tuple[bool, str, str]] = []
+        self._buffer: list[str] = []
+
+    def show_cursor(self) -> None:
+        print(constants.SHOW_CURSOR, end="", flush=True)
+
+    def _output(self, s: str, *, end: str = "", flush: bool = False) -> None:
+        # Buffer everything for the current frame so it can be written to the
+        # terminal in a single flush, rather than one write per line/escape
+        # sequence, which is what causes the screen to flicker
+        self._buffer.append(s)
+        if end:
+            self._buffer.append(end)
+        if flush:
+            self._flush_buffer()
+
+    def _flush_buffer(self) -> None:
+        if not self._buffer:
+            return
+        # Wrap the frame in a synchronized update so terminals that support it
+        # apply the whole frame at once instead of rendering it as it arrives
+        buffer = "".join(self._buffer)
+        print(
+            f"{constants.SYNC_UPDATE_BEGIN}{HIDE_CURSOR}{buffer}{SHOW_CURSOR}{constants.SYNC_UPDATE_END}",
+            end="",
+            flush=True,
+        )
+        self._buffer.clear()
 
     def print(self, process_group_manager: ProcessGroupManager) -> None:
         output = process_group_manager.get_cur_process_group_output()
@@ -374,7 +405,7 @@ class InteractiveConsolePrinter(ConsolePrinter):
             #
             # Move the cursor up the amount the lines that were last printed so we can start
             # comparing the last printed lines with the new lines that were generated
-            print(f"\033[{num_last_printed_lines}A", end="")
+            self._output(f"\033[{num_last_printed_lines}A")
             cursor_line = 0
             for cur_line, line_parts in enumerate(self._last_printed[:num_lines_to_print]):
                 # If the current line is not the same as it's newly generated version, we update the line
@@ -383,9 +414,9 @@ class InteractiveConsolePrinter(ConsolePrinter):
                     # Jump to the line that needs to be changed
                     lines_to_jump = cur_line - cursor_line
                     if lines_to_jump:
-                        print(f"\033[{lines_to_jump}B\r", end="")
+                        self._output(f"\033[{lines_to_jump}B\r")
                     # Clear the current line
-                    print(f"{constants.CLEAR_LINE}\r", end="")
+                    self._output(f"{constants.CLEAR_LINE}\r")
                     # Write the new line, this will move the cursor to the next line automatically
                     self.write(line, include_prefix=include_prefix, end=end, truncate=tail_output, columns=columns)
                     # Need to set the cursor_line to be the current line + 1 as the above write
@@ -396,7 +427,7 @@ class InteractiveConsolePrinter(ConsolePrinter):
                 # Jump to the start of the new lines that needs to be printed
                 lines_to_jump = num_last_printed_lines - cursor_line
                 if lines_to_jump:
-                    print(f"\033[{lines_to_jump}B\r", end="")
+                    self._output(f"\033[{lines_to_jump}B\r")
 
                 # Just print the new lines as normal
                 for line_parts in self._to_print[num_last_printed_lines:]:
@@ -404,25 +435,24 @@ class InteractiveConsolePrinter(ConsolePrinter):
                     self.write(line, include_prefix=include_prefix, end=end, truncate=tail_output, columns=columns)
             elif num_last_printed_lines > num_lines_to_print:
                 # Make sure to clear the remaining last printed lines at the end of the screen so they don't get left behind
-                print("\033[0J", end="")
+                self._output("\033[0J")
             else:
                 # Jump to the end of the output since the num of lines printed hasn't changed
                 lines_to_jump = num_lines_to_print - cursor_line
                 if lines_to_jump:
-                    print(f"\033[{lines_to_jump}B\r", end="")
+                    self._output(f"\033[{lines_to_jump}B\r")
 
-            # Force a flush to return the cursor to the bottom immediately
-            print(end="", flush=True)
+        # Write out the whole frame in a single flush so the terminal repaints
+        # atomically instead of tearing across several small writes
+        self._flush_buffer()
 
         self._last_printed = self._to_print.copy()
         self._to_print.clear()
 
     def clear_last_printed_lines(self) -> None:
         # Clear all the lines that were just printed
-        print(
-            f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}" * len(self._last_printed),
-            end="",
-        )
+        self._output(f"{constants.CLEAR_LINE}{constants.UP_LINE}{constants.CLEAR_LINE}" * len(self._last_printed))
+        self._flush_buffer()
 
     def reset(self) -> None:
         self._last_printed.clear()

@@ -8,6 +8,12 @@ IN_TTY = sys.stdout.isatty()
 CLEAR_LINE = "\033[2K"
 UP_LINE = "\033[1A\r"
 DOWN_LINE = "\033[1B\r"
+HIDE_CURSOR = "\033[?25l"
+SHOW_CURSOR = "\033[?25h"
+# Terminal synchronized update mode: https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036
+# Terminals that don't recognise this just ignore it, so it's safe to always emit
+SYNC_UPDATE_BEGIN = "\033[?2026h"
+SYNC_UPDATE_END = "\033[?2026l"
 ANSI_ESCAPE = re.compile(r"(\x9B|\x1B\[|\x1B\()[0-?]*[ -\/]*[@-~]")
 
 if IN_TTY:
