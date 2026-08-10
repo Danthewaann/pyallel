@@ -33,6 +33,7 @@ class ConsolePrinter:
         self._prefix = f"{self._colours.dim_on}=>{self._colours.dim_off} "
         self._icon = 0
         self._to_print: list[tuple[bool, str, str]] = []
+        self._last_progress_spinner_render = 0.0
 
     def write(
         self,
@@ -126,7 +127,16 @@ class ConsolePrinter:
         passed = None
         icon = ""
         poll = output.process.poll()
+        cur_time = time.perf_counter()
+        end = output.process.end
+        if not output.process.end:
+            end = cur_time
+        elapsed = end - output.process.start
+
         if include_progress:
+            if elapsed - self._last_progress_spinner_render >= constants.MAX_WAIT_BETWEEN_RENDERS:
+                self._icon = (self._icon + 1) % len(constants.ICONS)
+                self._last_progress_spinner_render = elapsed
             icon = constants.ICONS[self._icon]
             if poll is not None:
                 passed = poll == 0
@@ -148,10 +158,6 @@ class ConsolePrinter:
 
         timer = ""
         if include_timer:
-            end = output.process.end
-            if not output.process.end:
-                end = time.perf_counter()
-            elapsed = end - output.process.start
             timer = f"({self.format_time_taken(elapsed)})"
 
         command = output.process.command
@@ -165,43 +171,6 @@ class ConsolePrinter:
             out += f" {self._colours.dim_on}{timer}{self._colours.dim_off}"
 
         return out
-
-    def generate_process_group_output(
-        self,
-        output: ProcessGroupOutput,
-        *,
-        interrupt_count: int = 0,
-        tail_output: bool = True,
-    ) -> list[tuple[bool, str, str]]:
-        self.set_process_lines(output, interrupt_count)
-
-        for out in output.processes:
-            self.generate_process_output(out, tail_output=tail_output, append_newlines=True)
-
-        if interrupt_count == 1:
-            self._to_print.append((False, "", "\n"))
-            self._to_print.append(
-                (
-                    False,
-                    f"{self._colours.yellow_bold}Interrupt!{self._colours.reset_colour}",
-                    "\n",
-                )
-            )
-        elif interrupt_count == 2:  # noqa: PLR2004
-            self._to_print.append((False, "", "\n"))
-            self._to_print.append(
-                (
-                    False,
-                    f"{self._colours.red_bold}Abort!{self._colours.reset_colour}",
-                    "\n",
-                )
-            )
-
-        self._icon += 1
-        if self._icon == len(constants.ICONS):
-            self._icon = 0
-
-        return self._to_print
 
     def set_process_lines(  # noqa: PLR0915
         self,
@@ -368,6 +337,39 @@ class InteractiveConsolePrinter(ConsolePrinter):
             flush=True,
         )
         self._buffer.clear()
+
+    def generate_process_group_output(
+        self,
+        output: ProcessGroupOutput,
+        *,
+        interrupt_count: int = 0,
+        tail_output: bool = True,
+    ) -> list[tuple[bool, str, str]]:
+        self.set_process_lines(output, interrupt_count)
+
+        for out in output.processes:
+            self.generate_process_output(out, tail_output=tail_output, append_newlines=True)
+
+        if interrupt_count == 1:
+            self._to_print.append((False, "", "\n"))
+            self._to_print.append(
+                (
+                    False,
+                    f"{self._colours.yellow_bold}Interrupt!{self._colours.reset_colour}",
+                    "\n",
+                )
+            )
+        elif interrupt_count == 2:  # noqa: PLR2004
+            self._to_print.append((False, "", "\n"))
+            self._to_print.append(
+                (
+                    False,
+                    f"{self._colours.red_bold}Abort!{self._colours.reset_colour}",
+                    "\n",
+                )
+            )
+
+        return self._to_print
 
     def print(self, process_group_manager: ProcessGroupManager) -> None:
         output = process_group_manager.get_cur_process_group_output()

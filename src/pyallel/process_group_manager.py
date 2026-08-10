@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import selectors
 import signal
 from typing import Any
 
 from pyallel.errors import NoCommandsForProcessGroupError
-from pyallel.process import ProcessOutput
+from pyallel.process import Process, ProcessOutput
 from pyallel.process_group import ProcessGroup, ProcessGroupOutput
 
 
@@ -40,6 +41,7 @@ class ProcessGroupManager:
         self._interrupt_count = 0
         self._cur_process_group: ProcessGroup | None = None
         self._process_groups = process_groups
+        self._selector = selectors.DefaultSelector()
         self._all_output = ProcessGroupManagerOutput(
             process_group_outputs={
                 pg.id: ProcessGroupOutput(
@@ -59,11 +61,20 @@ class ProcessGroupManager:
         if self._process_groups:
             self._cur_process_group = self._process_groups.pop(0)
             self._cur_process_group.run()
+            for process in self._cur_process_group.processes:
+                self._selector.register(process.fileno(), selectors.EVENT_READ, data=process)
         else:
             self._cur_process_group = None
 
     def next(self) -> bool:
         return bool(self._cur_process_group or self._process_groups)
+
+    def wait_for_update(self, timeout: float) -> None:
+        # Block until either process output is ready to read or the timeout elapses
+        for key, _ in self._selector.select(timeout):
+            process: Process = key.data
+            if not process.fetch_stdout():
+                self._selector.unregister(key.fileobj)
 
     def stream(self) -> ProcessGroupManagerOutput:
         if self._cur_process_group is None:

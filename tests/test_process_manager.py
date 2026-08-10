@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import signal
 import subprocess
 import time
@@ -7,15 +8,18 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
+from pyallel import process
 from pyallel.errors import NoCommandsForProcessGroupError
 from pyallel.process import Process
 from pyallel.process_group import ProcessGroup
 from pyallel.process_group_manager import ProcessGroupManager
 
 
+@patch.object(process, "_is_buffered_reader", return_value=True)
 @patch.object(subprocess, "Popen")
-def test_stream(popen_mock: MagicMock) -> None:
+def test_stream(popen_mock: MagicMock, is_buffered_reader_mock: MagicMock) -> None:
     popen_mock.return_value.stdout.read1.return_value = b""
+    popen_mock.return_value.stdout.fileno.side_effect = lambda: os.pipe()[0]
     popen_mock.return_value.poll.return_value = 0
     pg_manager = ProcessGroupManager(
         process_groups=[
@@ -49,6 +53,7 @@ def test_stream(popen_mock: MagicMock) -> None:
     assert output.process_group_outputs[2].id == 2
     assert len(output.process_group_outputs[2].processes) == 2
     assert pg_manager.poll() == 0
+    is_buffered_reader_mock.assert_called()
 
 
 def test_from_args(mock_signal: MagicMock) -> None:
@@ -202,9 +207,11 @@ def test_from_args_with_bad_separator() -> None:
         ProcessGroupManager.from_args(":::", "echo hi")
 
 
+@patch.object(process, "_is_buffered_reader", return_value=True)
 @patch.object(subprocess, "Popen")
-def test_handle_signal(popen_mock: MagicMock) -> None:
+def test_handle_signal(popen_mock: MagicMock, is_buffered_reader_mock: MagicMock) -> None:
     popen_mock.return_value.stdout.read1.side_effect = lambda _: time.sleep(1)
+    popen_mock.return_value.stdout.fileno.side_effect = lambda: os.pipe()[0]
     pg_manager = ProcessGroupManager.from_args("sleep 0.1", "::", "sleep 0.2")
     pg_manager.run()
 
@@ -213,11 +220,14 @@ def test_handle_signal(popen_mock: MagicMock) -> None:
     send_signal_mock: MagicMock = popen_mock.return_value.send_signal
     assert send_signal_mock.call_count == 2
     send_signal_mock.assert_has_calls([call(signal.SIGINT), call(signal.SIGINT)])
+    is_buffered_reader_mock.assert_called()
 
 
+@patch.object(process, "_is_buffered_reader", return_value=True)
 @patch.object(subprocess, "Popen")
-def test_handle_signal_multiple(popen_mock: MagicMock) -> None:
+def test_handle_signal_multiple(popen_mock: MagicMock, is_buffered_reader_mock: MagicMock) -> None:
     popen_mock.return_value.stdout.read1.side_effect = lambda _: time.sleep(1)
+    popen_mock.return_value.stdout.fileno.side_effect = lambda: os.pipe()[0]
     pg_manager = ProcessGroupManager.from_args("sleep 0.1", "::", "sleep 0.2")
     pg_manager.run()
 
@@ -234,3 +244,4 @@ def test_handle_signal_multiple(popen_mock: MagicMock) -> None:
             call(signal.SIGKILL),
         ]
     )
+    is_buffered_reader_mock.assert_called()

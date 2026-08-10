@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 
 from pyallel.colours import Colours
-from pyallel.printer import ConsolePrinter
+from pyallel.printer import ConsolePrinter, InteractiveConsolePrinter
 from pyallel.process import Process, ProcessOutput
 from pyallel.process_group import ProcessGroupOutput
 
@@ -271,30 +271,31 @@ def test_printer_generate_process_output_status_handles_long_command() -> None:
     assert output == "[echo first; ech...] done ✔"
 
 
-def test_printer_generate_process_group_output() -> None:
-    printer = ConsolePrinter(colours=Colours.from_colour("no"))
-    process1 = Process(1, "echo first; echo second")
-    process2 = Process(1, "echo third; echo fourth")
-    process1.run()
-    process2.run()
-    process1.wait()
-    process2.wait()
+class TestInteractiveConsolePrinter:
+    def test_generate_process_group_output(self) -> None:
+        printer = InteractiveConsolePrinter(colours=Colours.from_colour("no"))
+        process1 = Process(1, "echo first; echo second")
+        process2 = Process(1, "echo third; echo fourth")
+        process1.run()
+        process2.run()
+        process1.wait()
+        process2.wait()
 
-    output = printer.generate_process_group_output(
-        ProcessGroupOutput(
-            id=1,
-            processes=[
-                ProcessOutput(id=1, process=process1, data="first\nsecond\n"),
-                ProcessOutput(id=2, process=process2, data="third\nfourth\n"),
-            ],
-        ),
-    )
+        output = printer.generate_process_group_output(
+            ProcessGroupOutput(
+                id=1,
+                processes=[
+                    ProcessOutput(id=1, process=process1, data="first\nsecond\n"),
+                    ProcessOutput(id=2, process=process2, data="third\nfourth\n"),
+                ],
+            ),
+        )
 
-    assert output == [
-        (False, "[echo first; echo second] done ✔", "\n"),
-        (True, "first", "\n"),
-        (True, "second", "\n"),
-        (False, "[echo third; echo fourth] done ✔", "\n"),
-        (True, "third", "\n"),
-        (True, "fourth", "\n"),
-    ]
+        assert output == [
+            (False, "[echo first; echo second] done ✔", "\n"),
+            (True, "first", "\n"),
+            (True, "second", "\n"),
+            (False, "[echo third; echo fourth] done ✔", "\n"),
+            (True, "third", "\n"),
+            (True, "fourth", "\n"),
+        ]

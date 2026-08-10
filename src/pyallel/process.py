@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import signal
 import subprocess
-import threading
 import time
-import typing
+from io import BufferedReader
+from typing import Any
+
+from typing_extensions import TypeGuard
 
 from pyallel.errors import InvalidLinesModifierError
-
-if typing.TYPE_CHECKING:
-    from io import BufferedReader
 
 
 class ProcessOutput:
@@ -34,7 +33,7 @@ class Process:
         self.percentage_lines = percentage_lines
         self._process: subprocess.Popen[bytes]
         self._buffer: bytes = b""
-        self._lock = threading.Lock()
+        self._stdout: BufferedReader
 
     def run(self) -> None:
         self.start = time.perf_counter()
@@ -45,43 +44,48 @@ class Process:
             stderr=subprocess.STDOUT,
             shell=True,
         )
+        if not _is_buffered_reader(self._process.stdout):
+            raise TypeError(f"Expected stdout to be a BufferedReader, got {self._process.stdout.__class__}")
+        self._stdout = self._process.stdout
 
-        def _read_stdout() -> None:
-            if self._process.stdout:
-                stdout = typing.cast("BufferedReader", self._process.stdout)
-                while True:
-                    data = stdout.read1(65536)
-                    if not data:
-                        break
-                    with self._lock:
-                        self._buffer += data
+    def fileno(self) -> int:
+        return self._stdout.fileno()
 
-        read_thread = threading.Thread(target=_read_stdout, daemon=True)
-        read_thread.start()
+    def fetch_stdout(self) -> bool:
+        data = self._stdout.read1(65536)
+        if not data:
+            return False
+
+        self._buffer += data
+        return True
 
     def poll(self) -> int | None:
         poll = self._process.poll()
         if poll is not None and not self.end:
             self.end = time.perf_counter()
+            # The process has exited, so drain whatever output is left
+            # sitting in the pipe now rather than waiting for the selector to
+            # notice it, otherwise trailing output written right before exit
+            # can be missed
+            while self.fetch_stdout():
+                pass
         return poll
 
-    def read(self) -> bytes:
-        with self._lock:
-            buffer = self._buffer
-            self._buffer = b""
-
+    def read(self, *, fetch_stdout: bool = True) -> bytes:
+        if fetch_stdout:
+            self.fetch_stdout()
+        buffer = self._buffer
+        self._buffer = b""
         return buffer
 
     def return_code(self) -> int | None:
         return self._process.returncode
 
     def interrupt(self) -> None:
-        if hasattr(self, "_process"):
-            self._process.send_signal(signal.SIGINT)
+        self._process.send_signal(signal.SIGINT)
 
     def kill(self) -> None:
-        if hasattr(self, "_process"):
-            self._process.send_signal(signal.SIGKILL)
+        self._process.send_signal(signal.SIGKILL)
 
     def wait(self) -> int:
         return self._process.wait()
@@ -113,3 +117,7 @@ class Process:
                 break
 
         return cls(id, " ".join(parts), round(percentage_lines / 100, 2))
+
+
+def _is_buffered_reader(stdout: Any) -> TypeGuard[BufferedReader]:
+    return isinstance(stdout, BufferedReader)

@@ -45,7 +45,7 @@ class ProcessGroup:
         return ProcessGroupOutput(
             id=self.id,
             processes=[
-                ProcessOutput(id=process.id, process=process, data=process.read().decode())
+                ProcessOutput(id=process.id, process=process, data=process.read(fetch_stdout=False).decode())
                 for process in self.processes
             ],
         )

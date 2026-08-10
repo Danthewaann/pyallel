@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib.metadata
 import logging
 import sys
-import time
 import traceback
 
 from pyallel import constants
@@ -96,7 +95,7 @@ def run(process_group_manager: ProcessGroupManager, printer: Printer) -> int:
             if not process_group_manager.next():
                 return 0
 
-        time.sleep(0.1)
+        process_group_manager.wait_for_update(constants.MAX_WAIT_BETWEEN_RENDERS)
 
 
 if __name__ == "__main__":

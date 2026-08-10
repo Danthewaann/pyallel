@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from pyallel import process
 from pyallel.errors import InvalidLinesModifierError
 from pyallel.process import Process, ProcessOutput
 from pyallel.process_group import ProcessGroup, ProcessGroupOutput
@@ -65,8 +66,9 @@ def test_from_commands_with_lines_modifier_exceeds_100() -> None:
         )
 
 
+@patch.object(process, "_is_buffered_reader", return_value=True)
 @patch.object(subprocess, "Popen")
-def test_stream(popen_mock: MagicMock) -> None:
+def test_stream(popen_mock: MagicMock, is_buffered_reader_mock: MagicMock) -> None:
     popen_mock.return_value.stdout.read1.return_value = b""
     process_group = ProcessGroup(
         id=1,
@@ -79,6 +81,7 @@ def test_stream(popen_mock: MagicMock) -> None:
     process_group.run()
     output = process_group.stream()
     assert len(output.processes) == 3
+    is_buffered_reader_mock.assert_called()
 
 
 def test_output_merge() -> None:
