@@ -467,21 +467,33 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
         self._current_process: Process | None = None
 
     def print(self, process_group_manager: ProcessGroupManager) -> None:
-        outputs = process_group_manager.cur_output
-        for pg in outputs.process_group_outputs.values():
-            for output in pg.processes:
-                if self._current_process is None:
-                    self._current_process = output.process
-                    process_output = process_group_manager.get_process(output.id)
-                    self.print_process_output(process_output, include_progress=False, include_timer=False)
-                elif self._current_process is not output.process:
-                    continue
-                else:
-                    self.print_process_output(output, include_cmd=False)
+        # This code doesn't work
+        # I have to make stream() only return new data and the printer class
+        # is then responsible for keeping track of every it has printed
+        #
+        # poll() call should not be done in the printer, the printer should just
+        # print data that it has been given and nothing more
+        pgm_output = process_group_manager.cur_output
+        pg_output = pgm_output.process_group_outputs[pgm_output.cur_process_group_id]
+        for p_output in pg_output.processes:
+            if self._current_process is None:
+                self._current_process = p_output.process
+                self.print_process_output(
+                    p_output, include_cmd=True, include_output=True, include_progress=False, include_timer=False
+                )
+            if self._current_process is not p_output.process:
+                continue
 
-                if output.process.poll() is not None:
-                    self.print_process_output(output, include_output=False)
-                    self._current_process = None
+            self.print_process_output(
+                p_output, include_cmd=False, include_output=True, include_progress=False, include_timer=False
+            )
+            if p_output.process.poll() is not None:
+                new_process_group_manager = process_group_manager.stream()
+                new_p_output = new_process_group_manager.get_process_output(p_output.id)
+                self.print_process_output(
+                    new_p_output, include_cmd=True, include_output=True, include_progress=True, include_timer=None
+                )
+                self._current_process = None
 
     def print_process_output(
         self,

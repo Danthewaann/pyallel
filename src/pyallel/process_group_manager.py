@@ -34,6 +34,14 @@ class ProcessGroupManagerOutput:
 
         return False
 
+    def get_process_output(self, process_id: int) -> ProcessOutput:
+        for pg in self.process_group_outputs.values():
+            for process in pg.processes:
+                if process.id == process_id:
+                    return process
+
+        raise KeyError(f"process with id '{process_id}' not found")
+
 
 class ProcessGroupManager:
     def __init__(self, process_groups: list[ProcessGroup]) -> None:
