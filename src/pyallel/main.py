@@ -96,7 +96,7 @@ def run(process_group_manager: ProcessGroupManager, printer: Printer) -> int:
             if not process_group_manager.next():
                 return 0
 
-        time.sleep(0.1)
+        time.sleep(0.008)
 
 
 if __name__ == "__main__":
