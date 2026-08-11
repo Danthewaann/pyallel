@@ -35,6 +35,9 @@ else:
 
 ICONS = ("/", "-", "\\", "|")
 
+# The maximum time to wait between renders in seconds
+MAX_WAIT_BETWEEN_RENDERS = 0.1
+
 # Unicode character bytes to render different symbols in the terminal
 TICK = "\u2714"
 X = "\u2718"

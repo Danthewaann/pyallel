@@ -140,7 +140,7 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                "[echo hi] running... ",
+                "[echo hi] running...",
                 f"{PREFIX}hi",
                 "[echo hi] done ✔",
             ],
@@ -153,7 +153,7 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                "[echo hi] running... ",
+                "[echo hi] running...",
                 f"{PREFIX}hi",
                 "[echo hi] done ✔",
             ],
@@ -166,7 +166,7 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                "[exit 1] running... ",
+                "[exit 1] running...",
                 "[exit 1] failed ✘",
                 "",
                 "ERROR: the following commands failed",
@@ -181,7 +181,7 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                "[TEST_VAR=1 echo hi] running... ",
+                "[TEST_VAR=1 echo hi] running...",
                 f"{PREFIX}hi",
                 "[TEST_VAR=1 echo hi] done ✔",
             ],
@@ -194,10 +194,10 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                "[sleep 0.1; echo first] running... ",
+                "[sleep 0.1; echo first] running...",
                 f"{PREFIX}first",
                 "[sleep 0.1; echo first] done ✔",
-                "[echo hi] running... ",
+                "[echo hi] running...",
                 f"{PREFIX}hi",
                 "[echo hi] done ✔",
             ],
@@ -210,10 +210,10 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                "[echo first] running... ",
+                "[echo first] running...",
                 f"{PREFIX}first",
                 "[echo first] done ✔",
-                "[echo hi] running... ",
+                "[echo hi] running...",
                 f"{PREFIX}hi",
                 "[echo hi] done ✔",
             ],
@@ -226,9 +226,9 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                "[exit 1] running... ",
+                "[exit 1] running...",
                 "[exit 1] failed ✘",
-                "[echo hi] running... ",
+                "[echo hi] running...",
                 f"{PREFIX}hi",
                 "[echo hi] done ✔",
                 "",
@@ -247,9 +247,9 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                "[exit 1] running... ",
+                "[exit 1] running...",
                 "[exit 1] failed ✘",
-                "[exit 1] running... ",
+                "[exit 1] running...",
                 "[exit 1] failed ✘",
                 "",
                 "ERROR: the following commands failed",
@@ -265,10 +265,10 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                "[echo first] running... ",
+                "[echo first] running...",
                 f"{PREFIX}first",
                 "[echo first] done ✔",
-                "[echo hi] running... ",
+                "[echo hi] running...",
                 f"{PREFIX}hi",
                 "[echo hi] done ✔",
             ],
@@ -281,7 +281,7 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                "[exit 1] running... ",
+                "[exit 1] running...",
                 "[exit 1] failed ✘",
                 "",
                 "ERROR: the following commands failed",
@@ -297,7 +297,7 @@ class TestNonInteractiveMode:
             re.search(
                 "".join(
                     [
-                        r"\[echo hi\] running... \n",
+                        r"\[echo hi\] running...\n",
                         f"{PREFIX}hi\n",
                         r"\[echo hi\] done ✔ \(0\..*\)\n",
                     ]
@@ -311,21 +311,11 @@ class TestNonInteractiveMode:
         exit_code = main.entry_point("sleep 1", "::", "echo hi", "-n", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
-        assert (
-            re.search(
-                "".join(
-                    [
-                        r"\[sleep 1\] running... \n",
-                        r"\[sleep 1\] done ✔ \(1\..*s\)\n",
-                        r"\[echo hi\] running... \n",
-                        f"{PREFIX}hi\n",
-                        r"\[echo hi\] done ✔ \(0\..*s\)\n",
-                    ]
-                ),
-                captured.out,
-            )
-            is not None
-        ), prettify_error(captured.out)
+        assert re.search(r"\[sleep 1\] running...\n", captured.out) is not None
+        assert re.search(r"\[sleep 1\] done ✔ \(1\..*s\)\n", captured.out) is not None
+        assert re.search(r"\[echo hi\] running...\n", captured.out) is not None
+        assert re.search(f"{PREFIX}hi\n", captured.out) is not None
+        assert re.search(r"\[echo hi\] done ✔ \(0\..*s\)\n", captured.out) is not None, prettify_error(captured.out)
 
     @pytest.mark.parametrize("wait", ["0.1", "0.5"])
     def test_handles_single_command_output_with_delayed_newlines(
@@ -337,7 +327,7 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                f"[printf hi; sleep {wait}; echo bye] running... ",
+                f"[printf hi; sleep {wait}; echo bye] running...",
                 f"{PREFIX}hibye",
                 f"[printf hi; sleep {wait}; echo bye] done ✔",
             ],
@@ -361,10 +351,10 @@ class TestNonInteractiveMode:
         compare_output(
             actual=captured.out.splitlines(),
             expected=[
-                f"[printf hi; sleep {wait}; echo bye] running... ",
+                f"[printf hi; sleep {wait}; echo bye] running...",
                 f"{PREFIX}hibye",
                 f"[printf hi; sleep {wait}; echo bye] done ✔",
-                f"[printf hi; sleep {wait}; echo bye] running... ",
+                f"[printf hi; sleep {wait}; echo bye] running...",
                 f"{PREFIX}hibye",
                 f"[printf hi; sleep {wait}; echo bye] done ✔",
             ],

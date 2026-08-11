@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from pyallel import process
 from pyallel.errors import InvalidLinesModifierError
 from pyallel.process import Process
 
@@ -59,10 +60,24 @@ def test_from_command_with_lines_modifier_handles_multiple_separators() -> None:
     assert process.percentage_lines == 0.5
 
 
+@patch.object(process, "_is_buffered_reader", return_value=False)
 @patch.object(subprocess, "Popen")
-def test_read(popen_mock: MagicMock) -> None:
+def test_run_not_buffered_reader(popen_mock: MagicMock, is_buffered_reader_mock: MagicMock) -> None:
+    process = Process(1, "echo first; echo second")
+    with pytest.raises(
+        TypeError, match=r"Expected stdout to be a BufferedReader, got <class 'unittest.mock.MagicMock'>"
+    ):
+        process.run()
+    popen_mock.assert_called_once()
+    is_buffered_reader_mock.assert_called_once()
+
+
+@patch.object(process, "_is_buffered_reader", return_value=True)
+@patch.object(subprocess, "Popen")
+def test_read(popen_mock: MagicMock, is_buffered_reader_mock: MagicMock) -> None:
     popen_mock.return_value.stdout.read1.side_effect = [b"first\nsecond\n", b""]
     process = Process(1, "echo first; echo second")
     process.run()
     output = process.read()
     assert output == b"first\nsecond\n"
+    is_buffered_reader_mock.assert_called_once()

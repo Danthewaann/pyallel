@@ -4,24 +4,47 @@ import signal
 import subprocess
 import threading
 import time
-import typing
+from io import BufferedReader
+from typing import Any
+
+from typing_extensions import TypeGuard
 
 from pyallel.errors import InvalidLinesModifierError
 
-if typing.TYPE_CHECKING:
-    from io import BufferedReader
-
 
 class ProcessOutput:
-    def __init__(self, id: int, process: Process, data: str = "") -> None:  # noqa: A002
+    def __init__(
+        self,
+        id: int,  # noqa: A002
+        data: str = "",
+        allocated_lines: int = 0,
+        allocated_percentage_lines: float = 0.0,
+        start: float = 0.0,
+        end: float = 0.0,
+        poll: int | None = None,
+        command: str = "",
+    ) -> None:
         self.id = id
         self.data = data
         self.lines = len(data.splitlines()) + 1
-        self.process = process
+        self.allocated_lines = allocated_lines
+        self.allocated_percentage_lines = allocated_percentage_lines
+        self.start = start
+        self.end = end
+        self.poll = poll
+        self.command = command
 
     def merge(self, other: ProcessOutput) -> None:
+        if self.id != other.id:
+            raise ValueError(f"Cannot merge process outputs with different ids: {self.id=}, {other.id=}")
+
         self.data += other.data
         self.lines += len(other.data.splitlines())
+        self.allocated_lines = other.allocated_lines
+        self.allocated_percentage_lines = other.allocated_percentage_lines
+        self.start = other.start
+        self.end = other.end
+        self.poll = other.poll
 
 
 class Process:
@@ -34,6 +57,7 @@ class Process:
         self.percentage_lines = percentage_lines
         self._process: subprocess.Popen[bytes]
         self._buffer: bytes = b""
+        self._stdout: BufferedReader
         self._lock = threading.Lock()
 
     def run(self) -> None:
@@ -46,15 +70,18 @@ class Process:
             shell=True,
         )
 
+        if not _is_buffered_reader(self._process.stdout):
+            raise TypeError(f"Expected stdout to be a BufferedReader, got {self._process.stdout.__class__}")
+
+        self._stdout = self._process.stdout
+
         def _read_stdout() -> None:
-            if self._process.stdout:
-                stdout = typing.cast("BufferedReader", self._process.stdout)
-                while True:
-                    data = stdout.read1(65536)
-                    if not data:
-                        break
-                    with self._lock:
-                        self._buffer += data
+            while True:
+                data = self._stdout.read1(65536)
+                if not data:
+                    break
+                with self._lock:
+                    self._buffer += data
 
         read_thread = threading.Thread(target=_read_stdout, daemon=True)
         read_thread.start()
@@ -76,12 +103,10 @@ class Process:
         return self._process.returncode
 
     def interrupt(self) -> None:
-        if hasattr(self, "_process"):
-            self._process.send_signal(signal.SIGINT)
+        self._process.send_signal(signal.SIGINT)
 
     def kill(self) -> None:
-        if hasattr(self, "_process"):
-            self._process.send_signal(signal.SIGKILL)
+        self._process.send_signal(signal.SIGKILL)
 
     def wait(self) -> int:
         return self._process.wait()
@@ -90,7 +115,7 @@ class Process:
     def from_command(cls, id: int, command: str) -> Process:  # noqa: A002
         cmd = command.split(" :::: ", maxsplit=1)
         if len(cmd) == 1:
-            return cls(id, cmd[0])
+            return cls(id, cmd[0].strip())
 
         args, *parts = cmd
 
@@ -112,4 +137,8 @@ class Process:
 
                 break
 
-        return cls(id, " ".join(parts), round(percentage_lines / 100, 2))
+        return cls(id, " ".join(parts).strip(), round(percentage_lines / 100, 2))
+
+
+def _is_buffered_reader(stdout: Any) -> TypeGuard[BufferedReader]:
+    return isinstance(stdout, BufferedReader)
