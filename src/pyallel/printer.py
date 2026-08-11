@@ -457,12 +457,11 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
 
         timer = ""
         if self._include_timer:
-            # cur_time = time.perf_counter()
-            # end = output.end
+            cur_time = time.perf_counter()
+            end = output.end
             if not output.end:
-                print("no end", output.command)
-            #     end = cur_time
-            elapsed = output.end - output.start
+                end = cur_time
+            elapsed = end - output.start
             timer = f"({format_time_taken(elapsed)})"
 
         status = (

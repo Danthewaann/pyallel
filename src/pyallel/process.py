@@ -57,6 +57,7 @@ class Process:
         self._process: subprocess.Popen[bytes]
         self._buffer: bytes = b""
         self._stdout: BufferedReader
+        self._drained = False
 
     def run(self) -> None:
         self.start = time.perf_counter()
@@ -77,25 +78,23 @@ class Process:
     def fetch_stdout(self) -> bool:
         data = self._stdout.read1(65536)
         if not data:
-            if not self.end:
-                self.end = time.perf_counter()
             return False
 
         self._buffer += data
         return True
 
-    def poll(self, *, fetch_stdout: bool = True) -> int | None:
+    def poll(self) -> int | None:
         poll = self._process.poll()
         if poll is not None and not self.end:
-            if not self.end:
-                self.end = time.perf_counter()
+            self.end = time.perf_counter()
             # The process has exited, so drain whatever output is left
             # sitting in the pipe now rather than waiting for the selector to
             # notice it, otherwise trailing output written right before exit
-            # can be missed
-            if fetch_stdout:
-                while self.fetch_stdout():
-                    pass
+            # can be missed. Gated on its own flag (not self.end) so that
+            # whichever caller notices the exit first doesn't rob a later
+            # caller of the chance to drain.
+            while self.fetch_stdout():
+                pass
         return poll
 
     def read(self) -> bytes:

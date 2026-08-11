@@ -76,23 +76,24 @@ class ProcessGroup:
         return 0
 
     def stream(self) -> ProcessGroupOutput:
-        return ProcessGroupOutput(
-            id=self.id,
-            processes=[
+        process_outputs: list[ProcessOutput] = []
+        for process in self.processes:
+            poll = process.poll()
+            data = process.read().decode()
+            process_outputs.append(
                 ProcessOutput(
                     id=process.id,
-                    data=process.read().decode(),
+                    data=data,
                     allocated_lines=process.lines,
                     allocated_percentage_lines=process.percentage_lines,
                     start=process.start,
                     end=process.end,
-                    poll=process.poll(fetch_stdout=False),
+                    poll=poll,
                     command=process.command,
                 )
-                for process in self.processes
-            ],
-            interrupt_count=self._interrupt_count,
-        )
+            )
+
+        return ProcessGroupOutput(id=self.id, processes=process_outputs, interrupt_count=self._interrupt_count)
 
     def wait_for_update(self, timeout: float) -> None:
         # Block until either process output is ready to read or the timeout elapses
