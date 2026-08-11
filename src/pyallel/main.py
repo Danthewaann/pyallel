@@ -85,6 +85,7 @@ def run(process_group_manager: ProcessGroupManager, printer: Printer) -> int:
         if poll is not None:
             # If we still have new output to print after the process group has completed,
             # make sure to print it here before continuing
+            process_group_manager.wait_for_update(constants.MAX_WAIT_BETWEEN_RENDERS)
             output = process_group_manager.stream()
             printer.print(output, done=True)
 

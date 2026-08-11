@@ -87,14 +87,6 @@ class Process:
         poll = self._process.poll()
         if poll is not None and not self.end:
             self.end = time.perf_counter()
-            # The process has exited, so drain whatever output is left
-            # sitting in the pipe now rather than waiting for the selector to
-            # notice it, otherwise trailing output written right before exit
-            # can be missed. Gated on its own flag (not self.end) so that
-            # whichever caller notices the exit first doesn't rob a later
-            # caller of the chance to drain.
-            while self.fetch_stdout():
-                pass
         return poll
 
     def read(self) -> bytes:
