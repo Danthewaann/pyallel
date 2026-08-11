@@ -40,18 +40,14 @@ def test_stream(popen_mock: MagicMock, is_buffered_reader_mock: MagicMock) -> No
         ],
     )
     pg_manager.run()
-    pg_manager.get_cur_process_group_output()
     output = pg_manager.stream()
-    assert len(output.process_group_outputs) == 1
-    assert output.process_group_outputs[1].id == 1
-    assert len(output.process_group_outputs[1].processes) == 2
+    assert output.id == 1
+    assert len(output.processes) == 2
     assert pg_manager.poll() == 0
     pg_manager.run()
-    pg_manager.get_cur_process_group_output()
     output = pg_manager.stream()
-    assert len(output.process_group_outputs) == 1
-    assert output.process_group_outputs[2].id == 2
-    assert len(output.process_group_outputs[2].processes) == 2
+    assert output.id == 2
+    assert len(output.processes) == 2
     assert pg_manager.poll() == 0
     is_buffered_reader_mock.assert_called()
 

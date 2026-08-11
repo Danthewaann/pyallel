@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import selectors
 import signal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from pyallel.errors import NoCommandsForProcessGroupError
-from pyallel.process import Process, ProcessOutput
+from pyallel.errors import NoCommandsForProcessGroupError, PyallelError
 from pyallel.process_group import ProcessGroup, ProcessGroupOutput
+
+if TYPE_CHECKING:
+    from pyallel.process import Process, ProcessOutput
 
 
 class ProcessGroupManagerOutput:
@@ -17,14 +19,6 @@ class ProcessGroupManagerOutput:
     ) -> None:
         self.process_group_outputs = process_group_outputs or {}
         self.cur_process_group_id = cur_process_group_id
-
-    def merge(self, other: ProcessGroupManagerOutput) -> None:
-        self.cur_process_group_id = other.cur_process_group_id
-        for key, value in other.process_group_outputs.items():
-            if key in self.process_group_outputs:
-                self.process_group_outputs[key].merge(value)
-            else:
-                self.process_group_outputs[key] = value
 
     def has_output(self) -> bool:
         for pg in self.process_group_outputs.values():
@@ -47,35 +41,36 @@ class ProcessGroupManager:
     def __init__(self, process_groups: list[ProcessGroup]) -> None:
         self._exit_code = 0
         self._interrupt_count = 0
-        self._cur_process_group: ProcessGroup | None = None
+        self._cur_pg_index = -1
         self._process_groups = process_groups
         self._selector = selectors.DefaultSelector()
-        self._all_output = ProcessGroupManagerOutput(
-            process_group_outputs={
-                pg.id: ProcessGroupOutput(
-                    id=pg.id,
-                    processes=[ProcessOutput(id=p.id, process=p) for p in pg.processes],
-                )
-                for pg in self._process_groups
-            }
-        )
-        self.cur_output = ProcessGroupManagerOutput()
 
     @property
     def interrupt_count(self) -> int:
         return self._interrupt_count
 
+    @property
+    def cur_process_group(self) -> ProcessGroup | None:
+        if self._cur_pg_index == -1:
+            return None
+        try:
+            return self._process_groups[self._cur_pg_index]
+        except KeyError:
+            return None
+
     def run(self) -> None:
-        if self._process_groups:
-            self._cur_process_group = self._process_groups.pop(0)
-            self._cur_process_group.run()
-            for process in self._cur_process_group.processes:
+        if self.next():
+            self._cur_pg_index += 1
+            process_group = self._process_groups[self._cur_pg_index]
+            process_group.run()
+            for process in process_group.processes:
                 self._selector.register(process.fileno(), selectors.EVENT_READ, data=process)
-        else:
-            self._cur_process_group = None
 
     def next(self) -> bool:
-        return bool(self._cur_process_group or self._process_groups)
+        try:
+            return bool(self._process_groups[self._cur_pg_index + 1])
+        except KeyError:
+            return False
 
     def wait_for_update(self, timeout: float) -> None:
         # Block until either process output is ready to read or the timeout elapses
@@ -84,39 +79,21 @@ class ProcessGroupManager:
             if not process.fetch_stdout():
                 self._selector.unregister(key.fileobj)
 
-    def stream(self) -> ProcessGroupManagerOutput:
-        if self._cur_process_group is None:
-            return ProcessGroupManagerOutput()
+    def stream(self) -> ProcessGroupOutput:
+        cur_process_group = self.cur_process_group
+        if cur_process_group is None:
+            raise PyallelError("Current process group not set, did you forget to call run()?")
 
-        output = ProcessGroupManagerOutput(
-            cur_process_group_id=self._cur_process_group.id,
-            process_group_outputs={self._cur_process_group.id: self._cur_process_group.stream()},
-        )
+        return cur_process_group.stream()
 
-        self._all_output.merge(output)
-        self.cur_output = output
-
-        return output
-
-    def get_cur_process_group_output(self) -> ProcessGroupOutput:
-        if self._cur_process_group:
-            return self._all_output.process_group_outputs[self._cur_process_group.id]
-
-        raise KeyError("no current process group output")
-
-    def get_process(self, process_id: int) -> ProcessOutput:
-        for pg in self._all_output.process_group_outputs.values():
-            for process in pg.processes:
-                if process.id == process_id:
-                    return process
-
-        raise KeyError(f"process with id '{process_id}' not found")
+    def get_processes(self) -> list[Process]:
+        return [p for pg in self._process_groups for p in pg.processes]
 
     def poll(self) -> int | None:
-        if self._cur_process_group is None:
+        if self.cur_process_group is None:
             return 0
 
-        poll = self._cur_process_group.poll()
+        poll = self.cur_process_group.poll()
 
         if poll is not None and self._exit_code:
             return self._exit_code
@@ -127,8 +104,8 @@ class ProcessGroupManager:
         return poll
 
     def handle_signal(self, signum: int, _frame: Any) -> None:
-        if self._cur_process_group is not None:
-            self._cur_process_group.handle_signal(signum)
+        if self.cur_process_group is not None:
+            self.cur_process_group.handle_signal(signum)
 
         self._exit_code = 128 + signum
         self._interrupt_count += 1
