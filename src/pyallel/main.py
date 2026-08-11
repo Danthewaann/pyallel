@@ -63,12 +63,13 @@ def entry_point(*args: str) -> int:
 
     if exit_code == 1:
         logger.error("failed run with arguments:\n%s", parsed_args)
-        process_group = process_group_manager.get_cur_process_group_output()
+        process_group = process_group_manager.cur_process_group
+        assert process_group is not None
         print(f"\n{colours.red_bold}ERROR: the following commands failed{colours.reset_colour}")
-        for process_output in process_group.processes:
-            process_poll = process_output.process.poll()
+        for process in process_group.processes:
+            process_poll = process.poll()
             if process_poll and process_poll > 0:
-                print(f"   {colours.red_bold}{process_output.process.command}{colours.reset_colour}")
+                print(f"   {colours.red_bold}{process.command}{colours.reset_colour}")
     else:
         logger.debug("finished run with arguments:\n%s", parsed_args)
 
@@ -78,15 +79,15 @@ def entry_point(*args: str) -> int:
 def run(process_group_manager: ProcessGroupManager, printer: Printer) -> int:
     process_group_manager.run()
     while True:
-        process_group_manager.stream()
-        printer.print(process_group_manager)
+        output = process_group_manager.stream()
+        printer.print(output)
 
         poll = process_group_manager.poll()
         if poll is not None:
-            # If we still have new output to print after the process group manager has completed,
+            # If we still have new output to print after the process group has completed,
             # make sure to print it here before continuing
-            if process_group_manager.stream().has_output():
-                printer.print(process_group_manager)
+            output = process_group_manager.stream()
+            printer.print(output, done=True)
 
             if poll > 0:
                 return poll

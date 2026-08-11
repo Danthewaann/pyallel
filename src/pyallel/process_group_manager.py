@@ -8,33 +8,7 @@ from pyallel.errors import NoCommandsForProcessGroupError, PyallelError
 from pyallel.process_group import ProcessGroup, ProcessGroupOutput
 
 if TYPE_CHECKING:
-    from pyallel.process import Process, ProcessOutput
-
-
-class ProcessGroupManagerOutput:
-    def __init__(
-        self,
-        process_group_outputs: dict[int, ProcessGroupOutput] | None = None,
-        cur_process_group_id: int = 1,
-    ) -> None:
-        self.process_group_outputs = process_group_outputs or {}
-        self.cur_process_group_id = cur_process_group_id
-
-    def has_output(self) -> bool:
-        for pg in self.process_group_outputs.values():
-            for process in pg.processes:
-                if process.data:
-                    return True
-
-        return False
-
-    def get_process_output(self, process_id: int) -> ProcessOutput:
-        for pg in self.process_group_outputs.values():
-            for process in pg.processes:
-                if process.id == process_id:
-                    return process
-
-        raise KeyError(f"process with id '{process_id}' not found")
+    from pyallel.process import Process
 
 
 class ProcessGroupManager:
@@ -55,7 +29,7 @@ class ProcessGroupManager:
             return None
         try:
             return self._process_groups[self._cur_pg_index]
-        except KeyError:
+        except IndexError:
             return None
 
     def run(self) -> None:
@@ -69,7 +43,7 @@ class ProcessGroupManager:
     def next(self) -> bool:
         try:
             return bool(self._process_groups[self._cur_pg_index + 1])
-        except KeyError:
+        except IndexError:
             return False
 
     def wait_for_update(self, timeout: float) -> None:

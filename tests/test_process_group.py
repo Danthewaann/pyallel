@@ -88,13 +88,9 @@ def test_output_merge() -> None:
     output = ProcessGroupOutput(
         id=1,
         processes=[
-            ProcessOutput(
-                id=1,
-                process=Process(id=1, command="echo first; echo hi"),
-                data="first\nhi\n",
-            ),
-            ProcessOutput(id=1, process=Process(id=2, command="echo second"), data="second\n"),
-            ProcessOutput(id=3, process=Process(id=3, command="echo third"), data="third\n"),
+            ProcessOutput(id=1, data="first\nhi\n"),
+            ProcessOutput(id=1, data="second\n"),
+            ProcessOutput(id=3, data="third\n"),
         ],
     )
 
@@ -102,13 +98,9 @@ def test_output_merge() -> None:
         ProcessGroupOutput(
             id=1,
             processes=[
-                ProcessOutput(
-                    id=1,
-                    process=Process(id=1, command="echo first; echo hi"),
-                    data="bye\n",
-                ),
-                ProcessOutput(id=1, process=Process(id=2, command="echo second"), data="hi\n"),
-                ProcessOutput(id=3, process=Process(id=3, command="echo third"), data="five\n"),
+                ProcessOutput(id=1, data="bye\n"),
+                ProcessOutput(id=1, data="hi\n"),
+                ProcessOutput(id=3, data="five\n"),
             ],
         )
     )

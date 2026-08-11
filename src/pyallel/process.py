@@ -12,15 +12,33 @@ from pyallel.errors import InvalidLinesModifierError
 
 
 class ProcessOutput:
-    def __init__(self, id: int, process: Process, data: str = "") -> None:  # noqa: A002
+    def __init__(
+        self,
+        id: int,  # noqa: A002
+        data: str = "",
+        allocated_lines: int = 0,
+        allocated_percentage_lines: float = 0.0,
+        start: float = 0.0,
+        end: float = 0.0,
+        poll: int | None = None,
+        command: str = "",
+    ) -> None:
         self.id = id
         self.data = data
         self.lines = len(data.splitlines()) + 1
-        self.process = process
+        self.allocated_lines = allocated_lines
+        self.allocated_percentage_lines = allocated_percentage_lines
+        self.start = start
+        self.end = end
+        self.poll = poll
+        self.command = command
 
     def merge(self, other: ProcessOutput) -> None:
         self.data += other.data
         self.lines += len(other.data.splitlines())
+        self.allocated_lines = other.allocated_lines
+        self.end = other.end
+        self.poll = other.poll
 
 
 class Process:
@@ -59,7 +77,7 @@ class Process:
         self._buffer += data
         return True
 
-    def poll(self) -> int | None:
+    def poll(self, fetch_stdout: bool = True) -> int | None:
         poll = self._process.poll()
         if poll is not None and not self.end:
             self.end = time.perf_counter()
@@ -67,8 +85,9 @@ class Process:
             # sitting in the pipe now rather than waiting for the selector to
             # notice it, otherwise trailing output written right before exit
             # can be missed
-            while self.fetch_stdout():
-                pass
+            if fetch_stdout:
+                while self.fetch_stdout():
+                    pass
         return poll
 
     def read(self, *, fetch_stdout: bool = True) -> bytes:

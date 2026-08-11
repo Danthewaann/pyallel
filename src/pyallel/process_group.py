@@ -9,9 +9,10 @@ from pyallel.process import Process, ProcessOutput
 
 
 class ProcessGroupOutput:
-    def __init__(self, id: int, processes: Sequence[ProcessOutput]) -> None:  # noqa: A002
+    def __init__(self, id: int, processes: Sequence[ProcessOutput], interrupt_count: int = 0) -> None:  # noqa: A002
         self.id = id
         self.processes = processes
+        self.interrupt_count = 0
 
     def merge(self, other: ProcessGroupOutput) -> None:
         for i, _ in enumerate(self.processes):
@@ -22,8 +23,8 @@ class ProcessGroup:
     def __init__(self, id: int, processes: list[Process]) -> None:  # noqa: A002
         self.id = id
         self.processes = processes
-        self._exit_code: int = 0
-        self._interrupt_count: int = 0
+        self._exit_code = 0
+        self._interrupt_count = 0
 
     def run(self) -> None:
         for process in self.processes:
@@ -45,9 +46,19 @@ class ProcessGroup:
         return ProcessGroupOutput(
             id=self.id,
             processes=[
-                ProcessOutput(id=process.id, process=process, data=process.read(fetch_stdout=False).decode())
+                ProcessOutput(
+                    id=process.id,
+                    data=process.read(fetch_stdout=False).decode(),
+                    allocated_lines=process.lines,
+                    allocated_percentage_lines=process.percentage_lines,
+                    start=process.start,
+                    end=process.end,
+                    poll=process.poll(fetch_stdout=False),
+                    command=process.command,
+                )
                 for process in self.processes
             ],
+            interrupt_count=self._interrupt_count,
         )
 
     def handle_signal(self, _signum: int) -> None:
