@@ -37,7 +37,7 @@ class InteractiveConsolePrinter(ConsolePrinter):
         self._icon = 0
 
     def print(self, output: ProcessGroupOutput, *, done: bool = False) -> None:
-        if self._cur_output is None:
+        if self._cur_output is None or self._cur_output.id != output.id:
             self._cur_output = output
         else:
             self._cur_output.merge(output)
@@ -388,14 +388,15 @@ class InteractiveConsolePrinter(ConsolePrinter):
 class NonInteractiveConsolePrinter(ConsolePrinter):
     def __init__(self, colours: Colours | None = None, *, timer: bool = False) -> None:
         super().__init__(colours, include_timer=timer)
-        # self._current_process: Process | None = None
         self._cur_pg_output: ProcessGroupOutput | None = None
         self._p_new = True
         self._p_index = 0
         self._generated_lines: list[tuple[bool, str, str]] = []
 
     def print(self, output: ProcessGroupOutput, *, done: bool = False) -> None:
-        if self._cur_pg_output is None:
+        if self._cur_pg_output is None or self._cur_pg_output.id != output.id:
+            self._p_new = True
+            self._p_index = 0
             self._cur_pg_output = output
         else:
             self._cur_pg_output.merge(output)
@@ -456,11 +457,12 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
 
         timer = ""
         if self._include_timer:
-            cur_time = time.perf_counter()
-            end = output.end
-            if not end:
-                end = cur_time
-            elapsed = end - output.start
+            # cur_time = time.perf_counter()
+            # end = output.end
+            if not output.end:
+                print("no end", output.command)
+            #     end = cur_time
+            elapsed = output.end - output.start
             timer = f"({format_time_taken(elapsed)})"
 
         status = (
@@ -468,7 +470,7 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
             f"[{self._colours.reset_colour}"
             f"{self._colours.blue_bold}{output.command}{self._colours.reset_colour}"
             f"{self._colours.white_bold}]{self._colours.reset_colour}"
-            f"{self._colours.white_bold} {msg} {icon}{self._colours.reset_colour}"
+            f"{colour} {msg} {icon}{self._colours.reset_colour}"
         )
 
         if timer:

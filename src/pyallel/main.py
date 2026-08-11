@@ -64,7 +64,6 @@ def entry_point(*args: str) -> int:
     if exit_code == 1:
         logger.error("failed run with arguments:\n%s", parsed_args)
         process_group = process_group_manager.cur_process_group
-        assert process_group is not None
         print(f"\n{colours.red_bold}ERROR: the following commands failed{colours.reset_colour}")
         for process in process_group.processes:
             process_poll = process.poll()

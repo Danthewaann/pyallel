@@ -1,88 +1,18 @@
 from __future__ import annotations
 
-import selectors
 import signal
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from pyallel.errors import NoCommandsForProcessGroupError, PyallelError
+from pyallel.errors import NoCommandsForProcessGroupError
 from pyallel.process_group import ProcessGroup, ProcessGroupOutput
-
-if TYPE_CHECKING:
-    from pyallel.process import Process
 
 
 class ProcessGroupManager:
     def __init__(self, process_groups: list[ProcessGroup]) -> None:
         self._exit_code = 0
         self._interrupt_count = 0
-        self._cur_pg_index = -1
         self._process_groups = process_groups
-        self._selector = selectors.DefaultSelector()
-
-    @property
-    def interrupt_count(self) -> int:
-        return self._interrupt_count
-
-    @property
-    def cur_process_group(self) -> ProcessGroup | None:
-        if self._cur_pg_index == -1:
-            return None
-        try:
-            return self._process_groups[self._cur_pg_index]
-        except IndexError:
-            return None
-
-    def run(self) -> None:
-        if self.next():
-            self._cur_pg_index += 1
-            process_group = self._process_groups[self._cur_pg_index]
-            process_group.run()
-            for process in process_group.processes:
-                self._selector.register(process.fileno(), selectors.EVENT_READ, data=process)
-
-    def next(self) -> bool:
-        try:
-            return bool(self._process_groups[self._cur_pg_index + 1])
-        except IndexError:
-            return False
-
-    def wait_for_update(self, timeout: float) -> None:
-        # Block until either process output is ready to read or the timeout elapses
-        for key, _ in self._selector.select(timeout):
-            process: Process = key.data
-            if not process.fetch_stdout():
-                self._selector.unregister(key.fileobj)
-
-    def stream(self) -> ProcessGroupOutput:
-        cur_process_group = self.cur_process_group
-        if cur_process_group is None:
-            raise PyallelError("Current process group not set, did you forget to call run()?")
-
-        return cur_process_group.stream()
-
-    def get_processes(self) -> list[Process]:
-        return [p for pg in self._process_groups for p in pg.processes]
-
-    def poll(self) -> int | None:
-        if self.cur_process_group is None:
-            return 0
-
-        poll = self.cur_process_group.poll()
-
-        if poll is not None and self._exit_code:
-            return self._exit_code
-
-        if self._interrupt_count > 1:
-            return self._exit_code
-
-        return poll
-
-    def handle_signal(self, signum: int, _frame: Any) -> None:
-        if self.cur_process_group is not None:
-            self.cur_process_group.handle_signal(signum)
-
-        self._exit_code = 128 + signum
-        self._interrupt_count += 1
+        self._cur_process_group: ProcessGroup | None = None
 
     @classmethod
     def from_args(cls, *args: str) -> ProcessGroupManager:
@@ -116,3 +46,45 @@ class ProcessGroupManager:
         signal.signal(signal.SIGTERM, process_group_manager.handle_signal)
 
         return process_group_manager
+
+    def run(self) -> None:
+        if self._process_groups:
+            self._cur_process_group = self._process_groups.pop(0)
+            self._cur_process_group.run()
+        else:
+            self._cur_process_group = None
+
+    def next(self) -> bool:
+        return bool(self._cur_process_group or self._process_groups)
+
+    def poll(self) -> int | None:
+        poll = self.cur_process_group.poll()
+
+        if poll is not None and self._exit_code:
+            return self._exit_code
+
+        if self._interrupt_count > 1:
+            return self._exit_code
+
+        return poll
+
+    def stream(self) -> ProcessGroupOutput:
+        return self.cur_process_group.stream()
+
+    def wait_for_update(self, timeout: float) -> None:
+        self.cur_process_group.wait_for_update(timeout)
+
+    def handle_signal(self, signum: int, _frame: Any) -> None:
+        self.cur_process_group.handle_signal(signum)
+        self._exit_code = 128 + signum
+        self._interrupt_count += 1
+
+    @property
+    def interrupt_count(self) -> int:
+        return self._interrupt_count
+
+    @property
+    def cur_process_group(self) -> ProcessGroup:
+        if self._cur_process_group is None:
+            raise ValueError("cur_process_group is not set, did you forget to call run()?")
+        return self._cur_process_group

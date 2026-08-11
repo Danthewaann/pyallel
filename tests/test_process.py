@@ -78,6 +78,7 @@ def test_read(popen_mock: MagicMock, is_buffered_reader_mock: MagicMock) -> None
     popen_mock.return_value.stdout.read1.side_effect = [b"first\nsecond\n", b""]
     process = Process(1, "echo first; echo second")
     process.run()
+    process.fetch_stdout()
     output = process.read()
     assert output == b"first\nsecond\n"
     is_buffered_reader_mock.assert_called_once()

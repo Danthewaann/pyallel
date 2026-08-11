@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 from unittest.mock import MagicMock, patch
 
@@ -70,6 +71,7 @@ def test_from_commands_with_lines_modifier_exceeds_100() -> None:
 @patch.object(subprocess, "Popen")
 def test_stream(popen_mock: MagicMock, is_buffered_reader_mock: MagicMock) -> None:
     popen_mock.return_value.stdout.read1.return_value = b""
+    popen_mock.return_value.stdout.fileno.side_effect = lambda: os.pipe()[0]
     process_group = ProcessGroup(
         id=1,
         processes=[

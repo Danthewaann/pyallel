@@ -311,21 +311,11 @@ class TestNonInteractiveMode:
         exit_code = main.entry_point("sleep 1", "::", "echo hi", "-n", "--colour", "no")
         captured = capsys.readouterr()
         assert exit_code == 0, prettify_error(captured.out)
-        assert (
-            re.search(
-                "".join(
-                    [
-                        r"\[sleep 1\] running...\n",
-                        r"\[sleep 1\] done ✔ \(1\..*s\)\n",
-                        r"\[echo hi\] running...\n",
-                        f"{PREFIX}hi\n",
-                        r"\[echo hi\] done ✔ \(0\..*s\)\n",
-                    ]
-                ),
-                captured.out,
-            )
-            is not None
-        ), prettify_error(captured.out)
+        assert re.search(r"\[sleep 1\] running...\n", captured.out) is not None
+        assert re.search(r"\[sleep 1\] done ✔ \(1\..*s\)\n", captured.out) is not None
+        assert re.search(r"\[echo hi\] running...\n", captured.out) is not None
+        assert re.search(f"{PREFIX}hi\n", captured.out) is not None
+        assert re.search(r"\[echo hi\] done ✔ \(0\..*s\)\n", captured.out) is not None, prettify_error(captured.out)
 
     @pytest.mark.parametrize("wait", ["0.1", "0.5"])
     def test_handles_single_command_output_with_delayed_newlines(

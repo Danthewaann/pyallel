@@ -34,9 +34,14 @@ class ProcessOutput:
         self.command = command
 
     def merge(self, other: ProcessOutput) -> None:
+        if self.id != other.id:
+            raise ValueError(f"Cannot merge process outputs with different ids: {self.id=}, {other.id=}")
+
         self.data += other.data
         self.lines += len(other.data.splitlines())
         self.allocated_lines = other.allocated_lines
+        self.allocated_percentage_lines = other.allocated_percentage_lines
+        self.start = other.start
         self.end = other.end
         self.poll = other.poll
 
@@ -72,15 +77,18 @@ class Process:
     def fetch_stdout(self) -> bool:
         data = self._stdout.read1(65536)
         if not data:
+            if not self.end:
+                self.end = time.perf_counter()
             return False
 
         self._buffer += data
         return True
 
-    def poll(self, fetch_stdout: bool = True) -> int | None:
+    def poll(self, *, fetch_stdout: bool = True) -> int | None:
         poll = self._process.poll()
         if poll is not None and not self.end:
-            self.end = time.perf_counter()
+            if not self.end:
+                self.end = time.perf_counter()
             # The process has exited, so drain whatever output is left
             # sitting in the pipe now rather than waiting for the selector to
             # notice it, otherwise trailing output written right before exit
@@ -90,9 +98,7 @@ class Process:
                     pass
         return poll
 
-    def read(self, *, fetch_stdout: bool = True) -> bytes:
-        if fetch_stdout:
-            self.fetch_stdout()
+    def read(self) -> bytes:
         buffer = self._buffer
         self._buffer = b""
         return buffer
@@ -113,7 +119,7 @@ class Process:
     def from_command(cls, id: int, command: str) -> Process:  # noqa: A002
         cmd = command.split(" :::: ", maxsplit=1)
         if len(cmd) == 1:
-            return cls(id, cmd[0])
+            return cls(id, cmd[0].strip())
 
         args, *parts = cmd
 
@@ -135,7 +141,7 @@ class Process:
 
                 break
 
-        return cls(id, " ".join(parts), round(percentage_lines / 100, 2))
+        return cls(id, " ".join(parts).strip(), round(percentage_lines / 100, 2))
 
 
 def _is_buffered_reader(stdout: Any) -> TypeGuard[BufferedReader]:
