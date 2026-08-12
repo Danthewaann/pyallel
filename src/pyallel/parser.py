@@ -11,6 +11,7 @@ class Arguments:
     timer: bool
     version: bool
     debug: bool
+    summary: bool
 
     def __repr__(self) -> str:
         msg = ""
@@ -87,6 +88,14 @@ def create_parser() -> ArgumentParser:
         "--no-timer",
         dest="timer",
         help="don't time how long each command is taking",
+        action="store_false",
+        default=True,
+    )
+    parser.add_argument(
+        "-s",
+        "--no-summary",
+        help="don't output a summary at the end",
+        dest="summary",
         action="store_false",
         default=True,
     )

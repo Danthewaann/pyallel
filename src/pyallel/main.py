@@ -15,6 +15,7 @@ from pyallel.printer import (
     InteractiveConsolePrinter,
     NonInteractiveConsolePrinter,
     Printer,
+    generate_summary,
 )
 from pyallel.process_group_manager import ProcessGroupManager
 
@@ -47,31 +48,29 @@ def entry_point(*args: str) -> int:
     try:
         process_group_manager = ProcessGroupManager.from_args(*parsed_args.commands)
     except PyallelError as e:
-        print(f"{colours.red_bold}Error: {e!s}{colours.reset_colour}")
+        print(f"{colours.red_bold}Error{colours.reset_colour}: {e!s}")
         return 1
 
     logger.debug("starting run with arguments:\n%s", parsed_args)
     try:
-        try:
-            exit_code = run(process_group_manager, printer)
-        except Exception:
-            logger.exception("failed run with arguments:\n%s", parsed_args)
-            print(f"{colours.red_bold}Error: {traceback.format_exc()}{colours.reset_colour}")
-            return 1
-    finally:
-        if isinstance(printer, InteractiveConsolePrinter):
-            printer.show_cursor()
+        exit_code = run(process_group_manager, printer)
+    except Exception:
+        logger.exception("failed run with arguments:\n%s", parsed_args)
+        print(
+            f"{colours.red_bold}Error{colours.reset_colour}: encountered unexpected error\n\n{traceback.format_exc()}"
+        )
+        return 1
 
     if exit_code == 1:
         logger.error("failed run with arguments:\n%s", parsed_args)
-        process_group = process_group_manager.cur_process_group
-        print(f"\n{colours.red_bold}ERROR: the following commands failed{colours.reset_colour}")
-        for process in process_group.processes:
-            process_poll = process.poll()
-            if process_poll and process_poll > 0:
-                print(f"   {colours.red_bold}{process.command}{colours.reset_colour}")
     else:
         logger.debug("finished run with arguments:\n%s", parsed_args)
+
+    if parsed_args.summary:
+        print()
+        outputs = [group.stream() for group in process_group_manager.groups]
+        summary = generate_summary(process_group_outputs=outputs, colours=colours, include_timer=parsed_args.timer)
+        print("\n".join(summary))
 
     return exit_code
 

@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import logging
 import time
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 
 from pyallel import constants
 from pyallel.colours import Colours
 from pyallel.constants import HIDE_CURSOR, SHOW_CURSOR
+from pyallel.errors import PyallelError
 
 if TYPE_CHECKING:
     from pyallel.process import ProcessOutput
@@ -337,9 +339,6 @@ class InteractiveConsolePrinter(ConsolePrinter):
     def reset(self) -> None:
         self._last_printed.clear()
 
-    def show_cursor(self) -> None:
-        print(constants.SHOW_CURSOR, end="", flush=True)
-
     def _write(
         self,
         line: str,
@@ -506,6 +505,126 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
     def _write(self, line: str, *, include_prefix: bool = False, end: str = "\n", flush: bool = False) -> None:
         prefix = self._prefix if include_prefix else ""
         print(f"{self._colours.reset_colour}{prefix}{line}", end=end, flush=flush)
+
+
+@dataclass
+class ProcessSummaryLine:
+    poll: int | None
+    status: str
+    duration: str
+    group: str
+    command: str
+
+    def to_line(self, colours: Colours | None = None) -> str:
+        line = (
+            self.generate_status(colours),
+            self.generate_duration(colours),
+            self.generate_group(colours),
+            self.generate_command(colours),
+        )
+        return " ".join(filter(len, line))
+
+    def generate_status(self, colours: Colours | None = None) -> str:
+        if not colours:
+            return self.status
+
+        if self.poll == -1:
+            return f"{colours.dim_on}{self.status}{colours.dim_off}"
+        if self.poll == 0:
+            return f"{colours.green_bold}{self.status}{colours.reset_colour}"
+        return f"{colours.red_bold}{self.status}{colours.reset_colour}"
+
+    def generate_duration(self, colours: Colours | None = None) -> str:
+        if not self.duration:
+            return self.duration
+        if not colours:
+            return self.duration
+
+        return f"{colours.white_bold}{self.duration}{colours.reset_colour}"
+
+    def generate_group(self, colours: Colours | None = None) -> str:
+        if not self.group.strip() or not colours:
+            return self.group
+
+        return f"{colours.dim_on}{self.group}{colours.dim_off}"
+
+    def generate_command(self, colours: Colours | None = None) -> str:
+        if not colours:
+            return f"[{self.command}]"
+
+        return (
+            f"{colours.white_bold}[{colours.reset_colour}"
+            f"{colours.blue_bold}{self.command}{colours.reset_colour}"
+            f"{colours.white_bold}]{colours.reset_colour}"
+        )
+
+
+def generate_summary(
+    process_group_outputs: list[ProcessGroupOutput],
+    colours: Colours | None = None,
+    columns: int | None = None,
+    *,
+    include_timer: bool = True,
+) -> list[str]:
+    colours = colours or Colours()
+    columns = columns or constants.columns()
+    summary = [f"{colours.white_bold}Results Summary{colours.reset_colour}"]
+    num_groups = len(process_group_outputs)
+    process_summarys: list[ProcessSummaryLine] = []
+    for pg in process_group_outputs:
+        for p in pg.processes:
+            poll = p.poll
+            if poll is None:
+                continue
+            if poll == -1:
+                status = "not started"
+            elif poll != 0:
+                status = f"failed {constants.X}"
+            else:
+                status = f"done {constants.TICK}"
+
+            duration = ""
+            if include_timer and poll != -1:
+                duration = format_time_taken(p.end - p.start)
+
+            group = ""
+            if num_groups > 1:
+                group = f"(group: {pg.id})"
+
+            process_summarys.append(
+                ProcessSummaryLine(
+                    poll=poll,
+                    status=status,
+                    duration=duration,
+                    group=group,
+                    command=p.command,
+                )
+            )
+
+    if not process_summarys:
+        raise PyallelError("no commands provided or no commands have completed")
+
+    status_padding = 0
+    duration_padding = 0
+    group_padding = 0
+    for line in process_summarys:
+        status_padding = max(status_padding, len(line.generate_status()))
+        duration_padding = max(duration_padding, len(line.generate_duration()))
+        group_padding = max(group_padding, len(line.generate_group()))
+
+    for line in process_summarys:
+        line.status = f"{line.generate_status(): <{status_padding}}"
+        line.duration = f"{line.generate_duration(): <{duration_padding}}"
+        line.group = f"{line.generate_group(): <{group_padding}}"
+
+    longest_line = 0
+    for line in process_summarys:
+        longest_line = max(longest_line, len(line.to_line()))
+    header = "=" * min(longest_line, columns)
+    summary.append(f"{colours.white_bold}{header}{colours.reset_colour}")
+
+    summary.extend([p.to_line(colours=colours) for p in process_summarys])
+    return summary
 
 
 def format_time_taken(time_taken: float) -> str:

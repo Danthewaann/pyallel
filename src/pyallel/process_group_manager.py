@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import signal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from pyallel.errors import NoCommandsForProcessGroupError
+from pyallel.errors import NoCommandsForProcessGroupError, PyallelError
 from pyallel.process_group import ProcessGroup, ProcessGroupOutput
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class ProcessGroupManager:
     def __init__(self, process_groups: list[ProcessGroup]) -> None:
         self._exit_code = 0
         self._interrupt_count = 0
-        self._process_groups = process_groups
+        self._process_groups = process_groups.copy()
         self._cur_process_group: ProcessGroup | None = None
+        self.groups: Sequence[ProcessGroup] = process_groups
 
     @classmethod
     def from_args(cls, *args: str) -> ProcessGroupManager:
@@ -79,5 +83,5 @@ class ProcessGroupManager:
     @property
     def cur_process_group(self) -> ProcessGroup:
         if self._cur_process_group is None:
-            raise ValueError("cur_process_group is not set, did you forget to call run()?")
+            raise PyallelError("cur_process_group is not set, did you forget to call run()?")
         return self._cur_process_group

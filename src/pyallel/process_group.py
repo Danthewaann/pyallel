@@ -4,6 +4,7 @@ from typing import Sequence
 
 from pyallel.errors import (
     InvalidLinesModifierError,
+    PyallelError,
 )
 from pyallel.process import Process, ProcessOutput
 
@@ -16,7 +17,7 @@ class ProcessGroupOutput:
 
     def merge(self, other: ProcessGroupOutput) -> None:
         if self.id != other.id:
-            raise ValueError(f"Cannot merge process group outputs with different ids: {self.id=}, {other.id=}")
+            raise PyallelError(f"Cannot merge process group outputs with different ids: {self.id=}, {other.id=}")
         for i, _ in enumerate(self.processes):
             self.processes[i].merge(other.processes[i])
 

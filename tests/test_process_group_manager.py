@@ -65,11 +65,11 @@ def test_from_args(mock_signal: MagicMock) -> None:
         ]
     )
     pg_manager = ProcessGroupManager.from_args("sleep 0.1", "::", "sleep 0.2")
-    assert len(pg_manager._process_groups) == len(expected_pg_manager._process_groups)
+    assert len(pg_manager.groups) == len(expected_pg_manager.groups)
 
     for pg1, pg2 in zip(
-        expected_pg_manager._process_groups,
-        pg_manager._process_groups,
+        expected_pg_manager.groups,
+        pg_manager.groups,
     ):
         assert len(pg1.processes) == len(pg2.processes)
 
@@ -186,11 +186,11 @@ def test_from_args(mock_signal: MagicMock) -> None:
 )
 def test_from_args_with_separators(args: list[str], expected_pg_manager: ProcessGroupManager) -> None:
     pg_manager = ProcessGroupManager.from_args(*args)
-    assert len(pg_manager._process_groups) == len(expected_pg_manager._process_groups)
+    assert len(pg_manager.groups) == len(expected_pg_manager.groups)
 
     for pg1, pg2 in zip(
-        expected_pg_manager._process_groups,
-        pg_manager._process_groups,
+        expected_pg_manager.groups,
+        pg_manager.groups,
     ):
         assert len(pg1.processes) == len(pg2.processes)
 

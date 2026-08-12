@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import pytest
 
+from pyallel import constants
 from pyallel.colours import Colours
-from pyallel.printer import InteractiveConsolePrinter, NonInteractiveConsolePrinter
+from pyallel.errors import PyallelError
+from pyallel.printer import InteractiveConsolePrinter, NonInteractiveConsolePrinter, generate_summary
 from pyallel.process import ProcessOutput
 from pyallel.process_group import ProcessGroupOutput
 
@@ -168,3 +170,117 @@ class TestNonInteractiveConsolePrinter:
             (True, "first", "\n"),
             (True, "second", "\n"),
         ]
+
+
+def test_generate_summary_ok_command() -> None:
+    summary = generate_summary(
+        process_group_outputs=[
+            ProcessGroupOutput(
+                id=1,
+                processes=[ProcessOutput(id=1, command="echo hi", poll=0)],
+            )
+        ],
+        colours=Colours.from_colour("no"),
+        include_timer=True,
+    )
+
+    assert summary == [
+        "Results Summary",
+        "=====================",
+        f"done {constants.TICK} 0.0s [echo hi]",
+    ]
+
+
+def test_generate_summary_failed_command() -> None:
+    summary = generate_summary(
+        process_group_outputs=[
+            ProcessGroupOutput(
+                id=1,
+                processes=[ProcessOutput(id=1, command="echo hi", poll=1)],
+            )
+        ],
+        colours=Colours.from_colour("no"),
+        include_timer=True,
+    )
+
+    assert summary == [
+        "Results Summary",
+        "=======================",
+        f"failed {constants.X} 0.0s [echo hi]",
+    ]
+
+
+def test_generate_summary_not_started_command() -> None:
+    summary = generate_summary(
+        process_group_outputs=[
+            ProcessGroupOutput(
+                id=1,
+                processes=[ProcessOutput(id=1, command="echo hi", poll=-1)],
+            )
+        ],
+        colours=Colours.from_colour("no"),
+        include_timer=True,
+    )
+
+    assert summary == [
+        "Results Summary",
+        "=====================",
+        "not started [echo hi]",
+    ]
+
+
+def test_generate_summary_multiple_groups() -> None:
+    summary = generate_summary(
+        process_group_outputs=[
+            ProcessGroupOutput(
+                id=1,
+                processes=[ProcessOutput(id=1, command="echo hi", poll=0)],
+            ),
+            ProcessGroupOutput(
+                id=2,
+                processes=[ProcessOutput(id=2, command="echo bye", poll=0)],
+            ),
+        ],
+        colours=Colours.from_colour("no"),
+        include_timer=True,
+    )
+
+    assert summary == [
+        "Results Summary",
+        "=================================",
+        f"done {constants.TICK} 0.0s (group: 1) [echo hi]",
+        f"done {constants.TICK} 0.0s (group: 2) [echo bye]",
+    ]
+
+
+def test_generate_summary_skips_running_command() -> None:
+    with pytest.raises(PyallelError, match="no commands provided or no commands have completed"):
+        generate_summary(
+            process_group_outputs=[
+                ProcessGroupOutput(
+                    id=1,
+                    processes=[ProcessOutput(id=1, command="echo hi", poll=None)],
+                )
+            ],
+            colours=Colours.from_colour("no"),
+            include_timer=False,
+        )
+
+
+def test_generate_summary_no_timer() -> None:
+    summary = generate_summary(
+        process_group_outputs=[
+            ProcessGroupOutput(
+                id=1,
+                processes=[ProcessOutput(id=1, command="echo hi", poll=0)],
+            )
+        ],
+        colours=Colours.from_colour("no"),
+        include_timer=False,
+    )
+
+    assert summary == [
+        "Results Summary",
+        "================",
+        f"done {constants.TICK} [echo hi]",
+    ]

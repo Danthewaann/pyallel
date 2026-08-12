@@ -9,7 +9,7 @@ from typing import Any
 
 from typing_extensions import TypeGuard
 
-from pyallel.errors import InvalidLinesModifierError
+from pyallel.errors import InvalidLinesModifierError, PyallelError
 
 
 class ProcessOutput:
@@ -36,7 +36,7 @@ class ProcessOutput:
 
     def merge(self, other: ProcessOutput) -> None:
         if self.id != other.id:
-            raise ValueError(f"Cannot merge process outputs with different ids: {self.id=}, {other.id=}")
+            raise PyallelError(f"Cannot merge process outputs with different ids: {self.id=}, {other.id=}")
 
         self.data += other.data
         self.lines += len(other.data.splitlines())
@@ -87,6 +87,9 @@ class Process:
         read_thread.start()
 
     def poll(self) -> int | None:
+        if not hasattr(self, "_process"):
+            return -1
+
         poll = self._process.poll()
         if poll is not None and not self.end:
             self.end = time.perf_counter()
@@ -100,15 +103,21 @@ class Process:
         return buffer
 
     def return_code(self) -> int | None:
+        if not hasattr(self, "_process"):
+            return -1
         return self._process.returncode
 
     def interrupt(self) -> None:
-        self._process.send_signal(signal.SIGINT)
+        if hasattr(self, "_process"):
+            self._process.send_signal(signal.SIGINT)
 
     def kill(self) -> None:
-        self._process.send_signal(signal.SIGKILL)
+        if hasattr(self, "_process"):
+            self._process.send_signal(signal.SIGKILL)
 
     def wait(self) -> int:
+        if not hasattr(self, "_process"):
+            return -1
         return self._process.wait()
 
     @classmethod

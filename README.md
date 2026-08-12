@@ -21,7 +21,7 @@ pipx install pyallel
 Once installed, you can run `pyallel` to see usage information, like so:
 
 ```
-usage: pyallel [-h] [-t] [-n] [-V] [--colour {yes,no,auto}] [--debug] [commands ...]
+usage: pyallel [-h] [-t] [-s] [-n] [-V] [--colour {yes,no,auto}] [--debug] [commands ...]
 
 run and handle the output of multiple executables in pyallel (as in parallel)
 
@@ -75,6 +75,7 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -t, --no-timer        don't time how long each command is taking
+  -s, --no-summary      don't output a summary at the end
   -n, --non-interactive
                         run in non-interactive mode
   -V, --version         print version and exit
