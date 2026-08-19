@@ -31,7 +31,7 @@ pyallel = "pyallel.main:entry_point"
 
 [dependency-groups]
 dev = [
-    "pytest>=7.4.3,<8",
+    "pytest>=8,<9",
     "mypy>=1.7.0,<2",
     "pyinstaller==6.11.0",
     "ruff>=0.15.20",
