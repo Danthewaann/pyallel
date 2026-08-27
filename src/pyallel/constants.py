@@ -16,22 +16,11 @@ SYNC_UPDATE_BEGIN = "\033[?2026h"
 SYNC_UPDATE_END = "\033[?2026l"
 ANSI_ESCAPE = re.compile(r"(\x9B|\x1B\[|\x1B\()[0-?]*[ -\/]*[@-~]")
 
-if IN_TTY:
+def columns() -> int:
+    return shutil.get_terminal_size().columns
 
-    def columns() -> int:
-        return shutil.get_terminal_size().columns
-
-    def lines() -> int:
-        return shutil.get_terminal_size().lines
-
-else:
-
-    def columns() -> int:
-        return sys.maxsize
-
-    def lines() -> int:
-        return sys.maxsize
-
+def lines() -> int:
+    return shutil.get_terminal_size().lines
 
 ICONS = ("/", "-", "\\", "|")
 
