@@ -46,9 +46,6 @@ build-backend = "hatchling.build"
 strict = true
 show_error_codes = true
 
-[tool.pytest.ini_options]
-addopts = "-vvv"
-
 [tool.ruff]
 # Allow lines to be as long as 120 columns
 line-length = 120
@@ -114,7 +111,7 @@ ban-relative-imports = "all"
 [tool.ruff.lint.isort]
 combine-as-imports = true
 force-wrap-aliases = true
-known-first-party = ["pizzabox", "tests"]
+known-first-party = ["src", "tests"]
 
 [tool.ruff.lint.mccabe]
 # The maximum function complexity to allow before triggering C901 errors
