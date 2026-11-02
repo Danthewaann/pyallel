@@ -392,7 +392,7 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
         self._p_index = 0
         self._generated_lines: list[tuple[bool, str, str]] = []
 
-    def print(self, output: ProcessGroupOutput, *, done: bool = False) -> None:  # noqa: ARG002
+    def print(self, output: ProcessGroupOutput, *, done: bool = False) -> None:
         if self._cur_pg_output is None or self._cur_pg_output.id != output.id:
             self._p_new = True
             self._p_index = 0
@@ -418,6 +418,14 @@ class NonInteractiveConsolePrinter(ConsolePrinter):
             self._p_index += 1
             header = self.generate_process_footer(p_output)
             self._write(header)
+
+        if done:
+            for p_output in self._cur_pg_output.processes[self._p_index :]:
+                header = self.generate_process_header(p_output.command)
+                self._write(header)
+                self.print_process_output(p_output)
+                header = self.generate_process_footer(p_output)
+                self._write(header)
 
     def print_process_output(self, output: ProcessOutput) -> None:
         for include_prefix, line, end in self.generate_process_output(output):

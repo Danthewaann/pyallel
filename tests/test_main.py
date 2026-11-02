@@ -218,6 +218,30 @@ class TestNonInteractiveMode:
             ],
         )
 
+    def test_run_multiple_commands_prints_all_output(self, capsys: pytest.CaptureFixture[str]) -> None:
+        exit_code = main.entry_point(
+            "sleep 2; echo a", "::", "echo b", "::", "echo c", "::", "echo d", *self.default_opts
+        )
+        captured = capsys.readouterr()
+        assert exit_code == 0, prettify_error(captured.out)
+        compare_output(
+            actual=captured.out.splitlines(),
+            expected=[
+                "[sleep 2; echo a] running...",
+                f"{PREFIX}a",
+                f"[sleep 2; echo a] done {constants.TICK}",
+                "[echo b] running...",
+                f"{PREFIX}b",
+                f"[echo b] done {constants.TICK}",
+                "[echo c] running...",
+                f"{PREFIX}c",
+                f"[echo c] done {constants.TICK}",
+                "[echo d] running...",
+                f"{PREFIX}d",
+                f"[echo d] done {constants.TICK}",
+            ],
+        )
+
     def test_run_multiple_commands_single_failure(self, capsys: pytest.CaptureFixture[str]) -> None:
         exit_code = main.entry_point("exit 1", "::", "echo hi", *self.default_opts)
         captured = capsys.readouterr()
